@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Water Friend - v0.12
+  index.html - Aniluna Water Friend - v0.13
 
   Purpose    : Single-file static hydration companion. Tap to drink, the thirst
                meter refills, the character reacts. No backend, no accounts.
@@ -99,7 +99,6 @@
   --head-amp: 2deg; --head-dur: 3.1s;
   --sparkle-op: 1; --sparkle-dur: 1.6s;
   --lid: 0; --smile-op: 1; --frown-op: 0;
-  --rainbow-op: 0.75;
 }
 .scene[data-band="okay"] {
   --sat: 1; --bri: 1;
@@ -109,7 +108,6 @@
   --head-amp: 1.2deg; --head-dur: 4.4s;
   --sparkle-op: 0.5; --sparkle-dur: 2.6s;
   --lid: 0; --smile-op: 1; --frown-op: 0;
-  --rainbow-op: 0;
 }
 .scene[data-band="thirsty"] {
   --sat: 0.7; --bri: 0.98;
@@ -119,7 +117,6 @@
   --head-amp: 0.7deg; --head-dur: 6s;
   --sparkle-op: 0.18; --sparkle-dur: 4s;
   --lid: 0.5; --smile-op: 0; --frown-op: 1;
-  --rainbow-op: 0;
 }
 .scene[data-band="dehydrated"] {
   --sat: 0.42; --bri: 0.95;
@@ -129,7 +126,6 @@
   --head-amp: 0.4deg; --head-dur: 8s;
   --sparkle-op: 0; --sparkle-dur: 6s;
   --lid: 1; --smile-op: 0; --frown-op: 1;
-  --rainbow-op: 0;
 }
 
 /* ============================================================
@@ -242,7 +238,7 @@ body {
 }
 :root[data-theme="night"] .stars { opacity: 0.85; }
 
-/* rainbow reward, happiest state only */
+/* rainbow reward, only while the meter reads at or above Config.thresholds.rainbow */
 .rainbow {
   position: absolute;
   left: 50%;
@@ -253,8 +249,8 @@ body {
   transition: opacity 0.9s ease, transform 0.9s ease;
   pointer-events: none;
 }
-.scene[data-band="hydrated"] .rainbow {
-  opacity: var(--rainbow-op);
+.scene[data-radiant="on"] .rainbow {
+  opacity: 0.78;
   transform: translateX(-50%) scale(1);
 }
 .rainbow path { fill: none; stroke-width: 3.3; stroke-linecap: round; }
@@ -715,7 +711,7 @@ input[type="range"]::-moz-range-thumb {
   <!-- ---------- meter ---------- -->
   <section class="panel block">
     <div class="meter-head">
-      <span class="label">Thirst meter</span>
+      <span class="label">Hydration</span>
       <span class="value" id="meterValue">100%</span>
     </div>
     <div class="meter-track" role="progressbar" id="meterBar"
@@ -783,7 +779,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.12",
+    version: "v0.13",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
   character: {
@@ -798,7 +794,8 @@ const Config = {
   thresholds: {          // lower bound of each band, descending
     hydrated: 75,
     okay: 45,
-    thirsty: 20
+    thirsty: 20,
+    rainbow: 95          // reward arc, compared against the displayed percent
   },
   limits: {                    // slider bounds, also used to snap saved values
     decayHours: { min: 0.5, max: 4, step: 0.5 },
@@ -1234,6 +1231,7 @@ const UI = {
     const band = State.band();
 
     this.el.scene.dataset.band = band;
+    this.el.scene.dataset.radiant = pct >= Config.thresholds.rainbow ? "on" : "off";
     this.el.meterFill.style.width = `${pct}%`;
     this.el.meterValue.textContent = `${pct}%`;
     this.el.meterBar.setAttribute("aria-valuenow", String(pct));

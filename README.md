@@ -1,4 +1,4 @@
-# Aniluna Water Friend - v0.12
+# Aniluna Water Friend - v0.13
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -25,9 +25,10 @@ alone and they slowly droop. That is the whole app.
 | | |
 |---|---|
 | Mood states | `hydrated` >=75, `okay` >=45, `thirsty` >=20, `dehydrated` <20 |
+| Meter | Labelled **Hydration**: 100% is full, 0% is empty. The bar fills when you drink |
 | Default decay | Full to completely empty in 2 hours, so the dehydrated band is entered just after 1 h 36 min |
 | Idle animation | Bob, head nod, tail swish, ear twitch, blink, sparkle. Amplitude and speed tuned per state |
-| Rainbow | Decorative reward, happiest state only |
+| Rainbow | Decorative reward, only while the meter reads 95% or above. At the 2 h default that is roughly the 6 minutes after topping up |
 | Sound | Procedural Web Audio: sip, yippie, sad "oh", gurgle. Unlocked on first gesture |
 | Easter egg | 5 drink taps within 5 seconds triggers a blubber/gurgle |
 | Settings | Full-to-empty slider (0.5 to 4.0 hours, half-hour steps), refill slider (25/50/75/100%), sound, easter egg, day/night theme |
@@ -40,7 +41,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.12", status: "DEVELOPMENT" },
+  app: { version: "v0.13", status: "DEVELOPMENT" },
   character: { name: "Aniluna", species: "unicorn" },
   hydration: { max: 100, defaultDecayHours: 2, defaultRefillAmount: 25 },
   limits: {
@@ -102,6 +103,25 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.13  2026-08-20  Renamed the visible meter label from "Thirst meter" to
+                   "Hydration". The bar fills when you drink, so labelling it
+                   thirst inverted the meaning: 100% read as maximally thirsty
+                   when it means completely topped up. Root cause: the label
+                   was taken verbatim from the brief's feature list while the
+                   state, the mood copy and the generated ARIA name all used
+                   hydration, so the visible label was the only wrong half and
+                   disagreed with its own accessible name. This is a
+                   deliberate deviation from the brief's "thirst meter with
+                   visible percentage" wording.
+                   Narrowed the rainbow to the top of the range. It now needs
+                   the meter to read at or above the new Config.thresholds
+                   .rainbow of 95 rather than the whole hydrated band from 75.
+                   Gated on the displayed, rounded percent so the arc always
+                   agrees with the number on screen: 94.6 renders as 95% and
+                   earns the rainbow. Replaced the four per-band --rainbow-op
+                   tokens with a single data-radiant attribute, since
+                   visibility is now one threshold rather than four values.
+
 v0.12  2026-08-20  Added a favicon. First attempt was a hand-drawn 16x16 pixel
                    unicorn head matching the in-app sprite, but at favicon size
                    it did not read as a unicorn, so it was replaced with the
