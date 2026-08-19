@@ -1,4 +1,4 @@
-# Aniluna Water Friend - v0.11
+# Aniluna Water Friend - v0.12
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -7,12 +7,12 @@ A tiny hydration companion that lives in one HTML file. Tap **"I drank water"**,
 the thirst meter refills, and Aniluna the pixel unicorn perks up. Leave them
 alone and they slowly droop. That is the whole app.
 
-**Play it:** https://mkoterski.github.io/ina-water-friend/
+**Play it:** https://mkoterski.github.io/aniluna/
 
 ## Why it is built like this
 
 - **One file.** `index.html` holds the markup, CSS and JS. No build step, no
-  dependencies, no server. Drop it on any static host.
+  dependencies, no server, not even an icon file. Drop it on any static host.
 - **Timestamps, not timers.** Hydration is derived from `Date.now()` minus the
   stored `lastUpdateAt`, so closing the tab, locking the phone or killing the
   browser all produce the correct amount of decay. `setInterval` is used *only*
@@ -31,6 +31,7 @@ alone and they slowly droop. That is the whole app.
 | Sound | Procedural Web Audio: sip, yippie, sad "oh", gurgle. Unlocked on first gesture |
 | Easter egg | 5 drink taps within 5 seconds triggers a blubber/gurgle |
 | Settings | Full-to-empty slider (0.5 to 4.0 hours, half-hour steps), refill slider (25/50/75/100%), sound, easter egg, day/night theme |
+| Favicon | Unicorn emoji wrapped in an inline SVG data URI, so there is no icon asset to ship |
 | Accessibility | `prefers-reduced-motion` respected, 44 px touch targets, ARIA labels, no autoplay audio |
 
 ## Renaming the character
@@ -39,7 +40,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.11", status: "DEVELOPMENT" },
+  app: { version: "v0.12", status: "DEVELOPMENT" },
   character: { name: "Aniluna", species: "unicorn" },
   hydration: { max: 100, defaultDecayHours: 2, defaultRefillAmount: 25 },
   limits: {
@@ -52,8 +53,11 @@ const Config = {
 
 Change `name` and the title, heading, speech, status text and ARIA labels all
 follow. The `limits` block drives the slider bounds, their tick labels and the
-clamping of saved values, so widening a slider is a one-line change. Bumping
-`storageKey` resets everyone's saved state, so only do that on a breaking change
+clamping of saved values, so widening a slider is a one-line change.
+
+`storageKey` is deliberately still `ina-water-friend/v1`, from the original
+working title. It is an opaque `localStorage` key, and renaming it would wipe
+every saved companion for no functional gain. Only bump it on a breaking change
 to the state shape.
 
 ## Code map
@@ -84,12 +88,12 @@ The running version is printed to the browser console on startup.
 
 ## Versioning and changelog
 
-This project follows the NeXtWind script standards
-([`../nxw-script-standards.md`](../nxw-script-standards.md)) for versioning and
+This project follows the NeXtWind script standards (`nxw-script-standards.md` in
+the parent `claude-mk` working folder, not published here) for versioning and
 changelog discipline: development starts at `v0.10`, every iteration increments
 the minor component by exactly one, every bump gets an entry, entries are newest
-first and say what changed and why, and prose uses hyphens rather than em dashes
-(NXW-VER-1 to NXW-VER-8, NXW-NAM-6).
+first and say what changed and why, bug-fix entries name the root cause, and
+prose uses hyphens rather than em dashes (NXW-VER-1 to NXW-VER-8, NXW-NAM-6).
 
 The version string appears in three places: the `index.html` header block, the
 changelog below, and the startup console banner. Promotion to `v1.0` happens
@@ -98,6 +102,14 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.12  2026-08-20  Added a favicon. First attempt was a hand-drawn 16x16 pixel
+                   unicorn head matching the in-app sprite, but at favicon size
+                   it did not read as a unicorn, so it was replaced with the
+                   unicorn emoji wrapped in an inline SVG data URI. That is also
+                   189 characters instead of 1163 and keeps the single-file
+                   promise. Renamed the repository to aniluna. Documented why
+                   storageKey keeps the old working-title string.
+
 v0.11  2026-08-20  Renamed the character to Aniluna. The old working title is
                    gone from the code entirely, every mention now comes from
                    Config.character.name. Cut the default full-to-empty time

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Water Friend - v0.11
+  index.html - Aniluna Water Friend - v0.12
 
   Purpose    : Single-file static hydration companion. Tap to drink, the thirst
                meter refills, the character reacts. No backend, no accounts.
@@ -18,6 +18,10 @@
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="A tiny single-file hydration companion. Drink water, keep your unicorn sparkly.">
 <meta name="theme-color" content="#cfe9ff">
+<!-- Unicorn emoji as an inline SVG favicon, so this stays a single file with no
+     icon asset to ship. Renders in the platform emoji font, so it looks a little
+     different per OS. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='50' dy='.35em' font-size='84' text-anchor='middle'%3E%F0%9F%A6%84%3C/text%3E%3C/svg%3E">
 <title>Aniluna Water Friend</title>
 <style>
 /* ============================================================
@@ -779,7 +783,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.11",
+    version: "v0.12",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
   character: {
@@ -809,6 +813,9 @@ const Config = {
     sipFeedbackMs: 520,
     gurgleFeedbackMs: 750
   },
+  /* Deliberately still the original string. It is an opaque localStorage key,
+     and renaming it would wipe every saved companion for no functional gain.
+     Only bump it on a breaking change to the state shape. */
   storageKey: "ina-water-friend/v1"
 };
 
