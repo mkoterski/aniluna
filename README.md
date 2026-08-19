@@ -1,4 +1,4 @@
-# Aniluna Water Friend - v0.13
+# Aniluna Water Friend - v0.14
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -24,7 +24,7 @@ alone and they slowly droop. That is the whole app.
 
 | | |
 |---|---|
-| Mood states | `hydrated` >=75, `okay` >=45, `thirsty` >=20, `dehydrated` <20 |
+| Mood states | `hydrated` >=75, `okay` >=45, `thirsty` >=20, `dehydrated` <20, compared against the displayed percent |
 | Meter | Labelled **Hydration**: 100% is full, 0% is empty. The bar fills when you drink |
 | Default decay | Full to completely empty in 2 hours, so the dehydrated band is entered just after 1 h 36 min |
 | Idle animation | Bob, head nod, tail swish, ear twitch, blink, sparkle. Amplitude and speed tuned per state |
@@ -41,7 +41,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.13", status: "DEVELOPMENT" },
+  app: { version: "v0.14", status: "DEVELOPMENT" },
   character: { name: "Aniluna", species: "unicorn" },
   hydration: { max: 100, defaultDecayHours: 2, defaultRefillAmount: 25 },
   limits: {
@@ -56,10 +56,14 @@ Change `name` and the title, heading, speech, status text and ARIA labels all
 follow. The `limits` block drives the slider bounds, their tick labels and the
 clamping of saved values, so widening a slider is a one-line change.
 
-`storageKey` is deliberately still `ina-water-friend/v1`, from the original
-working title. It is an opaque `localStorage` key, and renaming it would wipe
-every saved companion for no functional gain. Only bump it on a breaking change
-to the state shape.
+`storageKey` is `aniluna/v1`. Renaming a storage key normally costs everyone
+their saved state, so `Config.legacyKeys` lists the names the app used to write
+under and `Storage.migrate()` adopts the first one it finds on startup, exactly
+once, never overwriting data already at the current key. That makes a rename free.
+Prune `legacyKeys` once no browser could plausibly still hold an old name.
+
+The `/vN` suffix is the state-shape version, which is a different thing: bump it
+on a breaking change to the shape, where abandoning old saves is the point.
 
 ## Code map
 
@@ -68,7 +72,7 @@ The single script is split into labelled sections:
 | Section | Responsibility |
 |---|---|
 | `CONFIG` | Version, constants, defaults, thresholds, slider limits, storage key, copy |
-| `STORAGE` | Read/write/clear the JSON blob in `localStorage` |
+| `STORAGE` | Read/write/clear the JSON blob in `localStorage`, and one-time migration from a legacy key |
 | `TIME` | Relative time labels, local day key |
 | `AUDIO` | Context setup, gesture unlock, procedural sounds |
 | `STATE` | Decay, refill, bands, tap history, settings |
@@ -103,6 +107,28 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.14  2026-08-20  Renamed the localStorage key from ina-water-friend/v1 to
+                   aniluna/v1, so nothing user-visible or internal still
+                   carries the old working title. Added Config.legacyKeys and
+                   Storage.migrate() so the rename does not cost anyone their
+                   saved companion: on startup the app adopts a save found
+                   under an old key name, exactly once, and never overwrites
+                   data already present at the current key. Verified that
+                   hydration, drink count, decay hours, refill amount, theme
+                   and both toggles all survive the rename across a real page
+                   reload, that migration is idempotent, that it is a no-op on
+                   a clean install, and that a corrupt legacy save is adopted
+                   and then falls back to defaults rather than breaking
+                   startup.
+                   Fixed: mood bands were compared against the raw hydration
+                   float while the meter displayed the rounded percent, so a
+                   meter reading exactly 75% could sit in the okay band
+                   because the underlying value was 74.997. Found while
+                   testing the migration. State.band() now rounds first, so
+                   the number on screen, the mood line, the sprite state and
+                   the rainbow all agree at every boundary. Same class of bug
+                   as the v0.13 rainbow gating.
+
 v0.13  2026-08-20  Renamed the visible meter label from "Thirst meter" to
                    "Hydration". The bar fills when you drink, so labelling it
                    thirst inverted the meaning: 100% read as maximally thirsty

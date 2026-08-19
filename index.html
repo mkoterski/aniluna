@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Water Friend - v0.13
+  index.html - Aniluna Water Friend - v0.14
 
   Purpose    : Single-file static hydration companion. Tap to drink, the thirst
                meter refills, the character reacts. No backend, no accounts.
@@ -779,7 +779,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.13",
+    version: "v0.14",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
   character: {
@@ -810,10 +810,13 @@ const Config = {
     sipFeedbackMs: 520,
     gurgleFeedbackMs: 750
   },
-  /* Deliberately still the original string. It is an opaque localStorage key,
-     and renaming it would wipe every saved companion for no functional gain.
-     Only bump it on a breaking change to the state shape. */
-  storageKey: "ina-water-friend/v1"
+  storageKey: "aniluna/v1",
+  /* Keys this app used to write under. Storage.migrate adopts the first one it
+     finds, so renaming the key does not cost anyone their saved companion.
+     Safe to prune once no browser can plausibly still hold the old key.
+     The /vN suffix is the state-shape version: bump it on a breaking change,
+     which deliberately abandons old saves rather than migrating them. */
+  legacyKeys: ["ina-water-friend/v1"]
 };
 
 const BANDS = ["hydrated", "okay", "thirsty", "dehydrated"];
@@ -855,6 +858,27 @@ const Copy = {
 
 /* ========= STORAGE ========= */
 const Storage = {
+  /**
+   * One-time adoption of a save written under an older key name. Runs before
+   * the first read and never overwrites data already at the current key.
+   * Returns the key it migrated from, or null if there was nothing to do.
+   */
+  migrate() {
+    try {
+      if (localStorage.getItem(Config.storageKey) !== null) return null;
+      for (const legacy of Config.legacyKeys) {
+        const raw = localStorage.getItem(legacy);
+        if (raw === null) continue;
+        localStorage.setItem(Config.storageKey, raw);
+        localStorage.removeItem(legacy);
+        return legacy;
+      }
+    } catch (err) {
+      console.warn("Could not migrate saved state:", err);   // private mode / quota
+    }
+    return null;
+  },
+
   read() {
     try {
       const raw = localStorage.getItem(Config.storageKey);
@@ -1121,11 +1145,17 @@ const State = {
     }
   },
 
+  /**
+   * Bands are compared against the rounded percent, the same number the meter
+   * shows. Comparing the raw float instead lets a meter reading exactly 75%
+   * sit in the okay band, because the underlying value is 74.997.
+   */
   band(hydration = this.data.hydration) {
+    const pct = Math.round(hydration);
     const t = Config.thresholds;
-    if (hydration >= t.hydrated) return "hydrated";
-    if (hydration >= t.okay) return "okay";
-    if (hydration >= t.thirsty) return "thirsty";
+    if (pct >= t.hydrated) return "hydrated";
+    if (pct >= t.okay) return "okay";
+    if (pct >= t.thirsty) return "thirsty";
     return "dehydrated";
   },
 
@@ -1477,6 +1507,7 @@ function init() {
   UI.applyNaming();
   UI.applyLimits();
 
+  const migratedFrom = Storage.migrate();
   State.load();
   State.sync();
   State.save();
@@ -1493,6 +1524,9 @@ function init() {
   /* The browser console stands in for a shell banner, so the running version
      is always identifiable without reading the source. */
   console.log(`${Config.character.name} Water Friend ${Config.app.version} - ${Config.app.status}`);
+  if (migratedFrom) {
+    console.log(`Adopted saved state from the old key "${migratedFrom}".`);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
