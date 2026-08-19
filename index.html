@@ -1,4 +1,16 @@
 <!DOCTYPE html>
+<!--
+  index.html - Aniluna Water Friend - v0.11
+
+  Purpose    : Single-file static hydration companion. Tap to drink, the thirst
+               meter refills, the character reacts. No backend, no accounts.
+  Status     : DEVELOPMENT
+  Versioning : v0.x = development/testing, v1.x = production-ready
+  Author     : Matthias Koterski
+  Date       : 2026-08-20
+  Context    : Runs entirely in the browser. State lives in localStorage.
+  Changelog  : see README.md, newest first
+-->
 <html lang="en" data-theme="day">
 <head>
 <meta charset="utf-8">
@@ -6,7 +18,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="A tiny single-file hydration companion. Drink water, keep your unicorn sparkly.">
 <meta name="theme-color" content="#cfe9ff">
-<title>Ina Water Friend</title>
+<title>Aniluna Water Friend</title>
 <style>
 /* ============================================================
    THEME TOKENS
@@ -226,7 +238,7 @@ body {
 }
 :root[data-theme="night"] .stars { opacity: 0.85; }
 
-/* rainbow reward -- happiest state only */
+/* rainbow reward, happiest state only */
 .rainbow {
   position: absolute;
   left: 50%;
@@ -471,17 +483,60 @@ details.settings[open] summary::before { transform: rotate(90deg); }
   font-size: 0.9rem;
 }
 .setting label { flex: 1; }
-.setting input[type="number"] {
-  width: 76px;
-  min-height: 40px;
-  padding: 6px 8px;
-  text-align: center;
-  border: 2px solid var(--panel-edge);
-  border-radius: 12px;
-  background: var(--meter-bg);
-  font-variant-numeric: tabular-nums;
-}
 .setting input[type="checkbox"] { width: 26px; height: 26px; accent-color: var(--accent); }
+
+.setting-slider { display: block; padding: 10px 14px 12px; }
+.setting-row { display: flex; align-items: baseline; gap: 10px; }
+.setting-row label { flex: 1; }
+.setting-row output { font-weight: 700; font-variant-numeric: tabular-nums; }
+.setting-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -1px;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 34px;                 /* finger-friendly area around a 12px track */
+  margin: 2px 0 0;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--meter-bg);
+  border: 2px solid var(--panel-edge);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  margin-top: -7px;             /* centres the thumb on the track */
+  border-radius: 9px;
+  background: var(--accent);
+  border: 3px solid var(--panel);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+}
+input[type="range"]::-moz-range-track {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--meter-bg);
+  border: 2px solid var(--panel-edge);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: var(--accent);
+  border: 3px solid var(--panel);
+}
 .settings-foot { padding: 4px 14px 14px; font-size: 0.76rem; color: var(--text-soft); }
 
 .note {
@@ -522,14 +577,14 @@ details.settings[open] summary::before { transform: rotate(90deg); }
 
   <!-- ---------- top bar ---------- -->
   <header class="panel topbar">
-    <h1 id="appTitle">Ina Water Friend</h1>
+    <h1 id="appTitle">Aniluna Water Friend</h1>
     <button class="icon-btn" id="themeBtn" type="button" aria-pressed="false" aria-label="Switch to night theme">🌙</button>
     <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound on">🔔</button>
   </header>
 
   <!-- ---------- scene ---------- -->
   <section class="scene" id="scene" data-band="hydrated" aria-labelledby="sceneCaption">
-    <p class="sr-only" id="sceneCaption">Ina the unicorn, reacting to how hydrated she is.</p>
+    <p class="sr-only" id="sceneCaption">Aniluna the unicorn, reacting to how hydrated they are.</p>
     <div class="stars" aria-hidden="true"></div>
 
     <svg class="rainbow" viewBox="0 0 100 52" aria-hidden="true">
@@ -684,13 +739,21 @@ details.settings[open] summary::before { transform: rotate(90deg); }
   <!-- ---------- settings ---------- -->
   <details class="panel settings" id="settings">
     <summary>Settings</summary>
-    <div class="setting">
-      <label for="decayInput">Hours from full to empty</label>
-      <input id="decayInput" type="number" min="1" max="24" step="1" inputmode="numeric">
+    <div class="setting setting-slider">
+      <div class="setting-row">
+        <label for="decayInput">Full to empty</label>
+        <output id="decayOut" for="decayInput"></output>
+      </div>
+      <input id="decayInput" type="range">
+      <div class="setting-scale" id="decayScale" aria-hidden="true"></div>
     </div>
-    <div class="setting">
-      <label for="refillInput">Refill per drink (%)</label>
-      <input id="refillInput" type="number" min="5" max="100" step="5" inputmode="numeric">
+    <div class="setting setting-slider">
+      <div class="setting-row">
+        <label for="refillInput">Refill per drink</label>
+        <output id="refillOut" for="refillInput"></output>
+      </div>
+      <input id="refillInput" type="range">
+      <div class="setting-scale" id="refillScale" aria-hidden="true"></div>
     </div>
     <div class="setting">
       <label for="soundInput">Sound effects</label>
@@ -715,13 +778,17 @@ details.settings[open] summary::before { transform: rotate(90deg); }
 
 /* ========= CONFIG ========= */
 const Config = {
+  app: {
+    version: "v0.11",
+    status: "DEVELOPMENT"        // v0.x = development, v1.x = production
+  },
   character: {
-    name: "Ina",
+    name: "Aniluna",
     species: "unicorn"
   },
   hydration: {
     max: 100,
-    defaultDecayHours: 4,
+    defaultDecayHours: 2,        // full to completely empty in two hours
     defaultRefillAmount: 25
   },
   thresholds: {          // lower bound of each band, descending
@@ -729,9 +796,9 @@ const Config = {
     okay: 45,
     thirsty: 20
   },
-  limits: {
-    decayHours: { min: 1, max: 24 },
-    refillAmount: { min: 5, max: 100 }
+  limits: {                    // slider bounds, also used to snap saved values
+    decayHours: { min: 0.5, max: 4, step: 0.5 },
+    refillAmount: { min: 25, max: 100, step: 25 }
   },
   burst: {               // rapid-tap easter egg
     taps: 5,
@@ -894,7 +961,7 @@ const Audio_ = {
     osc.stop(t0 + dur + 0.02);
   },
 
-  /** Filtered noise burst -- the "water" texture of a sip. */
+  /** Filtered noise burst, the "water" texture of a sip. */
   noise({ start = 0, dur = 0.12, gain = 0.06, freq = 1400 }) {
     if (!this.ready()) return;
     const ctx = this.ctx;
@@ -972,10 +1039,23 @@ const State = {
     };
   },
 
-  clampNum(value, fallback, { min, max }) {
+  /**
+   * Number coercion that treats null, undefined and "" as absent rather than
+   * as zero, which is what Number() would do.
+   */
+  num(value, fallback) {
+    if (value === null || value === undefined || value === "") return fallback;
     const n = Number(value);
-    if (!Number.isFinite(n)) return fallback;
-    return Math.min(max, Math.max(min, Math.round(n)));
+    return Number.isFinite(n) ? n : fallback;
+  },
+
+  /** Clamp into range and snap onto the slider step, tolerating junk input. */
+  clampStep(value, fallback, { min, max, step }) {
+    const n = this.num(value, null);
+    if (n === null) return fallback;
+    const clamped = Math.min(max, Math.max(min, n));
+    const snapped = min + Math.round((clamped - min) / step) * step;
+    return Math.round(snapped * 100) / 100;      // drop floating point dust
   },
 
   /** Merge saved data over defaults so old/partial saves never break startup. */
@@ -990,15 +1070,16 @@ const State = {
     this.data = {
       ...base,
       ...saved,
-      hydration: Number.isFinite(Number(saved.hydration))
-        ? Math.min(Config.hydration.max, Math.max(0, Number(saved.hydration)))
-        : base.hydration,
-      lastUpdateAt: Number(saved.lastUpdateAt) || now,
-      lastDrinkAt: Number(saved.lastDrinkAt) || null,
-      todayCount: Math.max(0, Number(saved.todayCount) || 0),
+      hydration: Math.min(
+        Config.hydration.max,
+        Math.max(0, this.num(saved.hydration, base.hydration))
+      ),
+      lastUpdateAt: this.num(saved.lastUpdateAt, now),
+      lastDrinkAt: this.num(saved.lastDrinkAt, null),
+      todayCount: Math.max(0, Math.round(this.num(saved.todayCount, 0))),
       dayKey: typeof saved.dayKey === "string" ? saved.dayKey : base.dayKey,
-      decayHours: this.clampNum(saved.decayHours, base.decayHours, Config.limits.decayHours),
-      refillAmount: this.clampNum(saved.refillAmount, base.refillAmount, Config.limits.refillAmount),
+      decayHours: this.clampStep(saved.decayHours, base.decayHours, Config.limits.decayHours),
+      refillAmount: this.clampStep(saved.refillAmount, base.refillAmount, Config.limits.refillAmount),
       soundOn: saved.soundOn !== false,
       easterEggOn: saved.easterEggOn !== false,
       theme: saved.theme === "night" ? "night" : "day",
@@ -1012,7 +1093,7 @@ const State = {
   },
 
   /**
-   * Timestamp-driven decay. This -- not any interval -- is the source of truth,
+   * Timestamp-driven decay. This, not any interval, is the source of truth,
    * so closing the tab, sleeping the phone or killing the browser all work out.
    * Returns how many points were lost since the last sync.
    */
@@ -1103,8 +1184,8 @@ const UI = {
       "appTitle", "themeBtn", "soundBtn", "scene", "sceneCaption", "speech", "drops",
       "meterValue", "meterBar", "meterFill", "meterLabel", "moodLine",
       "statCount", "statLast", "drinkBtn", "resetBtn", "settings",
-      "decayInput", "refillInput", "soundInput", "eggInput", "themeInput",
-      "settingsFoot", "note"
+      "decayInput", "decayOut", "decayScale", "refillInput", "refillOut", "refillScale",
+      "soundInput", "eggInput", "themeInput", "settingsFoot", "note"
     ];
     ids.forEach((id) => { this.el[id] = document.getElementById(id); });
   },
@@ -1115,13 +1196,15 @@ const UI = {
     document.title = `${name} Water Friend`;
     this.el.appTitle.textContent = `${name} Water Friend`;
     this.el.sceneCaption.textContent =
-      `${name} the ${Config.character.species}, reacting to how hydrated she is.`;
+      `${name} the ${Config.character.species}, reacting to how hydrated they are.`;
     this.el.meterLabel.textContent = `${name}'s hydration level`;
     this.el.speech.setAttribute("aria-label", `${name} says`);
-    this.el.drinkBtn.setAttribute("aria-label", `I drank water — refill ${name}'s meter`);
+    this.el.drinkBtn.setAttribute("aria-label", `I drank water, refill ${name}'s meter`);
     this.el.resetBtn.setAttribute("aria-label", `Reset ${name} and today's count`);
     this.el.settingsFoot.textContent =
-      `${name} lives only in this browser — nothing is uploaded anywhere.`;
+      `${name} lives only in this browser. Nothing is uploaded anywhere.`;
+    this.el.note.textContent =
+      `Prototype ${Config.app.version} \u00b7 single file \u00b7 no accounts, no server, no cloud.`;
   },
 
   pick(list) {
@@ -1147,7 +1230,7 @@ const UI = {
     this.el.meterFill.style.width = `${pct}%`;
     this.el.meterValue.textContent = `${pct}%`;
     this.el.meterBar.setAttribute("aria-valuenow", String(pct));
-    this.el.meterBar.setAttribute("aria-valuetext", `${pct} percent — ${Copy.mood[band]}`);
+    this.el.meterBar.setAttribute("aria-valuetext", `${pct} percent, ${Copy.mood[band]}`);
     this.el.moodLine.textContent = Copy.mood[band];
     this.el.statCount.textContent = String(s.todayCount);
     this.el.statLast.textContent = Time.relative(s.lastDrinkAt, now);
@@ -1175,11 +1258,46 @@ const UI = {
     this.el.soundInput.checked = on;
   },
 
+  /** Slider bounds and their tick labels both come from Config. */
+  applyLimits() {
+    const apply = (input, scale, limit, format) => {
+      input.min = limit.min;
+      input.max = limit.max;
+      input.step = limit.step;
+
+      const stops = [];
+      for (let v = limit.min; v <= limit.max + 1e-9; v += limit.step) {
+        stops.push(Math.round(v * 100) / 100);
+      }
+      /* Label every stop when there are few of them, otherwise just the ends. */
+      const shown = stops.length > 4 ? [stops[0], stops[stops.length - 1]] : stops;
+      scale.textContent = "";
+      shown.forEach((v) => {
+        const span = document.createElement("span");
+        span.textContent = format(v);
+        scale.appendChild(span);
+      });
+    };
+    apply(this.el.decayInput, this.el.decayScale, Config.limits.decayHours, (v) => v.toFixed(1));
+    apply(this.el.refillInput, this.el.refillScale, Config.limits.refillAmount, (v) => `${v}%`);
+  },
+
+  formatHours(hours) {
+    return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  },
+
+  /** Reads straight from the inputs so the labels track a finger mid-drag. */
+  renderSettingsValues() {
+    this.el.decayOut.textContent = this.formatHours(Number(this.el.decayInput.value));
+    this.el.refillOut.textContent = `${Number(this.el.refillInput.value)}%`;
+  },
+
   syncSettingsInputs() {
     const s = State.data;
     this.el.decayInput.value = s.decayHours;
     this.el.refillInput.value = s.refillAmount;
     this.el.eggInput.checked = s.easterEggOn;
+    this.renderSettingsValues();
     this.applySound();
     this.applyTheme();
   },
@@ -1229,18 +1347,22 @@ const Events = {
       State.set({ easterEggOn: e.target.checked, tapHistory: [] });
     });
 
+    UI.el.decayInput.addEventListener("input", () => UI.renderSettingsValues());
     UI.el.decayInput.addEventListener("change", (e) => {
-      State.sync();
-      const hours = State.clampNum(e.target.value, State.data.decayHours, Config.limits.decayHours);
+      State.sync();          // bill the time already elapsed at the old rate
+      const hours = State.clampStep(e.target.value, State.data.decayHours, Config.limits.decayHours);
       State.set({ decayHours: hours });
       e.target.value = hours;
+      UI.renderSettingsValues();
       UI.render();
     });
 
+    UI.el.refillInput.addEventListener("input", () => UI.renderSettingsValues());
     UI.el.refillInput.addEventListener("change", (e) => {
-      const amount = State.clampNum(e.target.value, State.data.refillAmount, Config.limits.refillAmount);
+      const amount = State.clampStep(e.target.value, State.data.refillAmount, Config.limits.refillAmount);
       State.set({ refillAmount: amount });
       e.target.value = amount;
+      UI.renderSettingsValues();
     });
 
     /* Lifecycle: visibilitychange + pagehide are the signals we can rely on
@@ -1321,7 +1443,7 @@ const Events = {
     const after = State.band();
     if (lost > 1 && after !== before && State.bandRank(after) > State.bandRank(before)) {
       UI.say(Copy.welcomeBack(Config.character.name), 3200);
-      /* Visual feedback first on return -- no sound unless a gesture already
+      /* Visual feedback first on return. No sound unless a gesture already
          unlocked the audio context, and never loud on arrival. */
       if (after === "dehydrated" && Audio_.ready()) Audio_.sadOh();
     }
@@ -1348,6 +1470,7 @@ const Events = {
 function init() {
   UI.cache();
   UI.applyNaming();
+  UI.applyLimits();
 
   State.load();
   State.sync();
@@ -1361,6 +1484,10 @@ function init() {
 
   Events.bind();
   Events.startRefresh();
+
+  /* The browser console stands in for a shell banner, so the running version
+     is always identifiable without reading the source. */
+  console.log(`${Config.character.name} Water Friend ${Config.app.version} - ${Config.app.status}`);
 }
 
 document.addEventListener("DOMContentLoaded", init);
