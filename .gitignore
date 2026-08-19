@@ -1,0 +1,12 @@
+# OS / editor noise
+Thumbs.db
+Desktop.ini
+desktop.ini
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# OneDrive sync leftovers
+*.tmp
+~$*

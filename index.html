@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="A tiny single-file hydration companion. Drink water, keep your unicorn sparkly.">
+<meta name="theme-color" content="#cfe9ff">
+<title>Ina Water Friend</title>
+<style>
+/* ============================================================
+   THEME TOKENS
+   ============================================================ */
+:root {
+  --coat:        #fff7fb;
+  --coat-shade:  #ffe2f0;
+  --mane-1:      #ffabd6;
+  --mane-2:      #b7a6ff;
+  --mane-3:      #93dcff;
+  --horn:        #ffd884;
+  --horn-shade:  #edb552;
+  --ink:         #2a2036;
+  --eye-glint:   #ffffff;
+  --blush:       #ff96ba;
+  --muzzle:      #ffe7f2;
+  --hoof:        #d9b3e8;
+
+  --bg:          #d6ecff;
+  --bg-2:        #ffe6f3;
+  --scene-1:     #bfe3ff;
+  --scene-2:     #ffd9ec;
+  --ground:      #a9dfb6;
+  --panel:       #fffdfe;
+  --panel-edge:  #f0d5e6;
+  --text:        #3b2f4a;
+  --text-soft:   #7b6b8c;
+  --accent:      #4aa3f0;
+  --accent-ink:  #ffffff;
+  --meter-bg:    #efe2f0;
+  --meter-fill:  linear-gradient(90deg, #6fc7ff, #4aa3f0);
+  --shadow:      0 4px 0 #e6cadd;
+  --focus:       #ff6fae;
+}
+
+:root[data-theme="night"] {
+  --coat:        #f3ecff;
+  --coat-shade:  #d9c9f0;
+  --mane-1:      #ff8fc6;
+  --mane-2:      #9b86f5;
+  --mane-3:      #6fc6f0;
+  --horn:        #ffd06a;
+  --horn-shade:  #d99a3f;
+  --ink:         #1b1526;
+  --blush:       #ef7ba6;
+  --muzzle:      #e6d8f5;
+  --hoof:        #a883c4;
+
+  --bg:          #191333;
+  --bg-2:        #2a1c44;
+  --scene-1:     #241a46;
+  --scene-2:     #3a2159;
+  --ground:      #2f5a53;
+  --panel:       #251c3f;
+  --panel-edge:  #3d3060;
+  --text:        #efe6ff;
+  --text-soft:   #b4a4d4;
+  --accent:      #7f6bff;
+  --accent-ink:  #ffffff;
+  --meter-bg:    #35284f;
+  --meter-fill:  linear-gradient(90deg, #6fc6f0, #7f6bff);
+  --shadow:      0 4px 0 #120d24;
+  --focus:       #ff9ac9;
+}
+
+/* ============================================================
+   MOOD BAND TOKENS  (tuned per hydration state)
+   ============================================================ */
+.scene[data-band="hydrated"] {
+  --sat: 1.14; --bri: 1.03;
+  --droop: 0deg; --sink: 0px;
+  --bob-amp: 1.2px; --bob-dur: 2.2s;
+  --tail-amp: 9deg; --tail-dur: 1.2s;
+  --head-amp: 2deg; --head-dur: 3.1s;
+  --sparkle-op: 1; --sparkle-dur: 1.6s;
+  --lid: 0; --smile-op: 1; --frown-op: 0;
+  --rainbow-op: 0.75;
+}
+.scene[data-band="okay"] {
+  --sat: 1; --bri: 1;
+  --droop: 0.6deg; --sink: 0.4px;
+  --bob-amp: 0.75px; --bob-dur: 3.4s;
+  --tail-amp: 5deg; --tail-dur: 2.1s;
+  --head-amp: 1.2deg; --head-dur: 4.4s;
+  --sparkle-op: 0.5; --sparkle-dur: 2.6s;
+  --lid: 0; --smile-op: 1; --frown-op: 0;
+  --rainbow-op: 0;
+}
+.scene[data-band="thirsty"] {
+  --sat: 0.7; --bri: 0.98;
+  --droop: 3.2deg; --sink: 1.1px;
+  --bob-amp: 0.45px; --bob-dur: 4.8s;
+  --tail-amp: 2.5deg; --tail-dur: 3.6s;
+  --head-amp: 0.7deg; --head-dur: 6s;
+  --sparkle-op: 0.18; --sparkle-dur: 4s;
+  --lid: 0.5; --smile-op: 0; --frown-op: 1;
+  --rainbow-op: 0;
+}
+.scene[data-band="dehydrated"] {
+  --sat: 0.42; --bri: 0.95;
+  --droop: 6.5deg; --sink: 2.2px;
+  --bob-amp: 0.25px; --bob-dur: 6.8s;
+  --tail-amp: 1.2deg; --tail-dur: 5.6s;
+  --head-amp: 0.4deg; --head-dur: 8s;
+  --sparkle-op: 0; --sparkle-dur: 6s;
+  --lid: 1; --smile-op: 0; --frown-op: 1;
+  --rainbow-op: 0;
+}
+
+/* ============================================================
+   BASE LAYOUT
+   ============================================================ */
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  padding: 12px 12px calc(18px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: linear-gradient(170deg, var(--bg), var(--bg-2));
+  color: var(--text);
+  font: 16px/1.45 ui-rounded, "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.5s ease, color 0.3s ease;
+}
+
+.app {
+  width: 100%;
+  max-width: 424px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+:where(button, input, select) { font: inherit; color: inherit; }
+
+:where(button, input, select, summary):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 2px solid var(--panel-edge);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+/* ---------- top bar ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+}
+.topbar h1 {
+  margin: 0;
+  flex: 1;
+  font-size: 1.05rem;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.icon-btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 2px solid var(--panel-edge);
+  border-radius: 14px;
+  background: transparent;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.2s ease;
+}
+.icon-btn:active { transform: scale(0.92); }
+.icon-btn[aria-pressed="false"] { opacity: 0.5; }
+
+/* ---------- scene ---------- */
+.scene {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 2px solid var(--panel-edge);
+  background: linear-gradient(180deg, var(--scene-1), var(--scene-2));
+  box-shadow: var(--shadow);
+  aspect-ratio: 1 / 0.92;
+  display: grid;
+  place-items: end center;
+  transition: background 0.6s ease;
+}
+.scene::after {                       /* ground strip */
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 15%;
+  background: var(--ground);
+  transition: background 0.6s ease;
+}
+
+.stars {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  background-image:
+    radial-gradient(1.4px 1.4px at 14% 18%, #fff 99%, transparent),
+    radial-gradient(1.2px 1.2px at 78% 12%, #fff 99%, transparent),
+    radial-gradient(1.4px 1.4px at 62% 30%, #fff 99%, transparent),
+    radial-gradient(1.2px 1.2px at 30% 40%, #fff 99%, transparent),
+    radial-gradient(1.6px 1.6px at 88% 44%, #fff 99%, transparent);
+}
+:root[data-theme="night"] .stars { opacity: 0.85; }
+
+/* rainbow reward -- happiest state only */
+.rainbow {
+  position: absolute;
+  left: 50%;
+  top: 13%;
+  width: 70%;
+  transform: translateX(-50%) scale(0.94);
+  opacity: 0;
+  transition: opacity 0.9s ease, transform 0.9s ease;
+  pointer-events: none;
+}
+.scene[data-band="hydrated"] .rainbow {
+  opacity: var(--rainbow-op);
+  transform: translateX(-50%) scale(1);
+}
+.rainbow path { fill: none; stroke-width: 3.3; stroke-linecap: round; }
+
+/* pixel sparkles */
+.sparkles { position: absolute; inset: 0; pointer-events: none; }
+.sparkle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  opacity: 0;
+  animation: twinkle var(--sparkle-dur, 2s) ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+.sparkle::before, .sparkle::after {
+  content: "";
+  position: absolute;
+  background: #fff8d0;
+  box-shadow: 0 0 5px #ffe98a;
+}
+.sparkle::before { inset: 3px 0; }
+.sparkle::after  { inset: 0 3px; }
+.sparkle:nth-child(1) { left: 16%; top: 20%; --d: 0s; }
+.sparkle:nth-child(2) { left: 74%; top: 15%; --d: 0.5s; }
+.sparkle:nth-child(3) { left: 84%; top: 46%; --d: 1s; }
+.sparkle:nth-child(4) { left: 10%; top: 52%; --d: 1.5s; }
+.sparkle:nth-child(5) { left: 46%; top: 8%;  --d: 0.8s; }
+@keyframes twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  50%      { opacity: var(--sparkle-op, 1); transform: scale(1) rotate(45deg); }
+}
+
+/* speech bubble */
+.speech {
+  position: absolute;
+  left: 50%;
+  top: 4%;
+  transform: translateX(-50%);
+  max-width: 82%;
+  padding: 7px 12px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 2px solid var(--panel-edge);
+  color: var(--text);
+  font-size: 0.86rem;
+  text-align: center;
+  text-wrap: balance;
+  z-index: 3;
+  animation: pop 0.35s ease;
+}
+.speech::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 10px;
+  height: 10px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--panel);
+  border-right: 2px solid var(--panel-edge);
+  border-bottom: 2px solid var(--panel-edge);
+}
+@keyframes pop {
+  from { transform: translateX(-50%) scale(0.85); opacity: 0; }
+  to   { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* ============================================================
+   THE CHARACTER  (pixel unicorn, grouped for animation)
+   ============================================================ */
+.ina {
+  position: relative;
+  z-index: 2;
+  width: 56%;
+  max-width: 208px;
+  margin-bottom: 2%;
+  filter: saturate(var(--sat, 1)) brightness(var(--bri, 1));
+  transition: filter 0.7s ease;
+}
+.ina g { transform-box: fill-box; }
+.ina-shadow { fill: rgba(0, 0, 0, 0.13); }
+#inaInk feFlood { flood-color: var(--ink); }
+
+.ina-all {
+  transform-origin: 50% 100%;
+  transform: translateY(var(--sink, 0)) rotate(var(--droop, 0deg));
+  transition: transform 0.7s ease;
+}
+.ina-bob   { animation: bob var(--bob-dur, 3s) ease-in-out infinite; }
+.ina-head  { transform-origin: 50% 100%; animation: nod var(--head-dur, 4s) ease-in-out infinite; }
+.ina-tail  { transform-origin: 0% 100%;  animation: swish var(--tail-dur, 2s) ease-in-out infinite; }
+.ina-ear-r { transform-origin: 50% 100%; animation: twitch 5.5s ease-in-out infinite; }
+.ina-eyes  { transform-origin: 50% 50%;  animation: blink 6.5s ease-in-out infinite; }
+
+@keyframes bob    { 0%, 100% { transform: translateY(calc(var(--bob-amp) * -1)); } 50% { transform: translateY(var(--bob-amp)); } }
+@keyframes nod    { 0%, 100% { transform: rotate(calc(var(--head-amp) * -1)); } 50% { transform: rotate(var(--head-amp)); } }
+@keyframes swish  { 0%, 100% { transform: rotate(calc(var(--tail-amp) * -1)); } 50% { transform: rotate(var(--tail-amp)); } }
+@keyframes twitch { 0%, 88%, 100% { transform: rotate(0deg); } 92% { transform: rotate(-11deg); } 96% { transform: rotate(4deg); } }
+@keyframes blink  { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.12); } }
+
+.ina-lid   { transform-box: fill-box; transform-origin: 50% 0%; transform: scaleY(var(--lid, 0)); transition: transform 0.5s ease; }
+.ina-smile { opacity: var(--smile-op, 1); transition: opacity 0.4s ease; }
+.ina-frown { opacity: var(--frown-op, 0); transition: opacity 0.4s ease; }
+
+/* drink reaction */
+.scene.is-sipping .ina-bob { animation: sip-hop 0.5s ease; }
+@keyframes sip-hop {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  25%      { transform: translateY(-7%) scale(0.97, 1.04); }
+  60%      { transform: translateY(0) scale(1.04, 0.96); }
+}
+.scene.is-gurgling .ina-all { animation: wobble 0.7s ease; }
+@keyframes wobble {
+  0%, 100% { transform: translateY(var(--sink)) rotate(var(--droop)); }
+  20%      { transform: translateY(var(--sink)) rotate(-7deg) scale(1.05, 0.95); }
+  50%      { transform: translateY(var(--sink)) rotate(7deg) scale(0.95, 1.05); }
+  80%      { transform: translateY(var(--sink)) rotate(-3deg); }
+}
+
+/* floating droplets on drink */
+.drops { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.drop {
+  position: absolute;
+  left: 50%;
+  bottom: 34%;
+  font-size: 1.1rem;
+  opacity: 0;
+  animation: floatup 1.1s ease-out forwards;
+}
+@keyframes floatup {
+  0%   { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+  25%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), -80px) scale(1.15); }
+}
+
+/* ============================================================
+   METER / STATS / ACTIONS / SETTINGS
+   ============================================================ */
+.block { padding: 12px 14px; }
+
+.meter-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.meter-head .label { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-soft); }
+.meter-head .value { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.meter-track {
+  height: 22px;
+  border-radius: 11px;
+  background: var(--meter-bg);
+  border: 2px solid var(--panel-edge);
+  overflow: hidden;
+  padding: 2px;
+}
+.meter-fill {
+  height: 100%;
+  min-width: 4px;
+  border-radius: 9px;
+  background: var(--meter-fill);
+  transition: width 0.55s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.mood-line { margin: 8px 0 0; font-size: 0.85rem; color: var(--text-soft); }
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.stat {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--meter-bg);
+  text-align: center;
+}
+.stat dt { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-soft); }
+.stat dd { margin: 3px 0 0; font-size: 1.02rem; font-weight: 700; }
+
+.actions { display: grid; gap: 10px; }
+.btn {
+  min-height: 44px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.2s ease;
+}
+.btn:active { transform: translateY(3px) scale(0.99); }
+.btn-drink {
+  min-height: 68px;
+  font-size: 1.22rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+}
+.btn-drink:active { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18); }
+.btn-ghost {
+  background: transparent;
+  border: 2px solid var(--panel-edge);
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  padding: 10px 14px;
+}
+
+details.settings summary {
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.92rem;
+  list-style: none;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+details.settings summary::-webkit-details-marker { display: none; }
+details.settings summary::before { content: "▸"; transition: transform 0.2s ease; }
+details.settings[open] summary::before { transform: rotate(90deg); }
+
+.setting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  min-height: 44px;
+  font-size: 0.9rem;
+}
+.setting label { flex: 1; }
+.setting input[type="number"] {
+  width: 76px;
+  min-height: 40px;
+  padding: 6px 8px;
+  text-align: center;
+  border: 2px solid var(--panel-edge);
+  border-radius: 12px;
+  background: var(--meter-bg);
+  font-variant-numeric: tabular-nums;
+}
+.setting input[type="checkbox"] { width: 26px; height: 26px; accent-color: var(--accent); }
+.settings-foot { padding: 4px 14px 14px; font-size: 0.76rem; color: var(--text-soft); }
+
+.note {
+  font-size: 0.74rem;
+  color: var(--text-soft);
+  text-align: center;
+  margin: 0;
+  padding: 0 6px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   REDUCED MOTION  (idle + decorative motion is non-essential)
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .ina, .ina * { animation: none !important; transition: none !important; }
+  .sparkle { animation: none !important; opacity: var(--sparkle-op, 1); transform: rotate(45deg); }
+  .rainbow { transition: none !important; }
+  .drop { animation: none !important; opacity: 0 !important; }
+}
+</style>
+</head>
+<body>
+<main class="app">
+
+  <!-- ---------- top bar ---------- -->
+  <header class="panel topbar">
+    <h1 id="appTitle">Ina Water Friend</h1>
+    <button class="icon-btn" id="themeBtn" type="button" aria-pressed="false" aria-label="Switch to night theme">🌙</button>
+    <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound on">🔔</button>
+  </header>
+
+  <!-- ---------- scene ---------- -->
+  <section class="scene" id="scene" data-band="hydrated" aria-labelledby="sceneCaption">
+    <p class="sr-only" id="sceneCaption">Ina the unicorn, reacting to how hydrated she is.</p>
+    <div class="stars" aria-hidden="true"></div>
+
+    <svg class="rainbow" viewBox="0 0 100 52" aria-hidden="true">
+      <path d="M6 52a44 44 0 0 1 88 0"   stroke="#ff9aa9"/>
+      <path d="M9.5 52a40.5 40.5 0 0 1 81 0" stroke="#ffc98a"/>
+      <path d="M13 52a37 37 0 0 1 74 0"  stroke="#ffef9c"/>
+      <path d="M16.5 52a33.5 33.5 0 0 1 67 0" stroke="#a8e6a3"/>
+      <path d="M20 52a30 30 0 0 1 60 0"  stroke="#98d4f5"/>
+      <path d="M23.5 52a26.5 26.5 0 0 1 53 0" stroke="#b7a6ff"/>
+    </svg>
+
+    <div class="sparkles" aria-hidden="true">
+      <i class="sparkle"></i><i class="sparkle"></i><i class="sparkle"></i>
+      <i class="sparkle"></i><i class="sparkle"></i>
+    </div>
+
+    <p class="speech" id="speech">Hi! I feel sparkly ✨</p>
+    <div class="drops" id="drops" aria-hidden="true"></div>
+
+    <svg class="ina" viewBox="0 -1 32 31" shape-rendering="crispEdges" aria-hidden="true">
+      <defs>
+        <!-- One chunky pixel outline around the whole silhouette, so the parts
+             below only need their fill colours. -->
+        <filter id="inaInk" x="-20%" y="-20%" width="140%" height="140%"
+                color-interpolation-filters="sRGB">
+          <feMorphology operator="dilate" radius="1" in="SourceAlpha" result="grown"/>
+          <feFlood flood-color="#2a2036" result="inkColor"/>
+          <feComposite in="inkColor" in2="grown" operator="in" result="outline"/>
+          <feMerge>
+            <feMergeNode in="outline"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+
+      <ellipse class="ina-shadow" cx="16" cy="28.4" rx="7" ry="1.1"/>
+
+      <g class="ina-all">
+        <g class="ina-bob">
+          <g filter="url(#inaInk)">
+
+            <!-- tail (behind the body) -->
+            <g class="ina-tail">
+              <rect x="19" y="21" width="2" height="4" fill="var(--mane-1)"/>
+              <rect x="21" y="20" width="2" height="4" fill="var(--mane-2)"/>
+              <rect x="23" y="18" width="2" height="4" fill="var(--mane-3)"/>
+            </g>
+
+            <!-- mane, back layer -->
+            <rect x="4" y="10" width="2" height="8"  fill="var(--mane-3)"/>
+            <rect x="6" y="7"  width="3" height="13" fill="var(--mane-1)"/>
+
+            <!-- legs -->
+            <rect x="12" y="24" width="3" height="4" fill="var(--coat)"/>
+            <rect x="17" y="24" width="3" height="4" fill="var(--coat)"/>
+            <rect x="12" y="27" width="3" height="1" fill="var(--hoof)"/>
+            <rect x="17" y="27" width="3" height="1" fill="var(--hoof)"/>
+
+            <!-- torso -->
+            <rect x="12" y="19" width="8" height="6" fill="var(--coat)"/>
+            <rect x="12" y="24" width="8" height="1" fill="var(--coat-shade)"/>
+
+            <!-- ears -->
+            <rect x="9"  y="3" width="3" height="4" fill="var(--coat)"/>
+            <rect x="10" y="4" width="1" height="2" fill="var(--blush)"/>
+            <g class="ina-ear-r">
+              <rect x="20" y="3" width="3" height="4" fill="var(--coat)"/>
+              <rect x="21" y="4" width="1" height="2" fill="var(--blush)"/>
+            </g>
+
+            <g class="ina-head">
+              <!-- head -->
+              <rect x="11" y="6"  width="10" height="1"  fill="var(--coat)"/>
+              <rect x="10" y="7"  width="12" height="1"  fill="var(--coat)"/>
+              <rect x="9"  y="8"  width="14" height="10" fill="var(--coat)"/>
+              <rect x="10" y="18" width="12" height="1"  fill="var(--coat-shade)"/>
+              <rect x="11" y="19" width="10" height="1"  fill="var(--coat-shade)"/>
+
+              <!-- horn -->
+              <rect x="15" y="0" width="2" height="3" fill="var(--horn)"/>
+              <rect x="15" y="2" width="2" height="1" fill="var(--horn-shade)"/>
+              <rect x="14" y="3" width="4" height="3" fill="var(--horn)"/>
+              <rect x="14" y="4" width="2" height="1" fill="var(--horn-shade)"/>
+              <rect x="14" y="5" width="4" height="1" fill="var(--horn-shade)"/>
+
+              <!-- mane front layer + forelock -->
+              <rect x="9"  y="6" width="2" height="12" fill="var(--mane-2)"/>
+              <rect x="11" y="6" width="4" height="3"  fill="var(--mane-1)"/>
+              <rect x="15" y="7" width="4" height="2"  fill="var(--mane-3)"/>
+
+              <!-- face -->
+              <rect x="14" y="15" width="4" height="4" fill="var(--muzzle)"/>
+              <rect x="14" y="16" width="1" height="1" fill="var(--coat-shade)"/>
+              <rect x="17" y="16" width="1" height="1" fill="var(--coat-shade)"/>
+              <rect x="11" y="16" width="2" height="2" fill="var(--blush)"/>
+              <rect x="19" y="16" width="2" height="2" fill="var(--blush)"/>
+
+              <g class="ina-eyes">
+                <rect x="11" y="12" width="3" height="3" fill="var(--ink)"/>
+                <rect x="18" y="12" width="3" height="3" fill="var(--ink)"/>
+                <rect x="11" y="12" width="1" height="1" fill="var(--eye-glint)"/>
+                <rect x="18" y="12" width="1" height="1" fill="var(--eye-glint)"/>
+                <rect class="ina-lid" x="11" y="12" width="3" height="2" fill="var(--coat)"/>
+                <rect class="ina-lid" x="18" y="12" width="3" height="2" fill="var(--coat)"/>
+              </g>
+
+              <g class="ina-smile">
+                <rect x="14" y="17" width="1" height="1" fill="var(--ink)"/>
+                <rect x="15" y="18" width="2" height="1" fill="var(--ink)"/>
+                <rect x="17" y="17" width="1" height="1" fill="var(--ink)"/>
+              </g>
+              <g class="ina-frown">
+                <rect x="14" y="18" width="1" height="1" fill="var(--ink)"/>
+                <rect x="15" y="17" width="2" height="1" fill="var(--ink)"/>
+                <rect x="17" y="18" width="1" height="1" fill="var(--ink)"/>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+  </section>
+
+  <!-- ---------- meter ---------- -->
+  <section class="panel block">
+    <div class="meter-head">
+      <span class="label">Thirst meter</span>
+      <span class="value" id="meterValue">100%</span>
+    </div>
+    <div class="meter-track" role="progressbar" id="meterBar"
+         aria-labelledby="meterLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+      <div class="meter-fill" id="meterFill" style="width:100%"></div>
+    </div>
+    <span class="sr-only" id="meterLabel">Hydration level</span>
+    <p class="mood-line" id="moodLine" role="status">Hydrated and sparkly</p>
+  </section>
+
+  <!-- ---------- stats ---------- -->
+  <section class="panel block">
+    <dl class="stats">
+      <div class="stat"><dt>Drinks today</dt><dd id="statCount">0</dd></div>
+      <div class="stat"><dt>Last drink</dt><dd id="statLast">just now</dd></div>
+    </dl>
+  </section>
+
+  <!-- ---------- actions ---------- -->
+  <section class="actions">
+    <button class="btn btn-drink" id="drinkBtn" type="button">💧 I drank water</button>
+    <button class="btn btn-ghost" id="resetBtn" type="button">Start the day over</button>
+  </section>
+
+  <!-- ---------- settings ---------- -->
+  <details class="panel settings" id="settings">
+    <summary>Settings</summary>
+    <div class="setting">
+      <label for="decayInput">Hours from full to empty</label>
+      <input id="decayInput" type="number" min="1" max="24" step="1" inputmode="numeric">
+    </div>
+    <div class="setting">
+      <label for="refillInput">Refill per drink (%)</label>
+      <input id="refillInput" type="number" min="5" max="100" step="5" inputmode="numeric">
+    </div>
+    <div class="setting">
+      <label for="soundInput">Sound effects</label>
+      <input id="soundInput" type="checkbox">
+    </div>
+    <div class="setting">
+      <label for="eggInput">Gurgle easter egg</label>
+      <input id="eggInput" type="checkbox">
+    </div>
+    <div class="setting">
+      <label for="themeInput">Night theme</label>
+      <input id="themeInput" type="checkbox">
+    </div>
+    <p class="settings-foot" id="settingsFoot">Everything stays on this device.</p>
+  </details>
+
+  <p class="note" id="note">Prototype · single file · no accounts, no server, no cloud.</p>
+</main>
+
+<script>
+"use strict";
+
+/* ========= CONFIG ========= */
+const Config = {
+  character: {
+    name: "Ina",
+    species: "unicorn"
+  },
+  hydration: {
+    max: 100,
+    defaultDecayHours: 4,
+    defaultRefillAmount: 25
+  },
+  thresholds: {          // lower bound of each band, descending
+    hydrated: 75,
+    okay: 45,
+    thirsty: 20
+  },
+  limits: {
+    decayHours: { min: 1, max: 24 },
+    refillAmount: { min: 5, max: 100 }
+  },
+  burst: {               // rapid-tap easter egg
+    taps: 5,
+    windowMs: 5000
+  },
+  ui: {
+    refreshMs: 15000,    // relative-time label refresh only, never the state engine
+    sipFeedbackMs: 520,
+    gurgleFeedbackMs: 750
+  },
+  storageKey: "ina-water-friend/v1"
+};
+
+const BANDS = ["hydrated", "okay", "thirsty", "dehydrated"];
+
+const Copy = {
+  band: {
+    hydrated: [
+      "I feel sparkly and happy ✨",
+      "Look at me, I'm glowing 🌈",
+      "Perfectly puddle-full, thank you!"
+    ],
+    okay: [
+      "Feeling comfy and calm 💙",
+      "A little sip later would be lovely 💧",
+      "All good here. Cosy times."
+    ],
+    thirsty: [
+      "I'm a bit droopy... water soon?",
+      "My horn feels a little dusty 💧",
+      "Could we share a glass?"
+    ],
+    dehydrated: [
+      "oh... I really need some water",
+      "so thirsty... just a small sip?",
+      "*quiet unicorn noises* 💧"
+    ]
+  },
+  mood: {
+    hydrated: "Hydrated and sparkly",
+    okay: "Comfy and calm",
+    thirsty: "Getting a little droopy",
+    dehydrated: "Very thirsty"
+  },
+  sip: ["glug glug, thank you! 💧", "ahh, that's nice ✨", "mmm, cool water!"],
+  cheer: ["yippie! I feel so much better 🌈", "wheee, sparkles are back ✨"],
+  gurgle: ["blub blub blub! heehee 💦", "bluuubbb 💦 too much at once!"],
+  welcomeBack: (name) => `${name} missed you a little 💧`
+};
+
+/* ========= STORAGE ========= */
+const Storage = {
+  read() {
+    try {
+      const raw = localStorage.getItem(Config.storageKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      console.warn("Could not read saved state:", err);
+      return null;
+    }
+  },
+
+  write(state) {
+    try {
+      localStorage.setItem(Config.storageKey, JSON.stringify(state));
+    } catch (err) {
+      console.warn("Could not save state:", err);   // private mode / quota
+    }
+  },
+
+  clear() {
+    try {
+      localStorage.removeItem(Config.storageKey);
+    } catch (err) {
+      console.warn("Could not clear state:", err);
+    }
+  }
+};
+
+/* ========= TIME ========= */
+const Time = {
+  HOUR_MS: 3600000,
+
+  now() {
+    return Date.now();
+  },
+
+  /** Local calendar day, used for the drinks-today rollover. */
+  dayKey(ts) {
+    const d = new Date(ts);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  },
+
+  relative(ts, now) {
+    if (!ts) return "never";
+    const diff = Math.max(0, now - ts);
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins === 1) return "1 min ago";
+    if (mins < 60) return `${mins} min ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
+    const days = Math.floor(hours / 24);
+    return days === 1 ? "yesterday" : `${days} days ago`;
+  }
+};
+
+/* ========= AUDIO ========= */
+const Audio_ = {
+  ctx: null,
+  enabled: true,
+
+  /** Must run inside a user gesture: mobile browsers block audio otherwise. */
+  unlock() {
+    if (!this.enabled) return;
+    try {
+      if (!this.ctx) {
+        const Ctor = window.AudioContext || window.webkitAudioContext;
+        if (!Ctor) return;
+        this.ctx = new Ctor();
+      }
+      if (this.ctx.state === "suspended") this.ctx.resume();
+    } catch (err) {
+      console.warn("Audio unavailable:", err);
+      this.ctx = null;
+    }
+  },
+
+  ready() {
+    return this.enabled && this.ctx && this.ctx.state === "running";
+  },
+
+  /** One short synthesised tone with a soft envelope. */
+  tone({ freq = 440, to = null, start = 0, dur = 0.16, gain = 0.13, type = "sine", filter = null }) {
+    if (!this.ready()) return;
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime + start;
+    const osc = ctx.createOscillator();
+    const amp = ctx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (to) osc.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+
+    amp.gain.setValueAtTime(0.0001, t0);
+    amp.gain.exponentialRampToValueAtTime(gain, t0 + Math.min(0.03, dur / 3));
+    amp.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    let node = osc;
+    if (filter) {
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = filter;
+      node.connect(lp);
+      node = lp;
+    }
+    node.connect(amp).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  },
+
+  /** Filtered noise burst -- the "water" texture of a sip. */
+  noise({ start = 0, dur = 0.12, gain = 0.06, freq = 1400 }) {
+    if (!this.ready()) return;
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime + start;
+    const frames = Math.floor(ctx.sampleRate * dur);
+    const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < frames; i++) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = freq;
+    bp.Q.value = 1.1;
+
+    const amp = ctx.createGain();
+    amp.gain.setValueAtTime(gain, t0);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    src.connect(bp).connect(amp).connect(ctx.destination);
+    src.start(t0);
+  },
+
+  sip() {
+    for (let i = 0; i < 3; i++) {
+      const at = i * 0.11;
+      this.noise({ start: at, dur: 0.09, gain: 0.05, freq: 1100 + i * 260 });
+      this.tone({ freq: 340 + i * 90, to: 620 + i * 110, start: at, dur: 0.09, gain: 0.07, type: "sine" });
+    }
+  },
+
+  yippie() {
+    const notes = [523.25, 659.25, 783.99, 1046.5];   // C E G C
+    notes.forEach((f, i) => {
+      this.tone({ freq: f, start: i * 0.075, dur: 0.15, gain: 0.09, type: "triangle" });
+    });
+    this.tone({ freq: 1318.5, start: 0.32, dur: 0.22, gain: 0.06, type: "sine" });
+  },
+
+  sadOh() {
+    this.tone({ freq: 392, to: 233, dur: 0.5, gain: 0.08, type: "sine", filter: 900 });
+  },
+
+  gurgle() {
+    for (let i = 0; i < 7; i++) {
+      const at = i * 0.075;
+      const base = 150 + (i % 3) * 55;
+      this.tone({ freq: base * 2.1, to: base, start: at, dur: 0.11, gain: 0.1, type: "sine", filter: 700 });
+      this.noise({ start: at + 0.01, dur: 0.06, gain: 0.03, freq: 400 });
+    }
+  }
+};
+
+/* ========= STATE ========= */
+const State = {
+  data: null,
+
+  defaults() {
+    const now = Time.now();
+    return {
+      hydration: Config.hydration.max,
+      lastUpdateAt: now,
+      lastDrinkAt: now,
+      todayCount: 0,
+      dayKey: Time.dayKey(now),
+      decayHours: Config.hydration.defaultDecayHours,
+      refillAmount: Config.hydration.defaultRefillAmount,
+      soundOn: true,
+      easterEggOn: true,
+      theme: "day",
+      tapHistory: []
+    };
+  },
+
+  clampNum(value, fallback, { min, max }) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(max, Math.max(min, Math.round(n)));
+  },
+
+  /** Merge saved data over defaults so old/partial saves never break startup. */
+  load() {
+    const base = this.defaults();
+    const saved = Storage.read();
+    if (!saved || typeof saved !== "object") {
+      this.data = base;
+      return this.data;
+    }
+    const now = Time.now();
+    this.data = {
+      ...base,
+      ...saved,
+      hydration: Number.isFinite(Number(saved.hydration))
+        ? Math.min(Config.hydration.max, Math.max(0, Number(saved.hydration)))
+        : base.hydration,
+      lastUpdateAt: Number(saved.lastUpdateAt) || now,
+      lastDrinkAt: Number(saved.lastDrinkAt) || null,
+      todayCount: Math.max(0, Number(saved.todayCount) || 0),
+      dayKey: typeof saved.dayKey === "string" ? saved.dayKey : base.dayKey,
+      decayHours: this.clampNum(saved.decayHours, base.decayHours, Config.limits.decayHours),
+      refillAmount: this.clampNum(saved.refillAmount, base.refillAmount, Config.limits.refillAmount),
+      soundOn: saved.soundOn !== false,
+      easterEggOn: saved.easterEggOn !== false,
+      theme: saved.theme === "night" ? "night" : "day",
+      tapHistory: Array.isArray(saved.tapHistory) ? saved.tapHistory.filter(Number.isFinite) : []
+    };
+    return this.data;
+  },
+
+  save() {
+    Storage.write(this.data);
+  },
+
+  /**
+   * Timestamp-driven decay. This -- not any interval -- is the source of truth,
+   * so closing the tab, sleeping the phone or killing the browser all work out.
+   * Returns how many points were lost since the last sync.
+   */
+  sync(now = Time.now()) {
+    const s = this.data;
+    const elapsed = Math.max(0, now - s.lastUpdateAt);
+    const perMs = Config.hydration.max / (s.decayHours * Time.HOUR_MS);
+    const lost = elapsed * perMs;
+
+    s.hydration = Math.max(0, s.hydration - lost);
+    s.lastUpdateAt = now;
+    this.rollDay(now);
+    return lost;
+  },
+
+  rollDay(now) {
+    const key = Time.dayKey(now);
+    if (key !== this.data.dayKey) {
+      this.data.dayKey = key;
+      this.data.todayCount = 0;
+    }
+  },
+
+  band(hydration = this.data.hydration) {
+    const t = Config.thresholds;
+    if (hydration >= t.hydrated) return "hydrated";
+    if (hydration >= t.okay) return "okay";
+    if (hydration >= t.thirsty) return "thirsty";
+    return "dehydrated";
+  },
+
+  /** Higher index = worse. Used to detect mood improvements. */
+  bandRank(band) {
+    return BANDS.indexOf(band);
+  },
+
+  drink(now = Time.now()) {
+    const before = this.band();
+    this.sync(now);
+
+    const s = this.data;
+    s.hydration = Math.min(Config.hydration.max, s.hydration + s.refillAmount);
+    s.lastDrinkAt = now;
+    s.todayCount += 1;
+
+    const burst = this.registerTap(now);
+    const after = this.band();
+
+    this.save();
+    return { before, after, improved: this.bandRank(after) < this.bandRank(before), burst };
+  },
+
+  /** Five taps inside a rolling five-second window trigger the easter egg. */
+  registerTap(now) {
+    const s = this.data;
+    s.tapHistory = s.tapHistory.filter((ts) => now - ts <= Config.burst.windowMs);
+    s.tapHistory.push(now);
+    const triggered = s.easterEggOn && s.tapHistory.length >= Config.burst.taps;
+    if (triggered) s.tapHistory = [];
+    return triggered;
+  },
+
+  reset(now = Time.now()) {
+    const s = this.data;
+    s.hydration = Config.hydration.max;
+    s.todayCount = 0;
+    s.tapHistory = [];
+    s.lastUpdateAt = now;
+    s.lastDrinkAt = now;
+    s.dayKey = Time.dayKey(now);
+    this.save();
+  },
+
+  set(patch) {
+    Object.assign(this.data, patch);
+    this.save();
+  }
+};
+
+/* ========= UI ========= */
+const UI = {
+  el: {},
+  lastBand: null,
+  speechLock: 0,
+
+  cache() {
+    const ids = [
+      "appTitle", "themeBtn", "soundBtn", "scene", "sceneCaption", "speech", "drops",
+      "meterValue", "meterBar", "meterFill", "meterLabel", "moodLine",
+      "statCount", "statLast", "drinkBtn", "resetBtn", "settings",
+      "decayInput", "refillInput", "soundInput", "eggInput", "themeInput",
+      "settingsFoot", "note"
+    ];
+    ids.forEach((id) => { this.el[id] = document.getElementById(id); });
+  },
+
+  /** Everything that names the character reads from Config. */
+  applyNaming() {
+    const name = Config.character.name;
+    document.title = `${name} Water Friend`;
+    this.el.appTitle.textContent = `${name} Water Friend`;
+    this.el.sceneCaption.textContent =
+      `${name} the ${Config.character.species}, reacting to how hydrated she is.`;
+    this.el.meterLabel.textContent = `${name}'s hydration level`;
+    this.el.speech.setAttribute("aria-label", `${name} says`);
+    this.el.drinkBtn.setAttribute("aria-label", `I drank water — refill ${name}'s meter`);
+    this.el.resetBtn.setAttribute("aria-label", `Reset ${name} and today's count`);
+    this.el.settingsFoot.textContent =
+      `${name} lives only in this browser — nothing is uploaded anywhere.`;
+  },
+
+  pick(list) {
+    return list[Math.floor(Math.random() * list.length)];
+  },
+
+  /** Speech changes on events and band changes, not on every clock refresh. */
+  say(text, lockMs = 2600) {
+    this.el.speech.textContent = text;
+    this.el.speech.style.animation = "none";
+    void this.el.speech.offsetWidth;          // restart the pop animation
+    this.el.speech.style.animation = "";
+    this.speechLock = Time.now() + lockMs;
+  },
+
+  render() {
+    const s = State.data;
+    const now = Time.now();
+    const pct = Math.round(s.hydration);
+    const band = State.band();
+
+    this.el.scene.dataset.band = band;
+    this.el.meterFill.style.width = `${pct}%`;
+    this.el.meterValue.textContent = `${pct}%`;
+    this.el.meterBar.setAttribute("aria-valuenow", String(pct));
+    this.el.meterBar.setAttribute("aria-valuetext", `${pct} percent — ${Copy.mood[band]}`);
+    this.el.moodLine.textContent = Copy.mood[band];
+    this.el.statCount.textContent = String(s.todayCount);
+    this.el.statLast.textContent = Time.relative(s.lastDrinkAt, now);
+
+    if (band !== this.lastBand && now >= this.speechLock) {
+      this.say(this.pick(Copy.band[band]), 1200);
+    }
+    this.lastBand = band;
+  },
+
+  applyTheme() {
+    const night = State.data.theme === "night";
+    document.documentElement.dataset.theme = night ? "night" : "day";
+    this.el.themeBtn.textContent = night ? "☀️" : "🌙";
+    this.el.themeBtn.setAttribute("aria-pressed", String(night));
+    this.el.themeBtn.setAttribute("aria-label", night ? "Switch to day theme" : "Switch to night theme");
+    this.el.themeInput.checked = night;
+  },
+
+  applySound() {
+    const on = State.data.soundOn;
+    this.el.soundBtn.textContent = on ? "🔔" : "🔕";
+    this.el.soundBtn.setAttribute("aria-pressed", String(on));
+    this.el.soundBtn.setAttribute("aria-label", on ? "Sound on" : "Sound off");
+    this.el.soundInput.checked = on;
+  },
+
+  syncSettingsInputs() {
+    const s = State.data;
+    this.el.decayInput.value = s.decayHours;
+    this.el.refillInput.value = s.refillAmount;
+    this.el.eggInput.checked = s.easterEggOn;
+    this.applySound();
+    this.applyTheme();
+  },
+
+  flash(className, ms) {
+    this.el.scene.classList.remove(className);
+    void this.el.scene.offsetWidth;
+    this.el.scene.classList.add(className);
+    setTimeout(() => this.el.scene.classList.remove(className), ms);
+  },
+
+  droplets(count = 3) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    for (let i = 0; i < count; i++) {
+      const drop = document.createElement("span");
+      drop.className = "drop";
+      drop.textContent = "💧";
+      drop.style.setProperty("--dx", `${(i - (count - 1) / 2) * 26}px`);
+      drop.style.animationDelay = `${i * 0.09}s`;
+      this.el.drops.appendChild(drop);
+      setTimeout(() => drop.remove(), 1400);
+    }
+  }
+};
+
+/* ========= EVENTS ========= */
+const Events = {
+  refreshTimer: null,
+
+  bind() {
+    UI.el.drinkBtn.addEventListener("click", () => this.onDrink());
+    UI.el.resetBtn.addEventListener("click", () => this.onReset());
+
+    UI.el.themeBtn.addEventListener("click", () => {
+      State.set({ theme: State.data.theme === "night" ? "day" : "night" });
+      UI.applyTheme();
+    });
+    UI.el.themeInput.addEventListener("change", (e) => {
+      State.set({ theme: e.target.checked ? "night" : "day" });
+      UI.applyTheme();
+    });
+
+    UI.el.soundBtn.addEventListener("click", () => this.setSound(!State.data.soundOn));
+    UI.el.soundInput.addEventListener("change", (e) => this.setSound(e.target.checked));
+
+    UI.el.eggInput.addEventListener("change", (e) => {
+      State.set({ easterEggOn: e.target.checked, tapHistory: [] });
+    });
+
+    UI.el.decayInput.addEventListener("change", (e) => {
+      State.sync();
+      const hours = State.clampNum(e.target.value, State.data.decayHours, Config.limits.decayHours);
+      State.set({ decayHours: hours });
+      e.target.value = hours;
+      UI.render();
+    });
+
+    UI.el.refillInput.addEventListener("change", (e) => {
+      const amount = State.clampNum(e.target.value, State.data.refillAmount, Config.limits.refillAmount);
+      State.set({ refillAmount: amount });
+      e.target.value = amount;
+    });
+
+    /* Lifecycle: visibilitychange + pagehide are the signals we can rely on
+       in mobile browsers. beforeunload/unload often never fire there. */
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        this.onReturn();
+      } else {
+        State.sync();
+        State.save();
+        this.stopRefresh();
+      }
+    });
+    window.addEventListener("pagehide", () => {
+      State.sync();
+      State.save();
+      this.stopRefresh();
+    });
+
+    /* First gesture anywhere unlocks audio, so the very first drink has sound. */
+    const unlockOnce = () => {
+      Audio_.unlock();
+      window.removeEventListener("pointerdown", unlockOnce);
+      window.removeEventListener("keydown", unlockOnce);
+    };
+    window.addEventListener("pointerdown", unlockOnce, { once: false });
+    window.addEventListener("keydown", unlockOnce, { once: false });
+  },
+
+  setSound(on) {
+    State.set({ soundOn: on });
+    Audio_.enabled = on;
+    if (on) Audio_.unlock();
+    UI.applySound();
+  },
+
+  onDrink() {
+    Audio_.unlock();
+    const result = State.drink();
+    UI.render();
+    UI.droplets(result.burst ? 6 : 3);
+
+    if (result.burst) {
+      UI.say(UI.pick(Copy.gurgle));
+      UI.flash("is-gurgling", Config.ui.gurgleFeedbackMs);
+      Audio_.gurgle();
+      return;
+    }
+
+    UI.flash("is-sipping", Config.ui.sipFeedbackMs);
+    Audio_.sip();
+
+    if (result.improved) {
+      UI.say(UI.pick(Copy.cheer));
+      setTimeout(() => Audio_.yippie(), 260);
+    } else {
+      UI.say(UI.pick(Copy.sip));
+    }
+  },
+
+  onReset() {
+    const name = Config.character.name;
+    if (!window.confirm(`Fill ${name} back up and reset today's count?`)) return;
+    State.reset();
+    UI.lastBand = null;
+    UI.render();
+    UI.say(UI.pick(Copy.band.hydrated));
+  },
+
+  /** Page became visible again: re-derive state from the clock. */
+  onReturn() {
+    const before = State.band();
+    const lost = State.sync();
+    State.save();
+    UI.render();
+    this.startRefresh();
+
+    const after = State.band();
+    if (lost > 1 && after !== before && State.bandRank(after) > State.bandRank(before)) {
+      UI.say(Copy.welcomeBack(Config.character.name), 3200);
+      /* Visual feedback first on return -- no sound unless a gesture already
+         unlocked the audio context, and never loud on arrival. */
+      if (after === "dehydrated" && Audio_.ready()) Audio_.sadOh();
+    }
+  },
+
+  /** UI-only ticker for the relative-time label. Never the state engine. */
+  startRefresh() {
+    this.stopRefresh();
+    this.refreshTimer = setInterval(() => {
+      State.sync();
+      UI.render();
+    }, Config.ui.refreshMs);
+  },
+
+  stopRefresh() {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+  }
+};
+
+/* ========= INIT ========= */
+function init() {
+  UI.cache();
+  UI.applyNaming();
+
+  State.load();
+  State.sync();
+  State.save();
+
+  Audio_.enabled = State.data.soundOn;
+
+  UI.syncSettingsInputs();
+  UI.render();
+  UI.say(UI.pick(Copy.band[State.band()]), 1500);
+
+  Events.bind();
+  Events.startRefresh();
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
