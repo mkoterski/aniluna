@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Water Friend - v0.14
+  index.html - Aniluna Water Friend - v0.15
 
-  Purpose    : Single-file static hydration companion. Tap to drink, the thirst
-               meter refills, the character reacts. No backend, no accounts.
+  Purpose    : Single-file static hydration companion. Tap to drink, the meter
+               refills, the character reacts. No backend, no accounts.
   Status     : DEVELOPMENT
   Versioning : v0.x = development/testing, v1.x = production-ready
   Author     : Matthias Koterski
@@ -11,23 +11,23 @@
   Context    : Runs entirely in the browser. State lives in localStorage.
   Changelog  : see README.md, newest first
 -->
-<html lang="en" data-theme="day">
+<html lang="de" data-theme="day">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="A tiny single-file hydration companion. Drink water, keep your unicorn sparkly.">
+<meta name="description" content="A tiny single-file hydration companion. Drink water, keep your pet happy.">
 <meta name="theme-color" content="#cfe9ff">
-<!-- Unicorn emoji as an inline SVG favicon, so this stays a single file with no
-     icon asset to ship. Renders in the platform emoji font, so it looks a little
-     different per OS. -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='50' dy='.35em' font-size='84' text-anchor='middle'%3E%F0%9F%A6%84%3C/text%3E%3C/svg%3E">
-<title>Aniluna Water Friend</title>
+<!-- Emoji as an inline SVG favicon, so this stays a single file with no icon
+     asset to ship. Swapped per species at runtime by UI.applySpecies. -->
+<link rel="icon" id="favicon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='50' dy='.35em' font-size='84' text-anchor='middle'%3E%F0%9F%A6%84%3C/text%3E%3C/svg%3E">
+<title>Aniluna Wasserfreund</title>
 <style>
 /* ============================================================
    THEME TOKENS
    ============================================================ */
 :root {
+  /* unicorn */
   --coat:        #fff7fb;
   --coat-shade:  #ffe2f0;
   --mane-1:      #ffabd6;
@@ -35,11 +35,19 @@
   --mane-3:      #93dcff;
   --horn:        #ffd884;
   --horn-shade:  #edb552;
+  --muzzle:      #ffe7f2;
+  --hoof:        #d9b3e8;
+  /* dinosaur */
+  --skin:        #8fd98a;
+  --skin-shade:  #6cbd6b;
+  --belly:       #eaf7c9;
+  --spike:       #f2a35e;
+  --spike-shade: #d3833f;
+  --claw:        #f7e6a8;
+  /* shared */
   --ink:         #2a2036;
   --eye-glint:   #ffffff;
   --blush:       #ff96ba;
-  --muzzle:      #ffe7f2;
-  --hoof:        #d9b3e8;
 
   --bg:          #d6ecff;
   --bg-2:        #ffe6f3;
@@ -56,6 +64,8 @@
   --meter-fill:  linear-gradient(90deg, #6fc7ff, #4aa3f0);
   --shadow:      0 4px 0 #e6cadd;
   --focus:       #ff6fae;
+  --star:        #ffdf7a;          /* warm in daylight, so it reads on a pale sky */
+  --star-glow:   rgba(255, 208, 92, 0.9);
 }
 
 :root[data-theme="night"] {
@@ -66,10 +76,16 @@
   --mane-3:      #6fc6f0;
   --horn:        #ffd06a;
   --horn-shade:  #d99a3f;
-  --ink:         #1b1526;
-  --blush:       #ef7ba6;
   --muzzle:      #e6d8f5;
   --hoof:        #a883c4;
+  --skin:        #6fb87a;
+  --skin-shade:  #4d8f5c;
+  --belly:       #cfe6a8;
+  --spike:       #e0894a;
+  --spike-shade: #b96a33;
+  --claw:        #e8d79a;
+  --ink:         #1b1526;
+  --blush:       #ef7ba6;
 
   --bg:          #191333;
   --bg-2:        #2a1c44;
@@ -86,10 +102,12 @@
   --meter-fill:  linear-gradient(90deg, #6fc6f0, #7f6bff);
   --shadow:      0 4px 0 #120d24;
   --focus:       #ff9ac9;
+  --star:        #ffffff;
+  --star-glow:   rgba(255, 255, 255, 0.85);
 }
 
 /* ============================================================
-   MOOD BAND TOKENS  (tuned per hydration state)
+   MOOD BAND TOKENS  (one animation system, four tunings)
    ============================================================ */
 .scene[data-band="hydrated"] {
   --sat: 1.14; --bri: 1.03;
@@ -143,7 +161,9 @@ body {
   align-items: flex-start;
   background: linear-gradient(170deg, var(--bg), var(--bg-2));
   color: var(--text);
-  font: 16px/1.45 ui-rounded, "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font: 16px/1.45 ui-rounded, "Segoe UI Variable Display", "Segoe UI",
+        "Noto Sans SC", "PingFang SC", "Microsoft YaHei",
+        system-ui, -apple-system, sans-serif;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.5s ease, color 0.3s ease;
@@ -175,13 +195,14 @@ body {
 .topbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 8px 10px;
 }
 .topbar h1 {
   margin: 0;
   flex: 1;
-  font-size: 1.05rem;
+  min-width: 0;
+  font-size: 1.02rem;
   letter-spacing: 0.2px;
   white-space: nowrap;
   overflow: hidden;
@@ -190,17 +211,28 @@ body {
 .icon-btn {
   min-width: 44px;
   min-height: 44px;
-  padding: 0 10px;
+  padding: 0 8px;
   border: 2px solid var(--panel-edge);
   border-radius: 14px;
   background: transparent;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   line-height: 1;
   cursor: pointer;
   transition: transform 0.12s ease, background 0.2s ease;
 }
 .icon-btn:active { transform: scale(0.92); }
 .icon-btn[aria-pressed="false"] { opacity: 0.5; }
+
+/* ---------- info card ---------- */
+.info {
+  padding: 14px 16px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.info[hidden] { display: none; }
+.info p { margin: 0 0 8px; }
+.info p:last-child { margin-bottom: 0; }
+.info .tip { color: var(--text-soft); font-size: 0.82rem; }
 
 /* ---------- scene ---------- */
 .scene {
@@ -224,19 +256,25 @@ body {
   transition: background 0.6s ease;
 }
 
+/* Background stars: always at night, and in daylight only at the happiest
+   level, where they read as a warm sparkle rather than a night sky. */
 .stars {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 0.6s ease;
+  transition: opacity 0.8s ease;
   background-image:
-    radial-gradient(1.4px 1.4px at 14% 18%, #fff 99%, transparent),
-    radial-gradient(1.2px 1.2px at 78% 12%, #fff 99%, transparent),
-    radial-gradient(1.4px 1.4px at 62% 30%, #fff 99%, transparent),
-    radial-gradient(1.2px 1.2px at 30% 40%, #fff 99%, transparent),
-    radial-gradient(1.6px 1.6px at 88% 44%, #fff 99%, transparent);
+    radial-gradient(1.5px 1.5px at 14% 18%, var(--star) 99%, transparent),
+    radial-gradient(1.3px 1.3px at 78% 12%, var(--star) 99%, transparent),
+    radial-gradient(1.5px 1.5px at 62% 30%, var(--star) 99%, transparent),
+    radial-gradient(1.3px 1.3px at 30% 40%, var(--star) 99%, transparent),
+    radial-gradient(1.7px 1.7px at 88% 44%, var(--star) 99%, transparent),
+    radial-gradient(1.3px 1.3px at 46% 22%, var(--star) 99%, transparent),
+    radial-gradient(1.5px 1.5px at 22% 62%, var(--star) 99%, transparent);
+  filter: drop-shadow(0 0 3px var(--star-glow));
 }
-:root[data-theme="night"] .stars { opacity: 0.85; }
+:root[data-theme="night"] .stars { opacity: 0.9; }
+.scene[data-radiant="on"] .stars { opacity: 0.85; }
 
 /* rainbow reward, only while the meter reads at or above Config.thresholds.rainbow */
 .rainbow {
@@ -289,7 +327,7 @@ body {
   left: 50%;
   top: 4%;
   transform: translateX(-50%);
-  max-width: 82%;
+  max-width: 84%;
   padding: 7px 12px;
   border-radius: 14px;
   background: var(--panel);
@@ -319,9 +357,11 @@ body {
 }
 
 /* ============================================================
-   THE CHARACTER  (pixel unicorn, grouped for animation)
+   THE CHARACTERS
+   Both sprites share the same group class names, so one animation
+   system and one set of band tokens drive either species.
    ============================================================ */
-.ina {
+.pet {
   position: relative;
   z-index: 2;
   width: 56%;
@@ -329,21 +369,27 @@ body {
   margin-bottom: 2%;
   filter: saturate(var(--sat, 1)) brightness(var(--bri, 1));
   transition: filter 0.7s ease;
+  grid-area: 1 / 1;
+  align-self: end;
+  justify-self: center;
 }
-.ina g { transform-box: fill-box; }
-.ina-shadow { fill: rgba(0, 0, 0, 0.13); }
-#inaInk feFlood { flood-color: var(--ink); }
+.pet g { transform-box: fill-box; }
+.pet-shadow { fill: rgba(0, 0, 0, 0.13); }
+#petInk feFlood { flood-color: var(--ink); }
 
-.ina-all {
+.scene[data-species="unicorn"] .pet-dino,
+.scene[data-species="dinosaur"] .pet-unicorn { display: none; }
+
+.pet-all {
   transform-origin: 50% 100%;
   transform: translateY(var(--sink, 0)) rotate(var(--droop, 0deg));
   transition: transform 0.7s ease;
 }
-.ina-bob   { animation: bob var(--bob-dur, 3s) ease-in-out infinite; }
-.ina-head  { transform-origin: 50% 100%; animation: nod var(--head-dur, 4s) ease-in-out infinite; }
-.ina-tail  { transform-origin: 0% 100%;  animation: swish var(--tail-dur, 2s) ease-in-out infinite; }
-.ina-ear-r { transform-origin: 50% 100%; animation: twitch 5.5s ease-in-out infinite; }
-.ina-eyes  { transform-origin: 50% 50%;  animation: blink 6.5s ease-in-out infinite; }
+.pet-bob   { animation: bob var(--bob-dur, 3s) ease-in-out infinite; }
+.pet-head  { transform-origin: 50% 100%; animation: nod var(--head-dur, 4s) ease-in-out infinite; }
+.pet-tail  { transform-origin: 0% 100%;  animation: swish var(--tail-dur, 2s) ease-in-out infinite; }
+.pet-ear-r { transform-origin: 50% 100%; animation: twitch 5.5s ease-in-out infinite; }
+.pet-eyes  { transform-origin: 50% 50%;  animation: blink 6.5s ease-in-out infinite; }
 
 @keyframes bob    { 0%, 100% { transform: translateY(calc(var(--bob-amp) * -1)); } 50% { transform: translateY(var(--bob-amp)); } }
 @keyframes nod    { 0%, 100% { transform: rotate(calc(var(--head-amp) * -1)); } 50% { transform: rotate(var(--head-amp)); } }
@@ -351,23 +397,29 @@ body {
 @keyframes twitch { 0%, 88%, 100% { transform: rotate(0deg); } 92% { transform: rotate(-11deg); } 96% { transform: rotate(4deg); } }
 @keyframes blink  { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.12); } }
 
-.ina-lid   { transform-box: fill-box; transform-origin: 50% 0%; transform: scaleY(var(--lid, 0)); transition: transform 0.5s ease; }
-.ina-smile { opacity: var(--smile-op, 1); transition: opacity 0.4s ease; }
-.ina-frown { opacity: var(--frown-op, 0); transition: opacity 0.4s ease; }
+.pet-lid   { transform-box: fill-box; transform-origin: 50% 0%; transform: scaleY(var(--lid, 0)); transition: transform 0.5s ease; }
+.pet-smile { opacity: var(--smile-op, 1); transition: opacity 0.4s ease; }
+.pet-frown { opacity: var(--frown-op, 0); transition: opacity 0.4s ease; }
 
 /* drink reaction */
-.scene.is-sipping .ina-bob { animation: sip-hop 0.5s ease; }
+.scene.is-sipping .pet-bob { animation: sip-hop 0.5s ease; }
 @keyframes sip-hop {
   0%, 100% { transform: translateY(0) scale(1, 1); }
   25%      { transform: translateY(-7%) scale(0.97, 1.04); }
   60%      { transform: translateY(0) scale(1.04, 0.96); }
 }
-.scene.is-gurgling .ina-all { animation: wobble 0.7s ease; }
+.scene.is-gurgling .pet-all { animation: wobble 0.7s ease; }
 @keyframes wobble {
   0%, 100% { transform: translateY(var(--sink)) rotate(var(--droop)); }
   20%      { transform: translateY(var(--sink)) rotate(-7deg) scale(1.05, 0.95); }
   50%      { transform: translateY(var(--sink)) rotate(7deg) scale(0.95, 1.05); }
   80%      { transform: translateY(var(--sink)) rotate(-3deg); }
+}
+.scene.is-morphing .pet-all { animation: morph 0.6s ease; }
+@keyframes morph {
+  0%   { transform: translateY(var(--sink)) scale(0.7, 1.3); opacity: 0.2; }
+  55%  { transform: translateY(var(--sink)) scale(1.15, 0.9); opacity: 1; }
+  100% { transform: translateY(var(--sink)) rotate(var(--droop)) scale(1, 1); }
 }
 
 /* floating droplets on drink */
@@ -418,11 +470,7 @@ body {
 }
 .mood-line { margin: 8px 0 0; font-size: 0.85rem; color: var(--text-soft); }
 
-.stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .stat {
   padding: 10px 12px;
   border-radius: 14px;
@@ -445,7 +493,7 @@ body {
 .btn:active { transform: translateY(3px) scale(0.99); }
 .btn-drink {
   min-height: 68px;
-  font-size: 1.22rem;
+  font-size: 1.18rem;
   background: var(--accent);
   color: var(--accent-ink);
   box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
@@ -471,7 +519,7 @@ details.settings summary {
   gap: 8px;
 }
 details.settings summary::-webkit-details-marker { display: none; }
-details.settings summary::before { content: "▸"; transition: transform 0.2s ease; }
+details.settings summary::before { content: "\25B8"; transition: transform 0.2s ease; }
 details.settings[open] summary::before { transform: rotate(90deg); }
 
 .setting {
@@ -537,15 +585,62 @@ input[type="range"]::-moz-range-thumb {
   background: var(--accent);
   border: 3px solid var(--panel);
 }
-.settings-foot { padding: 4px 14px 14px; font-size: 0.76rem; color: var(--text-soft); }
 
+/* language segmented control */
+.langs { display: flex; gap: 6px; }
+.lang-btn {
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 2px solid var(--panel-edge);
+  border-radius: 12px;
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.lang-btn[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* ---------- footer, with the secret toggle bottom right ---------- */
+.foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+}
 .note {
+  flex: 1;
   font-size: 0.74rem;
   color: var(--text-soft);
   text-align: center;
   margin: 0;
-  padding: 0 6px;
+  padding-left: 30px;           /* balances the secret button so the note stays centred */
 }
+/* Deliberately quiet: discoverable if you look, invisible if you do not.
+   Still a real button with a real label, so assistive tech and keyboards
+   can reach it. */
+.secret {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: none;
+  background: none;
+  color: var(--text-soft);
+  opacity: 0.22;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.secret:hover, .secret:focus-visible { opacity: 0.85; transform: rotate(90deg); }
+.secret:active { transform: rotate(90deg) scale(0.85); }
 
 .sr-only {
   position: absolute;
@@ -557,7 +652,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ============================================================
-   REDUCED MOTION  (idle + decorative motion is non-essential)
+   REDUCED MOTION  (idle and decorative motion is non-essential)
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -565,10 +660,11 @@ input[type="range"]::-moz-range-thumb {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  .ina, .ina * { animation: none !important; transition: none !important; }
+  .pet, .pet * { animation: none !important; transition: none !important; }
   .sparkle { animation: none !important; opacity: var(--sparkle-op, 1); transform: rotate(45deg); }
-  .rainbow { transition: none !important; }
+  .rainbow, .stars { transition: none !important; }
   .drop { animation: none !important; opacity: 0 !important; }
+  .secret:hover, .secret:focus-visible { transform: none; }
 }
 </style>
 </head>
@@ -577,22 +673,30 @@ input[type="range"]::-moz-range-thumb {
 
   <!-- ---------- top bar ---------- -->
   <header class="panel topbar">
-    <h1 id="appTitle">Aniluna Water Friend</h1>
-    <button class="icon-btn" id="themeBtn" type="button" aria-pressed="false" aria-label="Switch to night theme">🌙</button>
-    <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound on">🔔</button>
+    <h1 id="appTitle">Aniluna Wasserfreund</h1>
+    <button class="icon-btn" id="infoBtn" type="button" aria-expanded="false" aria-controls="infoCard">&#9432;</button>
+    <button class="icon-btn" id="themeBtn" type="button">&#127769;</button>
+    <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true">&#128276;</button>
   </header>
 
+  <!-- ---------- info card ---------- -->
+  <section class="panel info" id="infoCard" hidden>
+    <p id="infoBody"></p>
+    <p class="tip" id="infoTip"></p>
+  </section>
+
   <!-- ---------- scene ---------- -->
-  <section class="scene" id="scene" data-band="hydrated" aria-labelledby="sceneCaption">
-    <p class="sr-only" id="sceneCaption">Aniluna the unicorn, reacting to how hydrated they are.</p>
+  <section class="scene" id="scene" data-band="okay" data-species="unicorn" data-radiant="off"
+           aria-labelledby="sceneCaption">
+    <p class="sr-only" id="sceneCaption"></p>
     <div class="stars" aria-hidden="true"></div>
 
     <svg class="rainbow" viewBox="0 0 100 52" aria-hidden="true">
-      <path d="M6 52a44 44 0 0 1 88 0"   stroke="#ff9aa9"/>
+      <path d="M6 52a44 44 0 0 1 88 0"       stroke="#ff9aa9"/>
       <path d="M9.5 52a40.5 40.5 0 0 1 81 0" stroke="#ffc98a"/>
-      <path d="M13 52a37 37 0 0 1 74 0"  stroke="#ffef9c"/>
+      <path d="M13 52a37 37 0 0 1 74 0"      stroke="#ffef9c"/>
       <path d="M16.5 52a33.5 33.5 0 0 1 67 0" stroke="#a8e6a3"/>
-      <path d="M20 52a30 30 0 0 1 60 0"  stroke="#98d4f5"/>
+      <path d="M20 52a30 30 0 0 1 60 0"      stroke="#98d4f5"/>
       <path d="M23.5 52a26.5 26.5 0 0 1 53 0" stroke="#b7a6ff"/>
     </svg>
 
@@ -601,14 +705,14 @@ input[type="range"]::-moz-range-thumb {
       <i class="sparkle"></i><i class="sparkle"></i>
     </div>
 
-    <p class="speech" id="speech">Hi! I feel sparkly ✨</p>
+    <p class="speech" id="speech"></p>
     <div class="drops" id="drops" aria-hidden="true"></div>
 
-    <svg class="ina" viewBox="0 -1 32 31" shape-rendering="crispEdges" aria-hidden="true">
+    <!-- One outline filter, shared by both sprites. feMorphology dilates the
+         whole silhouette by one grid unit, so each part only needs its fill. -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
       <defs>
-        <!-- One chunky pixel outline around the whole silhouette, so the parts
-             below only need their fill colours. -->
-        <filter id="inaInk" x="-20%" y="-20%" width="140%" height="140%"
+        <filter id="petInk" x="-20%" y="-20%" width="140%" height="140%"
                 color-interpolation-filters="sRGB">
           <feMorphology operator="dilate" radius="1" in="SourceAlpha" result="grown"/>
           <feFlood flood-color="#2a2036" result="inkColor"/>
@@ -619,87 +723,153 @@ input[type="range"]::-moz-range-thumb {
           </feMerge>
         </filter>
       </defs>
+    </svg>
 
-      <ellipse class="ina-shadow" cx="16" cy="28.4" rx="7" ry="1.1"/>
+    <!-- ===== unicorn ===== -->
+    <svg class="pet pet-unicorn" viewBox="0 -1 32 31" shape-rendering="crispEdges" aria-hidden="true">
+      <ellipse class="pet-shadow" cx="16" cy="28.4" rx="7" ry="1.1"/>
+      <g class="pet-all">
+        <g class="pet-bob">
+          <g filter="url(#petInk)">
 
-      <g class="ina-all">
-        <g class="ina-bob">
-          <g filter="url(#inaInk)">
-
-            <!-- tail (behind the body) -->
-            <g class="ina-tail">
+            <g class="pet-tail">
               <rect x="19" y="21" width="2" height="4" fill="var(--mane-1)"/>
               <rect x="21" y="20" width="2" height="4" fill="var(--mane-2)"/>
               <rect x="23" y="18" width="2" height="4" fill="var(--mane-3)"/>
             </g>
 
-            <!-- mane, back layer -->
             <rect x="4" y="10" width="2" height="8"  fill="var(--mane-3)"/>
             <rect x="6" y="7"  width="3" height="13" fill="var(--mane-1)"/>
 
-            <!-- legs -->
             <rect x="12" y="24" width="3" height="4" fill="var(--coat)"/>
             <rect x="17" y="24" width="3" height="4" fill="var(--coat)"/>
             <rect x="12" y="27" width="3" height="1" fill="var(--hoof)"/>
             <rect x="17" y="27" width="3" height="1" fill="var(--hoof)"/>
 
-            <!-- torso -->
             <rect x="12" y="19" width="8" height="6" fill="var(--coat)"/>
             <rect x="12" y="24" width="8" height="1" fill="var(--coat-shade)"/>
 
-            <!-- ears -->
             <rect x="9"  y="3" width="3" height="4" fill="var(--coat)"/>
             <rect x="10" y="4" width="1" height="2" fill="var(--blush)"/>
-            <g class="ina-ear-r">
+            <g class="pet-ear-r">
               <rect x="20" y="3" width="3" height="4" fill="var(--coat)"/>
               <rect x="21" y="4" width="1" height="2" fill="var(--blush)"/>
             </g>
 
-            <g class="ina-head">
-              <!-- head -->
+            <g class="pet-head">
               <rect x="11" y="6"  width="10" height="1"  fill="var(--coat)"/>
               <rect x="10" y="7"  width="12" height="1"  fill="var(--coat)"/>
               <rect x="9"  y="8"  width="14" height="10" fill="var(--coat)"/>
               <rect x="10" y="18" width="12" height="1"  fill="var(--coat-shade)"/>
               <rect x="11" y="19" width="10" height="1"  fill="var(--coat-shade)"/>
 
-              <!-- horn -->
               <rect x="15" y="0" width="2" height="3" fill="var(--horn)"/>
               <rect x="15" y="2" width="2" height="1" fill="var(--horn-shade)"/>
               <rect x="14" y="3" width="4" height="3" fill="var(--horn)"/>
               <rect x="14" y="4" width="2" height="1" fill="var(--horn-shade)"/>
               <rect x="14" y="5" width="4" height="1" fill="var(--horn-shade)"/>
 
-              <!-- mane front layer + forelock -->
               <rect x="9"  y="6" width="2" height="12" fill="var(--mane-2)"/>
               <rect x="11" y="6" width="4" height="3"  fill="var(--mane-1)"/>
               <rect x="15" y="7" width="4" height="2"  fill="var(--mane-3)"/>
 
-              <!-- face -->
               <rect x="14" y="15" width="4" height="4" fill="var(--muzzle)"/>
               <rect x="14" y="16" width="1" height="1" fill="var(--coat-shade)"/>
               <rect x="17" y="16" width="1" height="1" fill="var(--coat-shade)"/>
               <rect x="11" y="16" width="2" height="2" fill="var(--blush)"/>
               <rect x="19" y="16" width="2" height="2" fill="var(--blush)"/>
 
-              <g class="ina-eyes">
+              <g class="pet-eyes">
                 <rect x="11" y="12" width="3" height="3" fill="var(--ink)"/>
                 <rect x="18" y="12" width="3" height="3" fill="var(--ink)"/>
                 <rect x="11" y="12" width="1" height="1" fill="var(--eye-glint)"/>
                 <rect x="18" y="12" width="1" height="1" fill="var(--eye-glint)"/>
-                <rect class="ina-lid" x="11" y="12" width="3" height="2" fill="var(--coat)"/>
-                <rect class="ina-lid" x="18" y="12" width="3" height="2" fill="var(--coat)"/>
+                <rect class="pet-lid" x="11" y="12" width="3" height="2" fill="var(--coat)"/>
+                <rect class="pet-lid" x="18" y="12" width="3" height="2" fill="var(--coat)"/>
               </g>
 
-              <g class="ina-smile">
+              <g class="pet-smile">
                 <rect x="14" y="17" width="1" height="1" fill="var(--ink)"/>
                 <rect x="15" y="18" width="2" height="1" fill="var(--ink)"/>
                 <rect x="17" y="17" width="1" height="1" fill="var(--ink)"/>
               </g>
-              <g class="ina-frown">
+              <g class="pet-frown">
                 <rect x="14" y="18" width="1" height="1" fill="var(--ink)"/>
                 <rect x="15" y="17" width="2" height="1" fill="var(--ink)"/>
                 <rect x="17" y="18" width="1" height="1" fill="var(--ink)"/>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+
+    <!-- ===== dinosaur ===== -->
+    <svg class="pet pet-dino" viewBox="0 -1 32 31" shape-rendering="crispEdges" aria-hidden="true">
+      <ellipse class="pet-shadow" cx="16" cy="28.4" rx="7.5" ry="1.1"/>
+      <g class="pet-all">
+        <g class="pet-bob">
+          <g filter="url(#petInk)">
+
+            <!-- Overlaps the torso and tapers, so it stays visually attached
+                 while the swish rotates it about its own bottom left. -->
+            <g class="pet-tail">
+              <rect x="19" y="20" width="3" height="4" fill="var(--skin)"/>
+              <rect x="21" y="21" width="3" height="3" fill="var(--skin)"/>
+              <rect x="23" y="22" width="3" height="2" fill="var(--skin-shade)"/>
+              <rect x="22" y="20" width="2" height="1" fill="var(--spike)"/>
+              <rect x="24" y="21" width="2" height="1" fill="var(--spike)"/>
+            </g>
+
+            <rect x="12" y="24" width="3" height="4" fill="var(--skin)"/>
+            <rect x="17" y="24" width="3" height="4" fill="var(--skin)"/>
+            <rect x="12" y="27" width="3" height="1" fill="var(--claw)"/>
+            <rect x="17" y="27" width="3" height="1" fill="var(--claw)"/>
+
+            <rect x="12" y="19" width="8" height="6" fill="var(--skin)"/>
+            <rect x="13" y="21" width="6" height="4" fill="var(--belly)"/>
+            <rect x="19" y="19" width="2" height="2" fill="var(--spike-shade)"/>
+
+            <g class="pet-head">
+              <rect x="11" y="6"  width="10" height="1"  fill="var(--skin)"/>
+              <rect x="10" y="7"  width="12" height="1"  fill="var(--skin)"/>
+              <rect x="9"  y="8"  width="14" height="10" fill="var(--skin)"/>
+              <rect x="10" y="18" width="12" height="1"  fill="var(--skin-shade)"/>
+              <rect x="11" y="19" width="10" height="1"  fill="var(--skin-shade)"/>
+
+              <!-- head plates, in place of horn and ears -->
+              <rect x="11" y="4" width="2" height="2" fill="var(--spike)"/>
+              <rect x="15" y="3" width="2" height="3" fill="var(--spike)"/>
+              <rect x="19" y="4" width="2" height="2" fill="var(--spike)"/>
+              <rect x="11" y="5" width="2" height="1" fill="var(--spike-shade)"/>
+              <rect x="15" y="5" width="2" height="1" fill="var(--spike-shade)"/>
+              <rect x="19" y="5" width="2" height="1" fill="var(--spike-shade)"/>
+
+              <!-- snout -->
+              <rect x="13" y="14" width="6" height="4" fill="var(--belly)"/>
+              <rect x="14" y="15" width="1" height="1" fill="var(--skin-shade)"/>
+              <rect x="17" y="15" width="1" height="1" fill="var(--skin-shade)"/>
+              <rect x="10" y="16" width="2" height="2" fill="var(--blush)"/>
+              <rect x="20" y="16" width="2" height="2" fill="var(--blush)"/>
+
+              <g class="pet-eyes">
+                <rect x="11" y="10" width="3" height="3" fill="var(--ink)"/>
+                <rect x="18" y="10" width="3" height="3" fill="var(--ink)"/>
+                <rect x="11" y="10" width="1" height="1" fill="var(--eye-glint)"/>
+                <rect x="18" y="10" width="1" height="1" fill="var(--eye-glint)"/>
+                <rect class="pet-lid" x="11" y="10" width="3" height="2" fill="var(--skin)"/>
+                <rect class="pet-lid" x="18" y="10" width="3" height="2" fill="var(--skin)"/>
+              </g>
+
+              <g class="pet-smile">
+                <rect x="13" y="17" width="1" height="1" fill="var(--ink)"/>
+                <rect x="14" y="18" width="4" height="1" fill="var(--ink)"/>
+                <rect x="18" y="17" width="1" height="1" fill="var(--ink)"/>
+              </g>
+              <g class="pet-frown">
+                <rect x="13" y="18" width="1" height="1" fill="var(--ink)"/>
+                <rect x="14" y="17" width="4" height="1" fill="var(--ink)"/>
+                <rect x="18" y="18" width="1" height="1" fill="var(--ink)"/>
               </g>
             </g>
           </g>
@@ -711,66 +881,88 @@ input[type="range"]::-moz-range-thumb {
   <!-- ---------- meter ---------- -->
   <section class="panel block">
     <div class="meter-head">
-      <span class="label">Hydration</span>
-      <span class="value" id="meterValue">100%</span>
+      <span class="label" id="meterHeading"></span>
+      <span class="value" id="meterValue">75%</span>
     </div>
     <div class="meter-track" role="progressbar" id="meterBar"
-         aria-labelledby="meterLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
-      <div class="meter-fill" id="meterFill" style="width:100%"></div>
+         aria-labelledby="meterLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75">
+      <div class="meter-fill" id="meterFill" style="width:75%"></div>
     </div>
-    <span class="sr-only" id="meterLabel">Hydration level</span>
-    <p class="mood-line" id="moodLine" role="status">Hydrated and sparkly</p>
+    <span class="sr-only" id="meterLabel"></span>
+    <p class="mood-line" id="moodLine" role="status"></p>
   </section>
 
   <!-- ---------- stats ---------- -->
   <section class="panel block">
     <dl class="stats">
-      <div class="stat"><dt>Drinks today</dt><dd id="statCount">0</dd></div>
-      <div class="stat"><dt>Last drink</dt><dd id="statLast">just now</dd></div>
+      <div class="stat"><dt id="statCountLabel"></dt><dd id="statCount">0</dd></div>
+      <div class="stat"><dt id="statLastLabel"></dt><dd id="statLast"></dd></div>
     </dl>
   </section>
 
   <!-- ---------- actions ---------- -->
   <section class="actions">
-    <button class="btn btn-drink" id="drinkBtn" type="button">💧 I drank water</button>
-    <button class="btn btn-ghost" id="resetBtn" type="button">Start the day over</button>
+    <button class="btn btn-drink" id="drinkBtn" type="button"></button>
+    <button class="btn btn-ghost" id="resetBtn" type="button"></button>
   </section>
 
   <!-- ---------- settings ---------- -->
   <details class="panel settings" id="settings">
-    <summary>Settings</summary>
+    <summary id="settingsSummary"></summary>
+
+    <div class="setting">
+      <label id="langLabel">Sprache</label>
+      <div class="langs" role="group" aria-labelledby="langLabel">
+        <button class="lang-btn" id="langDe" type="button" data-locale="de" aria-pressed="true">DE</button>
+        <button class="lang-btn" id="langEn" type="button" data-locale="en" aria-pressed="false">EN</button>
+        <button class="lang-btn" id="langZh" type="button" data-locale="zh" aria-pressed="false">&#20013;&#25991;</button>
+      </div>
+    </div>
+
     <div class="setting setting-slider">
       <div class="setting-row">
-        <label for="decayInput">Full to empty</label>
+        <label for="decayInput" id="decayLabel"></label>
         <output id="decayOut" for="decayInput"></output>
       </div>
       <input id="decayInput" type="range">
       <div class="setting-scale" id="decayScale" aria-hidden="true"></div>
     </div>
+
     <div class="setting setting-slider">
       <div class="setting-row">
-        <label for="refillInput">Refill per drink</label>
+        <label for="refillInput" id="refillLabel"></label>
         <output id="refillOut" for="refillInput"></output>
       </div>
       <input id="refillInput" type="range">
       <div class="setting-scale" id="refillScale" aria-hidden="true"></div>
     </div>
+
     <div class="setting">
-      <label for="soundInput">Sound effects</label>
+      <label for="soundInput" id="soundLabel"></label>
       <input id="soundInput" type="checkbox">
     </div>
     <div class="setting">
-      <label for="eggInput">Gurgle easter egg</label>
+      <label for="eggInput" id="eggLabel"></label>
       <input id="eggInput" type="checkbox">
     </div>
     <div class="setting">
-      <label for="themeInput">Night theme</label>
+      <label for="autoThemeInput" id="autoThemeLabel"></label>
+      <input id="autoThemeInput" type="checkbox">
+    </div>
+    <div class="setting">
+      <label for="themeInput" id="themeLabel"></label>
       <input id="themeInput" type="checkbox">
     </div>
-    <p class="settings-foot" id="settingsFoot">Everything stays on this device.</p>
+
+    <p class="setting" style="min-height:0;padding-bottom:14px;font-size:0.76rem;color:var(--text-soft)"
+       id="settingsFoot"></p>
   </details>
 
-  <p class="note" id="note">Prototype · single file · no accounts, no server, no cloud.</p>
+  <!-- ---------- footer, secret species toggle bottom right ---------- -->
+  <div class="foot">
+    <p class="note" id="note"></p>
+    <button class="secret" id="secretBtn" type="button">&#42;</button>
+  </div>
 </main>
 
 <script>
@@ -779,36 +971,60 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.14",
+    version: "v0.15",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
-  character: {
-    name: "Aniluna",
-    species: "unicorn"
+
+  /* Two creatures, one app. Everything that differs between them lives here:
+     the name, the favicon and the voice used by the sound engine. */
+  species: {
+    unicorn: {
+      name: "Aniluna",
+      emoji: "\u{1F984}",
+      voice: { pitch: 1, wave: "triangle", filter: null, gurgleBase: 150 }
+    },
+    dinosaur: {
+      name: "Anirex",
+      emoji: "\u{1F996}",
+      voice: { pitch: 0.55, wave: "sawtooth", filter: 1100, gurgleBase: 95 }
+    }
   },
+  defaultSpecies: "unicorn",
+
+  locales: ["de", "en", "zh"],
+  defaultLocale: "de",
+
   hydration: {
     max: 100,
+    initial: 75,                 // first run starts short so a drink is the
+                                 // obvious next move and teaches the loop
     defaultDecayHours: 2,        // full to completely empty in two hours
     defaultRefillAmount: 25
   },
-  thresholds: {          // lower bound of each band, descending
+  thresholds: {                  // lower bound of each band, descending
     hydrated: 75,
     okay: 45,
     thirsty: 20,
-    rainbow: 95          // reward arc, compared against the displayed percent
+    rainbow: 95                  // reward arc, compared against the displayed percent
   },
-  limits: {                    // slider bounds, also used to snap saved values
+  limits: {                      // slider bounds, also used to snap saved values
     decayHours: { min: 0.5, max: 4, step: 0.5 },
     refillAmount: { min: 25, max: 100, step: 25 }
   },
-  burst: {               // rapid-tap easter egg
+  theme: {
+    dayStartHour: 7,             // local hours, used when themeMode is "auto"
+    nightStartHour: 19
+  },
+  burst: {                       // rapid-tap easter egg
     taps: 5,
     windowMs: 5000
   },
   ui: {
-    refreshMs: 15000,    // relative-time label refresh only, never the state engine
+    refreshMs: 15000,            // relative-time and clock-theme refresh only,
+                                 // never the state engine
     sipFeedbackMs: 520,
-    gurgleFeedbackMs: 750
+    gurgleFeedbackMs: 750,
+    morphFeedbackMs: 640
   },
   storageKey: "aniluna/v1",
   /* Keys this app used to write under. Storage.migrate adopts the first one it
@@ -821,39 +1037,193 @@ const Config = {
 
 const BANDS = ["hydrated", "okay", "thirsty", "dehydrated"];
 
-const Copy = {
-  band: {
-    hydrated: [
-      "I feel sparkly and happy ✨",
-      "Look at me, I'm glowing 🌈",
-      "Perfectly puddle-full, thank you!"
-    ],
-    okay: [
-      "Feeling comfy and calm 💙",
-      "A little sip later would be lovely 💧",
-      "All good here. Cosy times."
-    ],
-    thirsty: [
-      "I'm a bit droopy... water soon?",
-      "My horn feels a little dusty 💧",
-      "Could we share a glass?"
-    ],
-    dehydrated: [
-      "oh... I really need some water",
-      "so thirsty... just a small sip?",
-      "*quiet unicorn noises* 💧"
-    ]
+/* ========= STRINGS ========= */
+/* One entry per locale. `speech` is keyed by species first, because that is
+   where the personality lives; everything else is shared between species and
+   takes the name as an argument where it needs one. */
+const Strings = {
+  de: {
+    tag: "de-DE",
+    titleSuffix: "Wasserfreund",
+    caption: (name, species) => `${name}, ${species}. Reagiert darauf, wie viel getrunken wurde.`,
+    speciesWord: { unicorn: "ein Einhorn", dinosaur: "ein Dinosaurier" },
+    meter: "Flüssigkeit",
+    meterAria: (name) => `Flüssigkeitsstand von ${name}`,
+    drink: "\u{1F4A7} Ich habe Wasser getrunken",
+    drinkAria: (name) => `Ich habe Wasser getrunken, füllt die Anzeige von ${name}`,
+    reset: "Neuen Tag starten",
+    resetAria: (name) => `${name} auffüllen und den heutigen Zähler zurücksetzen`,
+    resetConfirm: (name) => `${name} wieder auffüllen und den heutigen Zähler zurücksetzen?`,
+    drinksToday: "Heute getrunken",
+    lastDrink: "Zuletzt",
+    settings: "Einstellungen",
+    language: "Sprache",
+    fullToEmpty: "Voll bis leer",
+    refill: "Pro Schluck",
+    sound: "Geräusche",
+    egg: "Blubber-Überraschung",
+    autoTheme: "Der Tageszeit folgen",
+    nightTheme: "Nachtmodus",
+    settingsFoot: (name) => `${name} lebt nur in diesem Browser. Es wird nichts hochgeladen.`,
+    note: (version) => `Prototyp ${version} · eine Datei · kein Konto, kein Server`,
+    infoAria: "Was ist das hier?",
+    infoBody: (name) => `${name} wird langsam durstig, während die Zeit läuft. Tippe auf den großen Knopf, wenn du selbst Wasser getrunken hast: die Anzeige füllt sich und ${name} strahlt wieder.`,
+    infoTip: "Alles bleibt auf diesem Gerät. Zeiten und Schluckgröße kannst du in den Einstellungen anpassen.",
+    themeToDay: "Zum Tagmodus wechseln",
+    themeToNight: "Zum Nachtmodus wechseln",
+    soundOn: "Geräusche an",
+    soundOff: "Geräusche aus",
+    secretAria: "Geheimer Schalter",
+    hours: (n, locale) => `${n.toLocaleString(locale)} ${n === 1 ? "Stunde" : "Stunden"}`,
+    justNow: "gerade eben",
+    never: "noch nie",
+    mood: {
+      hydrated: "Bestens gewässert",
+      okay: "Gemütlich und ruhig",
+      thirsty: "Wird etwas schlapp",
+      dehydrated: "Sehr durstig"
+    },
+    speech: {
+      unicorn: {
+        hydrated: ["Ich fühle mich glitzernd und glücklich ✨", "Schau mal, ich leuchte \u{1F308}"],
+        okay: ["Mir geht es gut und gemütlich \u{1F499}", "Ein Schlückchen später wäre schön \u{1F4A7}"],
+        thirsty: ["Ich bin ein bisschen schlapp... bald Wasser?", "Mein Horn fühlt sich staubig an \u{1F4A7}"],
+        dehydrated: ["oh... ich brauche wirklich Wasser", "so durstig... nur ein kleiner Schluck?"]
+      },
+      dinosaur: {
+        hydrated: ["Rawr! Ich fühle mich stark ✨", "Bestens gewässert, danke dir! \u{1F308}"],
+        okay: ["Hier ist alles gut und gemütlich \u{1F499}", "Ein Schluck später wäre nett \u{1F4A7}"],
+        thirsty: ["Mein Schwanz hängt etwas... bald Wasser?", "Meine Schuppen sind ganz trocken \u{1F4A7}"],
+        dehydrated: ["oooh... ich brauche wirklich Wasser", "so durstig... nur ein Schlückchen?"]
+      }
+    },
+    sip: ["gluck gluck, danke! \u{1F4A7}", "ahh, das ist gut ✨"],
+    cheer: ["juhu! mir geht es viel besser \u{1F308}", "wuhu, das Glitzern ist zurück ✨"],
+    gurgle: ["blub blub blub! hihi \u{1F4A6}", "bluuubbb \u{1F4A6} nicht alles auf einmal!"],
+    morph: (name) => `oh! jetzt bin ich ${name} ✨`
   },
-  mood: {
-    hydrated: "Hydrated and sparkly",
-    okay: "Comfy and calm",
-    thirsty: "Getting a little droopy",
-    dehydrated: "Very thirsty"
+
+  en: {
+    tag: "en-GB",
+    titleSuffix: "Water Friend",
+    caption: (name, species) => `${name}, ${species}. Reacts to how much has been drunk.`,
+    speciesWord: { unicorn: "a unicorn", dinosaur: "a dinosaur" },
+    meter: "Hydration",
+    meterAria: (name) => `${name}'s hydration level`,
+    drink: "\u{1F4A7} I drank water",
+    drinkAria: (name) => `I drank water, refill ${name}'s meter`,
+    reset: "Start the day over",
+    resetAria: (name) => `Reset ${name} and today's count`,
+    resetConfirm: (name) => `Fill ${name} back up and reset today's count?`,
+    drinksToday: "Drinks today",
+    lastDrink: "Last drink",
+    settings: "Settings",
+    language: "Language",
+    fullToEmpty: "Full to empty",
+    refill: "Refill per drink",
+    sound: "Sound effects",
+    egg: "Gurgle easter egg",
+    autoTheme: "Follow the time of day",
+    nightTheme: "Night theme",
+    settingsFoot: (name) => `${name} lives only in this browser. Nothing is uploaded anywhere.`,
+    note: (version) => `Prototype ${version} · single file · no accounts, no server`,
+    infoAria: "What is this?",
+    infoBody: (name) => `${name} slowly gets thirsty as time passes. Tap the big button whenever you drink water yourself: the meter fills up and ${name} perks right back up.`,
+    infoTip: "Everything stays on this device. Timing and sip size are adjustable in settings.",
+    themeToDay: "Switch to day theme",
+    themeToNight: "Switch to night theme",
+    soundOn: "Sound on",
+    soundOff: "Sound off",
+    secretAria: "Secret switch",
+    hours: (n, locale) => `${n.toLocaleString(locale)} ${n === 1 ? "hour" : "hours"}`,
+    justNow: "just now",
+    never: "never",
+    mood: {
+      hydrated: "Hydrated and sparkly",
+      okay: "Comfy and calm",
+      thirsty: "Getting a little droopy",
+      dehydrated: "Very thirsty"
+    },
+    speech: {
+      unicorn: {
+        hydrated: ["I feel sparkly and happy ✨", "Look at me, I'm glowing \u{1F308}"],
+        okay: ["Feeling comfy and calm \u{1F499}", "A little sip later would be lovely \u{1F4A7}"],
+        thirsty: ["I'm a bit droopy... water soon?", "My horn feels a little dusty \u{1F4A7}"],
+        dehydrated: ["oh... I really need some water", "so thirsty... just a small sip?"]
+      },
+      dinosaur: {
+        hydrated: ["Rawr! I feel strong ✨", "Perfectly watered, thank you! \u{1F308}"],
+        okay: ["All good here, nice and comfy \u{1F499}", "A sip later would be nice \u{1F4A7}"],
+        thirsty: ["My tail is drooping... water soon?", "My scales feel all dry \u{1F4A7}"],
+        dehydrated: ["oooh... I really need water", "so thirsty... just a little sip?"]
+      }
+    },
+    sip: ["glug glug, thank you! \u{1F4A7}", "ahh, that's nice ✨"],
+    cheer: ["yippie! I feel so much better \u{1F308}", "wheee, the sparkles are back ✨"],
+    gurgle: ["blub blub blub! heehee \u{1F4A6}", "bluuubbb \u{1F4A6} not all at once!"],
+    morph: (name) => `oh! I'm ${name} now ✨`
   },
-  sip: ["glug glug, thank you! 💧", "ahh, that's nice ✨", "mmm, cool water!"],
-  cheer: ["yippie! I feel so much better 🌈", "wheee, sparkles are back ✨"],
-  gurgle: ["blub blub blub! heehee 💦", "bluuubbb 💦 too much at once!"],
-  welcomeBack: (name) => `${name} missed you a little 💧`
+
+  zh: {
+    tag: "zh-CN",
+    titleSuffix: "喝水伙伴",
+    caption: (name, species) => `${name}，${species}。会根据喝水情况改变神情。`,
+    speciesWord: { unicorn: "一只独角兽", dinosaur: "一只恐龙" },
+    meter: "水分",
+    meterAria: (name) => `${name}的水分水平`,
+    drink: "\u{1F4A7} 我喝水了",
+    drinkAria: (name) => `我喝水了，给${name}补充水分`,
+    reset: "重新开始一天",
+    resetAria: (name) => `重置${name}和今天的次数`,
+    resetConfirm: (name) => `把${name}重新加满，并清空今天的次数？`,
+    drinksToday: "今天喝水",
+    lastDrink: "上一次",
+    settings: "设置",
+    language: "语言",
+    fullToEmpty: "从满到空",
+    refill: "每次补充",
+    sound: "音效",
+    egg: "咕噜彩蛋",
+    autoTheme: "跟随一天的时间",
+    nightTheme: "夜间模式",
+    settingsFoot: (name) => `${name}只住在这个浏览器里，不会上传任何数据。`,
+    note: (version) => `原型 ${version} · 单文件 · 无账号，无服务器`,
+    infoAria: "这是什么？",
+    infoBody: (name) => `随着时间流逝，${name}会慢慢变渴。你自己喝水的时候就点一下大按钮：水分条会回升，${name}也会重新精神起来。`,
+    infoTip: "所有数据只保存在这台设备上。时间和每次的分量可以在设置里调整。",
+    themeToDay: "切换到日间模式",
+    themeToNight: "切换到夜间模式",
+    soundOn: "音效已开",
+    soundOff: "音效已关",
+    secretAria: "神秘开关",
+    hours: (n, locale) => `${n.toLocaleString(locale)} 小时`,
+    justNow: "刚刚",
+    never: "还没有",
+    mood: {
+      hydrated: "水分充足，闪闪发光",
+      okay: "舒服又平静",
+      thirsty: "有点没精神了",
+      dehydrated: "非常口渴"
+    },
+    speech: {
+      unicorn: {
+        hydrated: ["我觉得闪闪发光，好开心 ✨", "快看，我在发光 \u{1F308}"],
+        okay: ["我觉得很舒服 \u{1F499}", "过一会儿喝一小口就更好了 \u{1F4A7}"],
+        thirsty: ["我有点没精神……可以喝水吗？", "我的角有点干了 \u{1F4A7}"],
+        dehydrated: ["哦……我真的需要喝水", "好渴……就一小口？"]
+      },
+      dinosaur: {
+        hydrated: ["吼！我觉得超有力量 ✨", "水分满满，谢谢你！\u{1F308}"],
+        okay: ["这里一切都好，很舒服 \u{1F499}", "待会儿喝一口会更好 \u{1F4A7}"],
+        thirsty: ["我的尾巴有点垂……喝水吗？", "我的鳞片干巴巴的 \u{1F4A7}"],
+        dehydrated: ["呜……我真的需要水", "好渴……一小口就行？"]
+      }
+    },
+    sip: ["咕噔咕噔，谢谢！\u{1F4A7}", "啊，好舒服 ✨"],
+    cheer: ["耶！我觉得好多了 \u{1F308}", "哇，闪光回来了 ✨"],
+    gurgle: ["咕噜咕噜咕噜！嘿嘿 \u{1F4A6}", "咕噜噜噜 \u{1F4A6} 不要一口气喝完！"],
+    morph: (name) => `哦！我现在是${name}了 ✨`
+  }
 };
 
 /* ========= STORAGE ========= */
@@ -921,17 +1291,27 @@ const Time = {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   },
 
-  relative(ts, now) {
-    if (!ts) return "never";
+  /** Drives the automatic light and dark switch. */
+  isDaytime(ts = Date.now()) {
+    const hour = new Date(ts).getHours();
+    return hour >= Config.theme.dayStartHour && hour < Config.theme.nightStartHour;
+  },
+
+  /**
+   * Localised relative time. Intl.RelativeTimeFormat handles the grammar for
+   * every locale, so only the sub-minute and never cases need their own copy.
+   */
+  relative(ts, now, strings) {
+    if (!ts) return strings.never;
     const diff = Math.max(0, now - ts);
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "just now";
-    if (mins === 1) return "1 min ago";
-    if (mins < 60) return `${mins} min ago`;
+    if (mins < 1) return strings.justNow;
+
+    const rtf = new Intl.RelativeTimeFormat(strings.tag, { numeric: "auto" });
+    if (mins < 60) return rtf.format(-mins, "minute");
     const hours = Math.floor(mins / 60);
-    if (hours < 24) return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
-    const days = Math.floor(hours / 24);
-    return days === 1 ? "yesterday" : `${days} days ago`;
+    if (hours < 24) return rtf.format(-hours, "hour");
+    return rtf.format(-Math.floor(hours / 24), "day");
   }
 };
 
@@ -939,6 +1319,11 @@ const Time = {
 const Audio_ = {
   ctx: null,
   enabled: true,
+  voice: Config.species[Config.defaultSpecies].voice,
+
+  setVoice(voice) {
+    this.voice = voice;
+  },
 
   /** Must run inside a user gesture: mobile browsers block audio otherwise. */
   unlock() {
@@ -960,27 +1345,29 @@ const Audio_ = {
     return this.enabled && this.ctx && this.ctx.state === "running";
   },
 
-  /** One short synthesised tone with a soft envelope. */
-  tone({ freq = 440, to = null, start = 0, dur = 0.16, gain = 0.13, type = "sine", filter = null }) {
+  /** One short synthesised tone with a soft envelope, in the current voice. */
+  tone({ freq = 440, to = null, start = 0, dur = 0.16, gain = 0.13, type = null, filter = null }) {
     if (!this.ready()) return;
     const ctx = this.ctx;
+    const v = this.voice;
     const t0 = ctx.currentTime + start;
     const osc = ctx.createOscillator();
     const amp = ctx.createGain();
 
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, t0);
-    if (to) osc.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+    osc.type = type || v.wave;
+    osc.frequency.setValueAtTime(freq * v.pitch, t0);
+    if (to) osc.frequency.exponentialRampToValueAtTime(to * v.pitch, t0 + dur);
 
     amp.gain.setValueAtTime(0.0001, t0);
     amp.gain.exponentialRampToValueAtTime(gain, t0 + Math.min(0.03, dur / 3));
     amp.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
 
     let node = osc;
-    if (filter) {
+    const cutoff = filter || v.filter;
+    if (cutoff) {
       const lp = ctx.createBiquadFilter();
       lp.type = "lowpass";
-      lp.frequency.value = filter;
+      lp.frequency.value = cutoff;
       node.connect(lp);
       node = lp;
     }
@@ -1020,29 +1407,40 @@ const Audio_ = {
     for (let i = 0; i < 3; i++) {
       const at = i * 0.11;
       this.noise({ start: at, dur: 0.09, gain: 0.05, freq: 1100 + i * 260 });
-      this.tone({ freq: 340 + i * 90, to: 620 + i * 110, start: at, dur: 0.09, gain: 0.07, type: "sine" });
+      this.tone({ freq: 340 + i * 90, to: 620 + i * 110, start: at, dur: 0.09, gain: 0.07 });
     }
   },
 
-  yippie() {
+  /** Rising arpeggio for the unicorn, a low pleased rumble for the dinosaur. */
+  cheer() {
     const notes = [523.25, 659.25, 783.99, 1046.5];   // C E G C
     notes.forEach((f, i) => {
-      this.tone({ freq: f, start: i * 0.075, dur: 0.15, gain: 0.09, type: "triangle" });
+      this.tone({ freq: f, start: i * 0.075, dur: 0.15, gain: 0.09 });
     });
-    this.tone({ freq: 1318.5, start: 0.32, dur: 0.22, gain: 0.06, type: "sine" });
+    this.tone({ freq: 1318.5, start: 0.32, dur: 0.22, gain: 0.06 });
+    if (this.voice.pitch < 1) {
+      this.noise({ start: 0.05, dur: 0.3, gain: 0.035, freq: 420 });   // a bit of roar
+    }
   },
 
-  sadOh() {
-    this.tone({ freq: 392, to: 233, dur: 0.5, gain: 0.08, type: "sine", filter: 900 });
+  sad() {
+    this.tone({ freq: 392, to: 233, dur: 0.5, gain: 0.08, filter: 900 });
   },
 
   gurgle() {
+    const base = this.voice.gurgleBase;
     for (let i = 0; i < 7; i++) {
       const at = i * 0.075;
-      const base = 150 + (i % 3) * 55;
-      this.tone({ freq: base * 2.1, to: base, start: at, dur: 0.11, gain: 0.1, type: "sine", filter: 700 });
+      const f = base + (i % 3) * 55;
+      this.tone({ freq: f * 2.1, to: f, start: at, dur: 0.11, gain: 0.1, filter: 700 });
       this.noise({ start: at + 0.01, dur: 0.06, gain: 0.03, freq: 400 });
     }
+  },
+
+  /** Short whoosh when the species changes. */
+  morph() {
+    this.tone({ freq: 220, to: 880, dur: 0.28, gain: 0.07 });
+    this.noise({ start: 0.02, dur: 0.22, gain: 0.04, freq: 900 });
   }
 };
 
@@ -1053,16 +1451,18 @@ const State = {
   defaults() {
     const now = Time.now();
     return {
-      hydration: Config.hydration.max,
+      hydration: Config.hydration.initial,
       lastUpdateAt: now,
-      lastDrinkAt: now,
+      lastDrinkAt: null,
       todayCount: 0,
       dayKey: Time.dayKey(now),
       decayHours: Config.hydration.defaultDecayHours,
       refillAmount: Config.hydration.defaultRefillAmount,
       soundOn: true,
       easterEggOn: true,
-      theme: "day",
+      themeMode: "auto",              // "auto" | "day" | "night"
+      species: Config.defaultSpecies,
+      locale: Config.defaultLocale,
       tapHistory: []
     };
   },
@@ -1086,7 +1486,11 @@ const State = {
     return Math.round(snapped * 100) / 100;      // drop floating point dust
   },
 
-  /** Merge saved data over defaults so old/partial saves never break startup. */
+  oneOf(value, allowed, fallback) {
+    return allowed.includes(value) ? value : fallback;
+  },
+
+  /** Merge saved data over defaults so old or partial saves never break startup. */
   load() {
     const base = this.defaults();
     const saved = Storage.read();
@@ -1095,6 +1499,11 @@ const State = {
       return this.data;
     }
     const now = Time.now();
+
+    /* Saves written before v0.15 carry `theme` instead of `themeMode`. Treat
+       the old value as an explicit choice rather than discarding it. */
+    const legacyTheme = this.oneOf(saved.theme, ["day", "night"], null);
+
     this.data = {
       ...base,
       ...saved,
@@ -1110,9 +1519,12 @@ const State = {
       refillAmount: this.clampStep(saved.refillAmount, base.refillAmount, Config.limits.refillAmount),
       soundOn: saved.soundOn !== false,
       easterEggOn: saved.easterEggOn !== false,
-      theme: saved.theme === "night" ? "night" : "day",
+      themeMode: this.oneOf(saved.themeMode, ["auto", "day", "night"], legacyTheme || base.themeMode),
+      species: this.oneOf(saved.species, Object.keys(Config.species), base.species),
+      locale: this.oneOf(saved.locale, Config.locales, base.locale),
       tapHistory: Array.isArray(saved.tapHistory) ? saved.tapHistory.filter(Number.isFinite) : []
     };
+    delete this.data.theme;
     return this.data;
   },
 
@@ -1201,6 +1613,14 @@ const State = {
     this.save();
   },
 
+  /** Flip between the two creatures. Returns the new species key. */
+  toggleSpecies() {
+    const keys = Object.keys(Config.species);
+    const next = keys[(keys.indexOf(this.data.species) + 1) % keys.length];
+    this.set({ species: next });
+    return next;
+  },
+
   set(patch) {
     Object.assign(this.data, patch);
     this.save();
@@ -1215,86 +1635,96 @@ const UI = {
 
   cache() {
     const ids = [
-      "appTitle", "themeBtn", "soundBtn", "scene", "sceneCaption", "speech", "drops",
-      "meterValue", "meterBar", "meterFill", "meterLabel", "moodLine",
-      "statCount", "statLast", "drinkBtn", "resetBtn", "settings",
-      "decayInput", "decayOut", "decayScale", "refillInput", "refillOut", "refillScale",
-      "soundInput", "eggInput", "themeInput", "settingsFoot", "note"
+      "appTitle", "infoBtn", "infoCard", "infoBody", "infoTip", "themeBtn", "soundBtn",
+      "scene", "sceneCaption", "speech", "drops",
+      "meterHeading", "meterValue", "meterBar", "meterFill", "meterLabel", "moodLine",
+      "statCountLabel", "statCount", "statLastLabel", "statLast",
+      "drinkBtn", "resetBtn", "settings", "settingsSummary", "langLabel",
+      "langDe", "langEn", "langZh",
+      "decayInput", "decayOut", "decayScale", "decayLabel",
+      "refillInput", "refillOut", "refillScale", "refillLabel",
+      "soundInput", "soundLabel", "eggInput", "eggLabel",
+      "autoThemeInput", "autoThemeLabel", "themeInput", "themeLabel",
+      "settingsFoot", "note", "secretBtn", "favicon"
     ];
     ids.forEach((id) => { this.el[id] = document.getElementById(id); });
   },
 
-  /** Everything that names the character reads from Config. */
-  applyNaming() {
-    const name = Config.character.name;
-    document.title = `${name} Water Friend`;
-    this.el.appTitle.textContent = `${name} Water Friend`;
-    this.el.sceneCaption.textContent =
-      `${name} the ${Config.character.species}, reacting to how hydrated they are.`;
-    this.el.meterLabel.textContent = `${name}'s hydration level`;
-    this.el.speech.setAttribute("aria-label", `${name} says`);
-    this.el.drinkBtn.setAttribute("aria-label", `I drank water, refill ${name}'s meter`);
-    this.el.resetBtn.setAttribute("aria-label", `Reset ${name} and today's count`);
-    this.el.settingsFoot.textContent =
-      `${name} lives only in this browser. Nothing is uploaded anywhere.`;
-    this.el.note.textContent =
-      `Prototype ${Config.app.version} \u00b7 single file \u00b7 no accounts, no server, no cloud.`;
+  /** Current locale strings. */
+  t() {
+    return Strings[State.data.locale] || Strings[Config.defaultLocale];
+  },
+
+  species() {
+    return Config.species[State.data.species];
   },
 
   pick(list) {
     return list[Math.floor(Math.random() * list.length)];
   },
 
-  /** Speech changes on events and band changes, not on every clock refresh. */
-  say(text, lockMs = 2600) {
-    this.el.speech.textContent = text;
-    this.el.speech.style.animation = "none";
-    void this.el.speech.offsetWidth;          // restart the pop animation
-    this.el.speech.style.animation = "";
-    this.speechLock = Time.now() + lockMs;
+  /** Every user-facing string is written here, from Strings plus Config. */
+  applyText() {
+    const t = this.t();
+    const sp = this.species();
+    const name = sp.name;
+
+    document.documentElement.lang = State.data.locale;
+    document.title = `${name} ${t.titleSuffix}`;
+    this.el.appTitle.textContent = `${name} ${t.titleSuffix}`;
+    this.el.sceneCaption.textContent = t.caption(name, t.speciesWord[State.data.species]);
+
+    this.el.meterHeading.textContent = t.meter;
+    this.el.meterLabel.textContent = t.meterAria(name);
+
+    this.el.drinkBtn.textContent = t.drink;
+    this.el.drinkBtn.setAttribute("aria-label", t.drinkAria(name));
+    this.el.resetBtn.textContent = t.reset;
+    this.el.resetBtn.setAttribute("aria-label", t.resetAria(name));
+
+    this.el.statCountLabel.textContent = t.drinksToday;
+    this.el.statLastLabel.textContent = t.lastDrink;
+
+    this.el.settingsSummary.textContent = t.settings;
+    this.el.langLabel.textContent = t.language;
+    this.el.decayLabel.textContent = t.fullToEmpty;
+    this.el.refillLabel.textContent = t.refill;
+    this.el.soundLabel.textContent = t.sound;
+    this.el.eggLabel.textContent = t.egg;
+    this.el.autoThemeLabel.textContent = t.autoTheme;
+    this.el.themeLabel.textContent = t.nightTheme;
+    this.el.settingsFoot.textContent = t.settingsFoot(name);
+
+    this.el.note.textContent = t.note(Config.app.version);
+    this.el.infoBtn.setAttribute("aria-label", t.infoAria);
+    this.el.infoBody.textContent = t.infoBody(name);
+    this.el.infoTip.textContent = t.infoTip;
+    this.el.secretBtn.setAttribute("aria-label", t.secretAria);
+
+    Config.locales.forEach((loc) => {
+      const btn = this.el["lang" + loc[0].toUpperCase() + loc.slice(1)];
+      if (btn) btn.setAttribute("aria-pressed", String(loc === State.data.locale));
+    });
+
+    this.applyTheme();
+    this.applySound();
+    this.renderSettingsValues();
   },
 
-  render() {
-    const s = State.data;
-    const now = Time.now();
-    const pct = Math.round(s.hydration);
-    const band = State.band();
-
-    this.el.scene.dataset.band = band;
-    this.el.scene.dataset.radiant = pct >= Config.thresholds.rainbow ? "on" : "off";
-    this.el.meterFill.style.width = `${pct}%`;
-    this.el.meterValue.textContent = `${pct}%`;
-    this.el.meterBar.setAttribute("aria-valuenow", String(pct));
-    this.el.meterBar.setAttribute("aria-valuetext", `${pct} percent, ${Copy.mood[band]}`);
-    this.el.moodLine.textContent = Copy.mood[band];
-    this.el.statCount.textContent = String(s.todayCount);
-    this.el.statLast.textContent = Time.relative(s.lastDrinkAt, now);
-
-    if (band !== this.lastBand && now >= this.speechLock) {
-      this.say(this.pick(Copy.band[band]), 1200);
-    }
-    this.lastBand = band;
-  },
-
-  applyTheme() {
-    const night = State.data.theme === "night";
-    document.documentElement.dataset.theme = night ? "night" : "day";
-    this.el.themeBtn.textContent = night ? "☀️" : "🌙";
-    this.el.themeBtn.setAttribute("aria-pressed", String(night));
-    this.el.themeBtn.setAttribute("aria-label", night ? "Switch to day theme" : "Switch to night theme");
-    this.el.themeInput.checked = night;
-  },
-
-  applySound() {
-    const on = State.data.soundOn;
-    this.el.soundBtn.textContent = on ? "🔔" : "🔕";
-    this.el.soundBtn.setAttribute("aria-pressed", String(on));
-    this.el.soundBtn.setAttribute("aria-label", on ? "Sound on" : "Sound off");
-    this.el.soundInput.checked = on;
+  /** Species affects the sprite shown, the favicon and the sound voice. */
+  applySpecies() {
+    const sp = this.species();
+    this.el.scene.dataset.species = State.data.species;
+    Audio_.setVoice(sp.voice);
+    this.el.favicon.href =
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'"
+      + "%3E%3Ctext x='50' y='50' dy='.35em' font-size='84' text-anchor='middle'%3E"
+      + encodeURIComponent(sp.emoji) + "%3C/text%3E%3C/svg%3E";
   },
 
   /** Slider bounds and their tick labels both come from Config. */
   applyLimits() {
+    const locale = Strings[State.data.locale].tag;
     const apply = (input, scale, limit, format) => {
       input.min = limit.min;
       input.max = limit.max;
@@ -1313,18 +1743,81 @@ const UI = {
         scale.appendChild(span);
       });
     };
-    apply(this.el.decayInput, this.el.decayScale, Config.limits.decayHours, (v) => v.toFixed(1));
-    apply(this.el.refillInput, this.el.refillScale, Config.limits.refillAmount, (v) => `${v}%`);
-  },
-
-  formatHours(hours) {
-    return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+    apply(this.el.decayInput, this.el.decayScale, Config.limits.decayHours,
+          (v) => v.toLocaleString(locale, { minimumFractionDigits: 1 }));
+    apply(this.el.refillInput, this.el.refillScale, Config.limits.refillAmount,
+          (v) => `${v.toLocaleString(locale)}%`);
   },
 
   /** Reads straight from the inputs so the labels track a finger mid-drag. */
   renderSettingsValues() {
-    this.el.decayOut.textContent = this.formatHours(Number(this.el.decayInput.value));
-    this.el.refillOut.textContent = `${Number(this.el.refillInput.value)}%`;
+    const t = this.t();
+    this.el.decayOut.textContent = t.hours(Number(this.el.decayInput.value), t.tag);
+    this.el.refillOut.textContent = `${Number(this.el.refillInput.value).toLocaleString(t.tag)}%`;
+  },
+
+  /** Speech changes on events and band changes, not on every clock refresh. */
+  say(text, lockMs = 2600) {
+    this.el.speech.textContent = text;
+    this.el.speech.style.animation = "none";
+    void this.el.speech.offsetWidth;          // restart the pop animation
+    this.el.speech.style.animation = "";
+    this.speechLock = Time.now() + lockMs;
+  },
+
+  bandSpeech(band = State.band()) {
+    return this.pick(this.t().speech[State.data.species][band]);
+  },
+
+  render() {
+    const s = State.data;
+    const t = this.t();
+    const now = Time.now();
+    const pct = Math.round(s.hydration);
+    const band = State.band();
+
+    this.el.scene.dataset.band = band;
+    this.el.scene.dataset.radiant = pct >= Config.thresholds.rainbow ? "on" : "off";
+    this.el.meterFill.style.width = `${pct}%`;
+    this.el.meterValue.textContent = `${pct.toLocaleString(t.tag)}%`;
+    this.el.meterBar.setAttribute("aria-valuenow", String(pct));
+    this.el.meterBar.setAttribute("aria-valuetext", `${pct}%, ${t.mood[band]}`);
+    this.el.moodLine.textContent = t.mood[band];
+    this.el.statCount.textContent = s.todayCount.toLocaleString(t.tag);
+    this.el.statLast.textContent = Time.relative(s.lastDrinkAt, now, t);
+
+    if (band !== this.lastBand && now >= this.speechLock) {
+      this.say(this.bandSpeech(band), 1200);
+    }
+    this.lastBand = band;
+  },
+
+  /** Resolves themeMode against the clock, so "auto" follows the time of day. */
+  effectiveTheme() {
+    const mode = State.data.themeMode;
+    if (mode === "day" || mode === "night") return mode;
+    return Time.isDaytime() ? "day" : "night";
+  },
+
+  applyTheme() {
+    const t = this.t();
+    const theme = this.effectiveTheme();
+    const night = theme === "night";
+
+    document.documentElement.dataset.theme = theme;
+    this.el.themeBtn.textContent = night ? "☀️" : "\u{1F319}";
+    this.el.themeBtn.setAttribute("aria-label", night ? t.themeToDay : t.themeToNight);
+    this.el.themeInput.checked = night;
+    this.el.autoThemeInput.checked = State.data.themeMode === "auto";
+  },
+
+  applySound() {
+    const t = this.t();
+    const on = State.data.soundOn;
+    this.el.soundBtn.textContent = on ? "\u{1F514}" : "\u{1F515}";
+    this.el.soundBtn.setAttribute("aria-pressed", String(on));
+    this.el.soundBtn.setAttribute("aria-label", on ? t.soundOn : t.soundOff);
+    this.el.soundInput.checked = on;
   },
 
   syncSettingsInputs() {
@@ -1335,6 +1828,12 @@ const UI = {
     this.renderSettingsValues();
     this.applySound();
     this.applyTheme();
+  },
+
+  toggleInfo(force) {
+    const open = force !== undefined ? force : this.el.infoCard.hidden;
+    this.el.infoCard.hidden = !open;
+    this.el.infoBtn.setAttribute("aria-expanded", String(open));
   },
 
   flash(className, ms) {
@@ -1349,7 +1848,7 @@ const UI = {
     for (let i = 0; i < count; i++) {
       const drop = document.createElement("span");
       drop.className = "drop";
-      drop.textContent = "💧";
+      drop.textContent = "\u{1F4A7}";
       drop.style.setProperty("--dx", `${(i - (count - 1) / 2) * 26}px`);
       drop.style.animationDelay = `${i * 0.09}s`;
       this.el.drops.appendChild(drop);
@@ -1365,13 +1864,20 @@ const Events = {
   bind() {
     UI.el.drinkBtn.addEventListener("click", () => this.onDrink());
     UI.el.resetBtn.addEventListener("click", () => this.onReset());
+    UI.el.secretBtn.addEventListener("click", () => this.onSecret());
+    UI.el.infoBtn.addEventListener("click", () => UI.toggleInfo());
 
+    /* The top bar button sets an explicit choice, which turns auto off. */
     UI.el.themeBtn.addEventListener("click", () => {
-      State.set({ theme: State.data.theme === "night" ? "day" : "night" });
+      State.set({ themeMode: UI.effectiveTheme() === "night" ? "day" : "night" });
       UI.applyTheme();
     });
     UI.el.themeInput.addEventListener("change", (e) => {
-      State.set({ theme: e.target.checked ? "night" : "day" });
+      State.set({ themeMode: e.target.checked ? "night" : "day" });
+      UI.applyTheme();
+    });
+    UI.el.autoThemeInput.addEventListener("change", (e) => {
+      State.set({ themeMode: e.target.checked ? "auto" : UI.effectiveTheme() });
       UI.applyTheme();
     });
 
@@ -1380,6 +1886,11 @@ const Events = {
 
     UI.el.eggInput.addEventListener("change", (e) => {
       State.set({ easterEggOn: e.target.checked, tapHistory: [] });
+    });
+
+    Config.locales.forEach((loc) => {
+      const btn = UI.el["lang" + loc[0].toUpperCase() + loc.slice(1)];
+      if (btn) btn.addEventListener("click", () => this.setLocale(loc));
     });
 
     UI.el.decayInput.addEventListener("input", () => UI.renderSettingsValues());
@@ -1423,8 +1934,8 @@ const Events = {
       window.removeEventListener("pointerdown", unlockOnce);
       window.removeEventListener("keydown", unlockOnce);
     };
-    window.addEventListener("pointerdown", unlockOnce, { once: false });
-    window.addEventListener("keydown", unlockOnce, { once: false });
+    window.addEventListener("pointerdown", unlockOnce);
+    window.addEventListener("keydown", unlockOnce);
   },
 
   setSound(on) {
@@ -1434,6 +1945,27 @@ const Events = {
     UI.applySound();
   },
 
+  setLocale(locale) {
+    if (!Config.locales.includes(locale) || locale === State.data.locale) return;
+    State.set({ locale });
+    UI.applyText();
+    UI.applyLimits();
+    UI.say(UI.bandSpeech(), 1500);
+    UI.render();
+  },
+
+  /** The almost hidden switch: become the other creature. */
+  onSecret() {
+    Audio_.unlock();
+    const next = State.toggleSpecies();
+    UI.applySpecies();
+    UI.applyText();
+    UI.render();
+    UI.flash("is-morphing", Config.ui.morphFeedbackMs);
+    UI.say(UI.t().morph(Config.species[next].name), 2600);
+    Audio_.morph();
+  },
+
   onDrink() {
     Audio_.unlock();
     const result = State.drink();
@@ -1441,7 +1973,7 @@ const Events = {
     UI.droplets(result.burst ? 6 : 3);
 
     if (result.burst) {
-      UI.say(UI.pick(Copy.gurgle));
+      UI.say(UI.pick(UI.t().gurgle));
       UI.flash("is-gurgling", Config.ui.gurgleFeedbackMs);
       Audio_.gurgle();
       return;
@@ -1451,20 +1983,19 @@ const Events = {
     Audio_.sip();
 
     if (result.improved) {
-      UI.say(UI.pick(Copy.cheer));
-      setTimeout(() => Audio_.yippie(), 260);
+      UI.say(UI.pick(UI.t().cheer));
+      setTimeout(() => Audio_.cheer(), 260);
     } else {
-      UI.say(UI.pick(Copy.sip));
+      UI.say(UI.pick(UI.t().sip));
     }
   },
 
   onReset() {
-    const name = Config.character.name;
-    if (!window.confirm(`Fill ${name} back up and reset today's count?`)) return;
+    if (!window.confirm(UI.t().resetConfirm(UI.species().name))) return;
     State.reset();
     UI.lastBand = null;
     UI.render();
-    UI.say(UI.pick(Copy.band.hydrated));
+    UI.say(UI.bandSpeech());
   },
 
   /** Page became visible again: re-derive state from the clock. */
@@ -1472,23 +2003,25 @@ const Events = {
     const before = State.band();
     const lost = State.sync();
     State.save();
+    UI.applyTheme();          // the clock may have crossed dawn or dusk
     UI.render();
     this.startRefresh();
 
     const after = State.band();
     if (lost > 1 && after !== before && State.bandRank(after) > State.bandRank(before)) {
-      UI.say(Copy.welcomeBack(Config.character.name), 3200);
+      UI.say(UI.bandSpeech(after), 3200);
       /* Visual feedback first on return. No sound unless a gesture already
          unlocked the audio context, and never loud on arrival. */
-      if (after === "dehydrated" && Audio_.ready()) Audio_.sadOh();
+      if (after === "dehydrated" && Audio_.ready()) Audio_.sad();
     }
   },
 
-  /** UI-only ticker for the relative-time label. Never the state engine. */
+  /** UI-only ticker for the relative-time label and the clock theme. */
   startRefresh() {
     this.stopRefresh();
     this.refreshTimer = setInterval(() => {
       State.sync();
+      UI.applyTheme();
       UI.render();
     }, Config.ui.refreshMs);
   },
@@ -1504,8 +2037,6 @@ const Events = {
 /* ========= INIT ========= */
 function init() {
   UI.cache();
-  UI.applyNaming();
-  UI.applyLimits();
 
   const migratedFrom = Storage.migrate();
   State.load();
@@ -1514,16 +2045,19 @@ function init() {
 
   Audio_.enabled = State.data.soundOn;
 
+  UI.applySpecies();
+  UI.applyLimits();
   UI.syncSettingsInputs();
+  UI.applyText();
   UI.render();
-  UI.say(UI.pick(Copy.band[State.band()]), 1500);
+  UI.say(UI.bandSpeech(), 1500);
 
   Events.bind();
   Events.startRefresh();
 
   /* The browser console stands in for a shell banner, so the running version
      is always identifiable without reading the source. */
-  console.log(`${Config.character.name} Water Friend ${Config.app.version} - ${Config.app.status}`);
+  console.log(`${UI.species().name} Water Friend ${Config.app.version} - ${Config.app.status}`);
   if (migratedFrom) {
     console.log(`Adopted saved state from the old key "${migratedFrom}".`);
   }

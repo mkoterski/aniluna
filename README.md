@@ -1,11 +1,14 @@
-# Aniluna Water Friend - v0.14
+# Aniluna Water Friend - v0.15
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
 
 A tiny hydration companion that lives in one HTML file. Tap **"I drank water"**,
-the thirst meter refills, and Aniluna the pixel unicorn perks up. Leave them
-alone and they slowly droop. That is the whole app.
+the meter refills, and your pixel pet perks up. Leave them alone and they slowly
+droop. That is the whole app.
+
+Speaks German, English and Chinese. Comes as a unicorn called Aniluna, or a
+dinosaur called Anirex if you find the switch.
 
 **Play it:** https://mkoterski.github.io/aniluna/
 
@@ -26,6 +29,12 @@ alone and they slowly droop. That is the whole app.
 |---|---|
 | Mood states | `hydrated` >=75, `okay` >=45, `thirsty` >=20, `dehydrated` <20, compared against the displayed percent |
 | Meter | Labelled **Hydration**: 100% is full, 0% is empty. The bar fills when you drink |
+| First run | Starts at 75%, not full, so a drink is the obvious next move and teaches the loop. Reset still fills to 100% |
+| Languages | German (default), English, Chinese. Covers every label, all speech, and relative times via `Intl.RelativeTimeFormat` |
+| Two creatures | A unicorn and a dinosaur, switched by an almost hidden `*` in the bottom right. Name, speech, favicon and synth voice all follow |
+| Light and dark | Automatic from the local clock, day 07:00 to 19:00. The top bar button sets an explicit override, and a settings toggle hands control back to the clock |
+| Stars | Always at night. In daylight only at the happiest level, where they turn warm gold so they read against a pale sky |
+| Info | A small circled-i in the top bar opens two localised sentences explaining the loop |
 | Default decay | Full to completely empty in 2 hours, so the dehydrated band is entered just after 1 h 36 min |
 | Idle animation | Bob, head nod, tail swish, ear twitch, blink, sparkle. Amplitude and speed tuned per state |
 | Rainbow | Decorative reward, only while the meter reads 95% or above. At the 2 h default that is roughly the 6 minutes after topping up |
@@ -41,9 +50,15 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.14", status: "DEVELOPMENT" },
-  character: { name: "Aniluna", species: "unicorn" },
-  hydration: { max: 100, defaultDecayHours: 2, defaultRefillAmount: 25 },
+  app: { version: "v0.15", status: "DEVELOPMENT" },
+  species: {
+    unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
+    dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
+  },
+  defaultSpecies: "unicorn",
+  locales: ["de", "en", "zh"],
+  defaultLocale: "de",
+  hydration: { max: 100, initial: 75, defaultDecayHours: 2, defaultRefillAmount: 25 },
   limits: {
     decayHours: { min: 0.5, max: 4, step: 0.5 },
     refillAmount: { min: 25, max: 100, step: 25 }
@@ -52,8 +67,8 @@ const Config = {
 };
 ```
 
-Change `name` and the title, heading, speech, status text and ARIA labels all
-follow. The `limits` block drives the slider bounds, their tick labels and the
+Change a `name` and the title, heading, speech, status text and ARIA labels all
+follow. Both creature names are working titles and each is a single string. The `limits` block drives the slider bounds, their tick labels and the
 clamping of saved values, so widening a slider is a one-line change.
 
 `storageKey` is `aniluna/v1`. Renaming a storage key normally costs everyone
@@ -76,7 +91,8 @@ The single script is split into labelled sections:
 | `TIME` | Relative time labels, local day key |
 | `AUDIO` | Context setup, gesture unlock, procedural sounds |
 | `STATE` | Decay, refill, bands, tap history, settings |
-| `UI` | DOM refs, rendering, naming, slider limits, speech, effects |
+| `STRINGS` | Every user-facing string, one entry per locale, speech keyed by species |
+| `UI` | DOM refs, rendering, text application, slider limits, speech, effects |
 | `EVENTS` | Input, lifecycle and the UI-only refresh ticker |
 | `INIT` | Startup sequence and the version banner |
 
@@ -107,6 +123,57 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.15  2026-08-20  Added a secret species switch, three languages, a clock
+                   driven theme, an info button, and a gentler first run.
+
+                   Species: an almost hidden asterisk in the bottom right
+                   flips between the unicorn Aniluna and a new dinosaur,
+                   Anirex. Name, speech copy, favicon emoji and the synth
+                   voice all follow from Config.species, so adding a third
+                   creature is a config entry plus a sprite. Both sprites use
+                   the same group class names, so the single animation system
+                   and the four mood-band token blocks drive either one with
+                   no extra CSS. The switch is visually quiet but a real
+                   labelled button, so keyboards and screen readers can still
+                   reach it. Anirex is a working title.
+
+                   Languages: German, English and Chinese, German by default,
+                   in a new STRINGS section with one entry per locale and
+                   speech keyed by species. Relative times use
+                   Intl.RelativeTimeFormat rather than hand-written strings,
+                   so the grammar is right in all three, and numbers go
+                   through toLocaleString, so the sliders read 1,5 Stunden in
+                   German. Renamed the sprite classes from .ina-* to .pet-*
+                   and the outline filter to petInk: after two renames the old
+                   prefix was a misnomer, and with two species it named the
+                   wrong thing entirely.
+
+                   Theme: themeMode replaces the theme boolean and takes auto,
+                   day or night. Auto resolves against the local clock and is
+                   re-evaluated on return to the tab and on the UI ticker, so
+                   it flips at dusk while the page is open. The top bar button
+                   sets an explicit override; a settings toggle returns
+                   control to the clock. Saves written before this version
+                   carry theme rather than themeMode, and that value is
+                   adopted as an explicit choice rather than discarded.
+
+                   Stars: shown always at night, and in daylight only at or
+                   above the rainbow threshold, tinted warm gold in daylight
+                   so they read against a pale sky rather than vanishing.
+
+                   First run: hydration starts at Config.hydration.initial of
+                   75 instead of full, so a new user has something to fix and
+                   learns the loop from a single tap. Reset still fills to 100.
+
+                   Info: a circled-i in the top bar toggles a localised
+                   two-sentence explanation, wired with aria-expanded and
+                   aria-controls.
+
+                   Not changed: the page does not reload itself. State is
+                   derived from timestamps, so it self-corrects whenever the
+                   tab becomes visible. An automatic reload would add nothing
+                   and could interrupt a tap.
+
 v0.14  2026-08-20  Renamed the localStorage key from ina-water-friend/v1 to
                    aniluna/v1, so nothing user-visible or internal still
                    carries the old working title. Added Config.legacyKeys and
