@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Water Friend - v0.15
+  index.html - Aniluna Aqua Buddy - v0.17
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -21,7 +21,7 @@
 <!-- Emoji as an inline SVG favicon, so this stays a single file with no icon
      asset to ship. Swapped per species at runtime by UI.applySpecies. -->
 <link rel="icon" id="favicon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='50' dy='.35em' font-size='84' text-anchor='middle'%3E%F0%9F%A6%84%3C/text%3E%3C/svg%3E">
-<title>Aniluna Wasserfreund</title>
+<title>Aniluna Aqua Buddy</title>
 <style>
 /* ============================================================
    THEME TOKENS
@@ -66,6 +66,7 @@
   --focus:       #ff6fae;
   --star:        #ffdf7a;          /* warm in daylight, so it reads on a pale sky */
   --star-glow:   rgba(255, 208, 92, 0.9);
+  --wind-stroke: rgba(255, 255, 255, 0.85);
 }
 
 :root[data-theme="night"] {
@@ -104,6 +105,7 @@
   --focus:       #ff9ac9;
   --star:        #ffffff;
   --star-glow:   rgba(255, 255, 255, 0.85);
+  --wind-stroke: rgba(226, 216, 255, 0.6);
 }
 
 /* ============================================================
@@ -162,6 +164,7 @@ body {
   background: linear-gradient(170deg, var(--bg), var(--bg-2));
   color: var(--text);
   font: 16px/1.45 ui-rounded, "Segoe UI Variable Display", "Segoe UI",
+        "Noto Sans TC", "PingFang TC", "Microsoft JhengHei",
         "Noto Sans SC", "PingFang SC", "Microsoft YaHei",
         system-ui, -apple-system, sans-serif;
   -webkit-text-size-adjust: 100%;
@@ -279,6 +282,7 @@ body {
 /* rainbow reward, only while the meter reads at or above Config.thresholds.rainbow */
 .rainbow {
   position: absolute;
+  z-index: 1;                   /* over the sun and moon, under the character */
   left: 50%;
   top: 13%;
   width: 70%;
@@ -288,10 +292,91 @@ body {
   pointer-events: none;
 }
 .scene[data-radiant="on"] .rainbow {
-  opacity: 0.78;
+  opacity: 0.45;
   transform: translateX(-50%) scale(1);
 }
 .rainbow path { fill: none; stroke-width: 3.3; stroke-linecap: round; }
+
+/* ---------- sun and moon ----------
+   Both travel the same arc: up from the left at their rise hour, highest at
+   their peak hour, down to the right at their set hour. East to west, so the
+   sun comes up on the left the way it actually does. */
+.sky { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.body {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 1.2s ease, left 1.5s linear, top 1.5s linear;
+}
+.body[data-visible="yes"] { opacity: 1; }
+.sun {
+  width: 11%;
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 38% 34%, #fff6cf 0%, #ffd45e 52%, #f7a53c 100%);
+  box-shadow: 0 0 14px 5px rgba(255, 206, 92, 0.45);
+}
+.moon {
+  width: 9%;
+  aspect-ratio: 1;
+  background:
+    radial-gradient(circle at 66% 62%, rgba(150, 140, 190, 0.4) 0 14%, transparent 15%),
+    radial-gradient(circle at 34% 40%, rgba(150, 140, 190, 0.34) 0 10%, transparent 11%),
+    radial-gradient(circle at 58% 26%, rgba(150, 140, 190, 0.26) 0 7%, transparent 8%),
+    radial-gradient(circle at 40% 36%, #fdfbff 0%, #e6def7 60%, #c9bee6 100%);
+  box-shadow: 0 0 12px 4px rgba(226, 216, 255, 0.35);
+}
+
+/* ---------- ambient life: birds by day, wind gusts mostly by night ----------
+   Both are spawned rarely by Ambient, cross the scene once and remove
+   themselves. Rates live in Config.ambient. */
+.ambient { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.amb {
+  position: absolute;
+  left: -25%;
+  animation: drift var(--dur, 12s) linear forwards;
+}
+.amb.rtl { animation-name: drift-rtl; }
+.amb-flip { display: block; }
+.amb.rtl .amb-flip { transform: scaleX(-1); }
+@keyframes drift {
+  0%   { left: -25%; opacity: 0; }
+  14%  { opacity: var(--amb-op, 0.7); }
+  86%  { opacity: var(--amb-op, 0.7); }
+  100% { left: 118%; opacity: 0; }
+}
+@keyframes drift-rtl {
+  0%   { left: 118%; opacity: 0; }
+  14%  { opacity: var(--amb-op, 0.7); }
+  86%  { opacity: var(--amb-op, 0.7); }
+  100% { left: -25%; opacity: 0; }
+}
+.amb-bob { display: block; animation: amb-bob var(--bob, 3.4s) ease-in-out infinite; }
+@keyframes amb-bob {
+  0%, 100% { transform: translateY(-14%); }
+  50%      { transform: translateY(14%); }
+}
+.bird svg { display: block; width: 100%; height: auto; overflow: visible; }
+.bird path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: flap var(--flap, 0.7s) ease-in-out infinite;
+}
+@keyframes flap {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(0.25); }
+}
+.wind svg { display: block; width: 100%; height: auto; overflow: visible; }
+.wind path {
+  fill: none;
+  stroke: var(--wind-stroke);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
 
 /* pixel sparkles */
 .sparkles { position: absolute; inset: 0; pointer-events: none; }
@@ -662,7 +747,8 @@ input[type="range"]::-moz-range-thumb {
   }
   .pet, .pet * { animation: none !important; transition: none !important; }
   .sparkle { animation: none !important; opacity: var(--sparkle-op, 1); transform: rotate(45deg); }
-  .rainbow, .stars { transition: none !important; }
+  .rainbow, .stars, .body { transition: none !important; }
+  .amb { display: none !important; }
   .drop { animation: none !important; opacity: 0 !important; }
   .secret:hover, .secret:focus-visible { transform: none; }
 }
@@ -673,7 +759,7 @@ input[type="range"]::-moz-range-thumb {
 
   <!-- ---------- top bar ---------- -->
   <header class="panel topbar">
-    <h1 id="appTitle">Aniluna Wasserfreund</h1>
+    <h1 id="appTitle">Aniluna Aqua Buddy</h1>
     <button class="icon-btn" id="infoBtn" type="button" aria-expanded="false" aria-controls="infoCard">&#9432;</button>
     <button class="icon-btn" id="themeBtn" type="button">&#127769;</button>
     <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true">&#128276;</button>
@@ -690,6 +776,12 @@ input[type="range"]::-moz-range-thumb {
            aria-labelledby="sceneCaption">
     <p class="sr-only" id="sceneCaption"></p>
     <div class="stars" aria-hidden="true"></div>
+
+    <div class="sky" aria-hidden="true">
+      <div class="body sun" id="sun" data-visible="no"></div>
+      <div class="body moon" id="moon" data-visible="no"></div>
+    </div>
+    <div class="ambient" id="ambient" aria-hidden="true"></div>
 
     <svg class="rainbow" viewBox="0 0 100 52" aria-hidden="true">
       <path d="M6 52a44 44 0 0 1 88 0"       stroke="#ff9aa9"/>
@@ -915,7 +1007,7 @@ input[type="range"]::-moz-range-thumb {
       <div class="langs" role="group" aria-labelledby="langLabel">
         <button class="lang-btn" id="langDe" type="button" data-locale="de" aria-pressed="true">DE</button>
         <button class="lang-btn" id="langEn" type="button" data-locale="en" aria-pressed="false">EN</button>
-        <button class="lang-btn" id="langZh" type="button" data-locale="zh" aria-pressed="false">&#20013;&#25991;</button>
+        <button class="lang-btn" id="langZh" type="button" data-locale="zh" aria-pressed="false">&#32321;&#20013;</button>
       </div>
     </div>
 
@@ -971,7 +1063,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.15",
+    version: "v0.17",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -1015,6 +1107,23 @@ const Config = {
     dayStartHour: 7,             // local hours, used when themeMode is "auto"
     nightStartHour: 19
   },
+
+  /* Sun and moon arcs, in local hours. Each body rises on the left at `rise`,
+     is highest at `peak` and sets on the right at `set`. The moon's window
+     crosses midnight, so its hours run past 24. */
+  sky: {
+    sun:  { rise: 7,  peak: 12, set: 19 },
+    moon: { rise: 20, peak: 24, set: 29 },   // 20:00, midnight, 05:00
+    left: 8, right: 92,          // horizontal travel, percent of the scene
+    horizon: 60, apex: 16        // vertical range, percent from the top
+  },
+
+  /* How often the decorative life shows up, [min, max] milliseconds between
+     one appearance and the next. null means never at that time of day. */
+  ambient: {
+    bird: { day: [48000, 96000], night: null },
+    wind: { day: [150000, 260000], night: [42000, 84000] }
+  },
   burst: {                       // rapid-tap easter egg
     taps: 5,
     windowMs: 5000
@@ -1037,192 +1146,197 @@ const Config = {
 
 const BANDS = ["hydrated", "okay", "thirsty", "dehydrated"];
 
-/* ========= STRINGS ========= */
-/* One entry per locale. `speech` is keyed by species first, because that is
-   where the personality lives; everything else is shared between species and
-   takes the name as an argument where it needs one. */
+/* ========= STRINGS =========
+   One entry per locale. These are written as native copy, not translations of
+   the English: the German leans on diminutives and warmth, and the Chinese is
+   Taiwanese Traditional with the soft sentence-final particles that register as
+   cute rather than formal. `tag` is the BCP 47 tag used for Intl formatting and
+   for the document language, which is why zh carries zh-TW: plain "zh" would
+   not tell a browser whether to pick Traditional or Simplified glyphs.
+   `speech` is keyed by species first, because that is where the personality is;
+   everything else is shared and takes the name as an argument. */
 const Strings = {
   de: {
     tag: "de-DE",
-    titleSuffix: "Wasserfreund",
-    caption: (name, species) => `${name}, ${species}. Reagiert darauf, wie viel getrunken wurde.`,
-    speciesWord: { unicorn: "ein Einhorn", dinosaur: "ein Dinosaurier" },
-    meter: "Flüssigkeit",
-    meterAria: (name) => `Flüssigkeitsstand von ${name}`,
-    drink: "\u{1F4A7} Ich habe Wasser getrunken",
-    drinkAria: (name) => `Ich habe Wasser getrunken, füllt die Anzeige von ${name}`,
-    reset: "Neuen Tag starten",
-    resetAria: (name) => `${name} auffüllen und den heutigen Zähler zurücksetzen`,
-    resetConfirm: (name) => `${name} wieder auffüllen und den heutigen Zähler zurücksetzen?`,
-    drinksToday: "Heute getrunken",
-    lastDrink: "Zuletzt",
+    titleSuffix: "Aqua Buddy",
+    caption: (name, species) => `${name}, ${species}. Reagiert darauf, wie viel du trinkst.`,
+    speciesWord: { unicorn: "ein Einhorn", dinosaur: "ein Dino" },
+    meter: "Hydration",
+    meterAria: (name) => `Hydration von ${name}`,
+    drink: "\u{1F4A7} Ich hab Wasser getrunken",
+    drinkAria: (name) => `Ich hab Wasser getrunken, f\u00fcllt die Anzeige von ${name}`,
+    reset: "Neuer Tag, neues Gl\u00fcck",
+    resetAria: (name) => `${name} auff\u00fcllen und den heutigen Z\u00e4hler zur\u00fccksetzen`,
+    resetConfirm: (name) => `${name} randvoll machen und heute neu z\u00e4hlen?`,
+    drinksToday: "Schlucke heute",
+    lastDrink: "Letzter Schluck",
     settings: "Einstellungen",
     language: "Sprache",
-    fullToEmpty: "Voll bis leer",
+    fullToEmpty: "Von voll zu leer",
     refill: "Pro Schluck",
-    sound: "Geräusche",
-    egg: "Blubber-Überraschung",
+    sound: "T\u00f6ne",
+    egg: "Blubber-\u00dcberraschung",
     autoTheme: "Der Tageszeit folgen",
     nightTheme: "Nachtmodus",
-    settingsFoot: (name) => `${name} lebt nur in diesem Browser. Es wird nichts hochgeladen.`,
-    note: (version) => `Prototyp ${version} · eine Datei · kein Konto, kein Server`,
+    settingsFoot: (name) => `${name} wohnt nur in diesem Browser. Nichts wird irgendwohin geschickt, versprochen.`,
+    note: (version) => `Prototyp ${version} \u00b7 eine Datei \u00b7 kein Konto, kein Server`,
     infoAria: "Was ist das hier?",
-    infoBody: (name) => `${name} wird langsam durstig, während die Zeit läuft. Tippe auf den großen Knopf, wenn du selbst Wasser getrunken hast: die Anzeige füllt sich und ${name} strahlt wieder.`,
-    infoTip: "Alles bleibt auf diesem Gerät. Zeiten und Schluckgröße kannst du in den Einstellungen anpassen.",
+    infoBody: (name) => `${name} wird mit der Zeit ein bisschen durstig. Immer wenn du selbst Wasser trinkst, tippst du auf den gro\u00dfen Knopf: dann f\u00fcllt sich die Anzeige und ${name} strahlt wieder.`,
+    infoTip: "Alles bleibt auf diesem Ger\u00e4t. Tempo und Schluckgr\u00f6\u00dfe kannst du unten anpassen.",
     themeToDay: "Zum Tagmodus wechseln",
     themeToNight: "Zum Nachtmodus wechseln",
-    soundOn: "Geräusche an",
-    soundOff: "Geräusche aus",
+    soundOn: "T\u00f6ne sind an",
+    soundOff: "T\u00f6ne sind aus",
     secretAria: "Geheimer Schalter",
     hours: (n, locale) => `${n.toLocaleString(locale)} ${n === 1 ? "Stunde" : "Stunden"}`,
     justNow: "gerade eben",
     never: "noch nie",
     mood: {
-      hydrated: "Bestens gewässert",
-      okay: "Gemütlich und ruhig",
-      thirsty: "Wird etwas schlapp",
-      dehydrated: "Sehr durstig"
+      hydrated: "Randvoll und gl\u00fccklich",
+      okay: "Alles gem\u00fctlich",
+      thirsty: "Werd ein bisschen schlapp",
+      dehydrated: "Ganz doll durstig"
     },
     speech: {
       unicorn: {
-        hydrated: ["Ich fühle mich glitzernd und glücklich ✨", "Schau mal, ich leuchte \u{1F308}"],
-        okay: ["Mir geht es gut und gemütlich \u{1F499}", "Ein Schlückchen später wäre schön \u{1F4A7}"],
-        thirsty: ["Ich bin ein bisschen schlapp... bald Wasser?", "Mein Horn fühlt sich staubig an \u{1F4A7}"],
-        dehydrated: ["oh... ich brauche wirklich Wasser", "so durstig... nur ein kleiner Schluck?"]
+        hydrated: ["Ich glitzere vor Gl\u00fcck \u2728", "Schau mal, ich leuchte ganz doll \u{1F308}", "Randvoll, danke dir!"],
+        okay: ["Mir geht's fein \u{1F499}", "Ein Schl\u00fcckchen sp\u00e4ter w\u00e4r sch\u00f6n \u{1F4A7}"],
+        thirsty: ["Ich bin ein bisschen schlapp... Wasser?", "Mein Horn ist ganz staubig \u{1F4A7}"],
+        dehydrated: ["oh... ich brauche ganz dringend Wasser", "so durstig... nur ein Schl\u00fcckchen?"]
       },
       dinosaur: {
-        hydrated: ["Rawr! Ich fühle mich stark ✨", "Bestens gewässert, danke dir! \u{1F308}"],
-        okay: ["Hier ist alles gut und gemütlich \u{1F499}", "Ein Schluck später wäre nett \u{1F4A7}"],
-        thirsty: ["Mein Schwanz hängt etwas... bald Wasser?", "Meine Schuppen sind ganz trocken \u{1F4A7}"],
-        dehydrated: ["oooh... ich brauche wirklich Wasser", "so durstig... nur ein Schlückchen?"]
+        hydrated: ["Rawr! Ich bin stark wie nie \u2728", "Randvoll gew\u00e4ssert, danke dir! \u{1F308}"],
+        okay: ["Alles bestens hier \u{1F499}", "Ein Schluck sp\u00e4ter w\u00e4r nett \u{1F4A7}"],
+        thirsty: ["Mein Schw\u00e4nzchen h\u00e4ngt... Wasser?", "Meine Schuppen sind staubtrocken \u{1F4A7}"],
+        dehydrated: ["oooh... ich brauche ganz dringend Wasser", "so durstig... nur ein Schl\u00fcckchen?"]
       }
     },
-    sip: ["gluck gluck, danke! \u{1F4A7}", "ahh, das ist gut ✨"],
-    cheer: ["juhu! mir geht es viel besser \u{1F308}", "wuhu, das Glitzern ist zurück ✨"],
+    sip: ["gluck gluck, danke dir! \u{1F4A7}", "ahh, tut das gut \u2728"],
+    cheer: ["juhu! Mir geht's viel besser \u{1F308}", "wuhuu, das Glitzern ist zur\u00fcck \u2728"],
     gurgle: ["blub blub blub! hihi \u{1F4A6}", "bluuubbb \u{1F4A6} nicht alles auf einmal!"],
-    morph: (name) => `oh! jetzt bin ich ${name} ✨`
+    morph: (name) => `oh! Jetzt bin ich ${name} \u2728`
   },
 
   en: {
     tag: "en-GB",
-    titleSuffix: "Water Friend",
-    caption: (name, species) => `${name}, ${species}. Reacts to how much has been drunk.`,
-    speciesWord: { unicorn: "a unicorn", dinosaur: "a dinosaur" },
+    titleSuffix: "Aqua Buddy",
+    caption: (name, species) => `${name}, ${species}. Reacts to how much you drink.`,
+    speciesWord: { unicorn: "a unicorn", dinosaur: "a dino" },
     meter: "Hydration",
-    meterAria: (name) => `${name}'s hydration level`,
+    meterAria: (name) => `${name}'s hydration`,
     drink: "\u{1F4A7} I drank water",
-    drinkAria: (name) => `I drank water, refill ${name}'s meter`,
-    reset: "Start the day over",
+    drinkAria: (name) => `I drank water, top up ${name}'s hydration`,
+    reset: "A brand new day",
     resetAria: (name) => `Reset ${name} and today's count`,
-    resetConfirm: (name) => `Fill ${name} back up and reset today's count?`,
-    drinksToday: "Drinks today",
-    lastDrink: "Last drink",
+    resetConfirm: (name) => `Fill ${name} right up and start today over?`,
+    drinksToday: "Sips today",
+    lastDrink: "Last sip",
     settings: "Settings",
     language: "Language",
     fullToEmpty: "Full to empty",
-    refill: "Refill per drink",
-    sound: "Sound effects",
-    egg: "Gurgle easter egg",
+    refill: "Per sip",
+    sound: "Sounds",
+    egg: "Gurgle surprise",
     autoTheme: "Follow the time of day",
     nightTheme: "Night theme",
-    settingsFoot: (name) => `${name} lives only in this browser. Nothing is uploaded anywhere.`,
-    note: (version) => `Prototype ${version} · single file · no accounts, no server`,
+    settingsFoot: (name) => `${name} lives only in this browser. Nothing is sent anywhere, promise.`,
+    note: (version) => `Prototype ${version} \u00b7 single file \u00b7 no accounts, no server`,
     infoAria: "What is this?",
-    infoBody: (name) => `${name} slowly gets thirsty as time passes. Tap the big button whenever you drink water yourself: the meter fills up and ${name} perks right back up.`,
-    infoTip: "Everything stays on this device. Timing and sip size are adjustable in settings.",
+    infoBody: (name) => `${name} gets a little thirsty as time goes by. Whenever you drink water yourself, tap the big button: the meter fills back up and ${name} perks right up with it.`,
+    infoTip: "Everything stays on this device. Pace and sip size are adjustable below.",
     themeToDay: "Switch to day theme",
     themeToNight: "Switch to night theme",
-    soundOn: "Sound on",
-    soundOff: "Sound off",
+    soundOn: "Sounds are on",
+    soundOff: "Sounds are off",
     secretAria: "Secret switch",
     hours: (n, locale) => `${n.toLocaleString(locale)} ${n === 1 ? "hour" : "hours"}`,
     justNow: "just now",
-    never: "never",
+    never: "not yet",
     mood: {
-      hydrated: "Hydrated and sparkly",
+      hydrated: "Topped up and sparkly",
       okay: "Comfy and calm",
       thirsty: "Getting a little droopy",
       dehydrated: "Very thirsty"
     },
     speech: {
       unicorn: {
-        hydrated: ["I feel sparkly and happy ✨", "Look at me, I'm glowing \u{1F308}"],
-        okay: ["Feeling comfy and calm \u{1F499}", "A little sip later would be lovely \u{1F4A7}"],
-        thirsty: ["I'm a bit droopy... water soon?", "My horn feels a little dusty \u{1F4A7}"],
-        dehydrated: ["oh... I really need some water", "so thirsty... just a small sip?"]
+        hydrated: ["I'm sparkling with happiness \u2728", "Look at me, I'm properly glowing \u{1F308}", "Topped right up, thank you!"],
+        okay: ["Feeling just lovely \u{1F499}", "A little sip later would be nice \u{1F4A7}"],
+        thirsty: ["I'm a bit droopy... water soon?", "My horn has gone all dusty \u{1F4A7}"],
+        dehydrated: ["oh... I really do need some water", "so thirsty... just a tiny sip?"]
       },
       dinosaur: {
-        hydrated: ["Rawr! I feel strong ✨", "Perfectly watered, thank you! \u{1F308}"],
-        okay: ["All good here, nice and comfy \u{1F499}", "A sip later would be nice \u{1F4A7}"],
-        thirsty: ["My tail is drooping... water soon?", "My scales feel all dry \u{1F4A7}"],
-        dehydrated: ["oooh... I really need water", "so thirsty... just a little sip?"]
+        hydrated: ["Rawr! Stronger than ever \u2728", "Topped right up, thank you! \u{1F308}"],
+        okay: ["All good over here \u{1F499}", "A sip later would be nice \u{1F4A7}"],
+        thirsty: ["My little tail is drooping... water?", "My scales have gone bone dry \u{1F4A7}"],
+        dehydrated: ["oooh... I really do need water", "so thirsty... just a tiny sip?"]
       }
     },
-    sip: ["glug glug, thank you! \u{1F4A7}", "ahh, that's nice ✨"],
-    cheer: ["yippie! I feel so much better \u{1F308}", "wheee, the sparkles are back ✨"],
+    sip: ["glug glug, thank you! \u{1F4A7}", "ahh, that's the stuff \u2728"],
+    cheer: ["yippie! I feel so much better \u{1F308}", "wheee, the sparkle is back \u2728"],
     gurgle: ["blub blub blub! heehee \u{1F4A6}", "bluuubbb \u{1F4A6} not all at once!"],
-    morph: (name) => `oh! I'm ${name} now ✨`
+    morph: (name) => `oh! I'm ${name} now \u2728`
   },
 
   zh: {
-    tag: "zh-CN",
-    titleSuffix: "喝水伙伴",
-    caption: (name, species) => `${name}，${species}。会根据喝水情况改变神情。`,
-    speciesWord: { unicorn: "一只独角兽", dinosaur: "一只恐龙" },
-    meter: "水分",
-    meterAria: (name) => `${name}的水分水平`,
-    drink: "\u{1F4A7} 我喝水了",
-    drinkAria: (name) => `我喝水了，给${name}补充水分`,
-    reset: "重新开始一天",
-    resetAria: (name) => `重置${name}和今天的次数`,
-    resetConfirm: (name) => `把${name}重新加满，并清空今天的次数？`,
-    drinksToday: "今天喝水",
-    lastDrink: "上一次",
-    settings: "设置",
-    language: "语言",
-    fullToEmpty: "从满到空",
-    refill: "每次补充",
-    sound: "音效",
-    egg: "咕噜彩蛋",
-    autoTheme: "跟随一天的时间",
-    nightTheme: "夜间模式",
-    settingsFoot: (name) => `${name}只住在这个浏览器里，不会上传任何数据。`,
-    note: (version) => `原型 ${version} · 单文件 · 无账号，无服务器`,
-    infoAria: "这是什么？",
-    infoBody: (name) => `随着时间流逝，${name}会慢慢变渴。你自己喝水的时候就点一下大按钮：水分条会回升，${name}也会重新精神起来。`,
-    infoTip: "所有数据只保存在这台设备上。时间和每次的分量可以在设置里调整。",
-    themeToDay: "切换到日间模式",
-    themeToNight: "切换到夜间模式",
-    soundOn: "音效已开",
-    soundOff: "音效已关",
-    secretAria: "神秘开关",
-    hours: (n, locale) => `${n.toLocaleString(locale)} 小时`,
-    justNow: "刚刚",
-    never: "还没有",
+    tag: "zh-TW",
+    titleSuffix: "Aqua Buddy",
+    caption: (name, species) => `${name}\uff0c${species}\u3002\u6703\u770b\u4f60\u559d\u591a\u5c11\u6c34\u4f86\u6539\u8b8a\u5fc3\u60c5\u3002`,
+    speciesWord: { unicorn: "\u4e00\u96bb\u7368\u89d2\u7378", dinosaur: "\u4e00\u96bb\u6050\u9f8d" },
+    meter: "\u6c34\u5206",
+    meterAria: (name) => `${name}\u7684\u6c34\u5206`,
+    drink: "\u{1F4A7} \u6211\u559d\u6c34\u4e86",
+    drinkAria: (name) => `\u6211\u559d\u6c34\u4e86\uff0c\u5e6b${name}\u88dc\u5145\u6c34\u5206`,
+    reset: "\u91cd\u65b0\u958b\u59cb\u65b0\u7684\u4e00\u5929",
+    resetAria: (name) => `\u91cd\u8a2d${name}\u548c\u4eca\u5929\u7684\u6b21\u6578`,
+    resetConfirm: (name) => `\u8981\u628a${name}\u52a0\u6eff\uff0c\u4e26\u628a\u4eca\u5929\u7684\u6b21\u6578\u6b78\u96f6\u55ce\uff1f`,
+    drinksToday: "\u4eca\u5929\u559d\u4e86",
+    lastDrink: "\u4e0a\u4e00\u6b21",
+    settings: "\u8a2d\u5b9a",
+    language: "\u8a9e\u8a00",
+    fullToEmpty: "\u5f9e\u6eff\u5230\u7a7a",
+    refill: "\u6bcf\u6b21\u88dc\u5145",
+    sound: "\u97f3\u6548",
+    egg: "\u5495\u5695\u5f69\u86cb",
+    autoTheme: "\u8ddf\u8457\u6642\u9593\u8b8a\u5316",
+    nightTheme: "\u591c\u9593\u6a21\u5f0f",
+    settingsFoot: (name) => `${name}\u53ea\u4f4f\u5728\u9019\u500b\u7009\u89bd\u5668\u88e1\uff0c\u4e0d\u6703\u4e0a\u50b3\u4efb\u4f55\u6771\u897f\u5594\u3002`,
+    note: (version) => `\u539f\u578b ${version} \u00b7 \u55ae\u4e00\u6a94\u6848 \u00b7 \u6c92\u6709\u5e33\u865f\uff0c\u6c92\u6709\u4f3c\u670d\u5668`,
+    infoAria: "\u9019\u662f\u4ec0\u9ebc\u5440\uff1f",
+    infoBody: (name) => `\u6642\u9593\u4e00\u904e\uff0c${name}\u5c31\u6703\u6f38\u6f38\u8b8a\u6e34\u3002\u4f60\u81ea\u5df1\u559d\u6c34\u7684\u6642\u5019\u5c31\u9ede\u4e00\u4e0b\u5927\u6309\u9215\uff0c\u6c34\u5206\u5c31\u6703\u56de\u4f86\uff0c${name}\u4e5f\u6703\u9a6c\u4e0a\u6709\u7cbe\u795e\u5594\uff01`,
+    infoTip: "\u6240\u6709\u8cc7\u6599\u53ea\u7559\u5728\u9019\u53f0\u88dd\u7f6e\u4e0a\u3002\u901f\u5ea6\u548c\u6bcf\u6b21\u7684\u4efd\u91cf\u53ef\u4ee5\u5728\u4e0b\u9762\u8abf\u6574\u3002",
+    themeToDay: "\u5207\u63db\u5230\u767d\u5929\u6a21\u5f0f",
+    themeToNight: "\u5207\u63db\u5230\u591c\u6668\u6a21\u5f0f",
+    soundOn: "\u97f3\u6548\u958b\u8457",
+    soundOff: "\u97f3\u6548\u95dc\u4e86",
+    secretAria: "\u795e\u79d8\u7684\u5c0f\u958b\u95dc",
+    hours: (n, locale) => `${n.toLocaleString(locale)} \u5c0f\u6642`,
+    justNow: "\u525b\u525b",
+    never: "\u9084\u6c92\u6709\u5594",
     mood: {
-      hydrated: "水分充足，闪闪发光",
-      okay: "舒服又平静",
-      thirsty: "有点没精神了",
-      dehydrated: "非常口渴"
+      hydrated: "\u6c34\u5206\u6eff\u6eff\uff0c\u9583\u9583\u767c\u5149",
+      okay: "\u8212\u670d\u53c8\u5b89\u5fc3",
+      thirsty: "\u6709\u9ede\u6c92\u7cbe\u795e\u4e86",
+      dehydrated: "\u8d85\u7d1a\u53e3\u6e34"
     },
     speech: {
       unicorn: {
-        hydrated: ["我觉得闪闪发光，好开心 ✨", "快看，我在发光 \u{1F308}"],
-        okay: ["我觉得很舒服 \u{1F499}", "过一会儿喝一小口就更好了 \u{1F4A7}"],
-        thirsty: ["我有点没精神……可以喝水吗？", "我的角有点干了 \u{1F4A7}"],
-        dehydrated: ["哦……我真的需要喝水", "好渴……就一小口？"]
+        hydrated: ["\u6211\u9583\u9583\u767c\u5149\uff0c\u597d\u958b\u5fc3\u5594 \u2728", "\u4f60\u770b\u4f60\u770b\uff0c\u6211\u5728\u767c\u5149\u8036 \u{1F308}", "\u6eff\u6eff\u7684\uff0c\u8b1d\u8b1d\u4f60\uff01"],
+        okay: ["\u73fe\u5728\u89ba\u5f97\u597d\u8212\u670d \u{1F499}", "\u7b49\u7b49\u518d\u559d\u4e00\u5c0f\u53e3\u5c31\u66f4\u597d\u4e86 \u{1F4A7}"],
+        thirsty: ["\u6211\u6709\u9ede\u6c92\u529b\u6c23\u4e86\u2026\u53ef\u4ee5\u559d\u6c34\u55ce\uff1f", "\u6211\u7684\u89d2\u6709\u9ede\u4e79\u4e79\u7684 \u{1F4A7}"],
+        dehydrated: ["\u55da\u2026\u6211\u771f\u7684\u597d\u60f3\u559d\u6c34", "\u597d\u6e34\u5594\u2026\u4e00\u5c0f\u53e3\u5c31\u597d\u5566\uff1f"]
       },
       dinosaur: {
-        hydrated: ["吼！我觉得超有力量 ✨", "水分满满，谢谢你！\u{1F308}"],
-        okay: ["这里一切都好，很舒服 \u{1F499}", "待会儿喝一口会更好 \u{1F4A7}"],
-        thirsty: ["我的尾巴有点垂……喝水吗？", "我的鳞片干巴巴的 \u{1F4A7}"],
-        dehydrated: ["呜……我真的需要水", "好渴……一小口就行？"]
+        hydrated: ["\u543c\uff01\u6211\u89ba\u5f97\u8d85\u6709\u529b\u6c23 \u2728", "\u6c34\u5206\u6eff\u6eff\uff0c\u8b1d\u8b1d\u4f60\u5594 \u{1F308}"],
+        okay: ["\u9019\u88e1\u4e00\u5207\u90fd\u597d\uff0c\u5f88\u8212\u670d \u{1F499}", "\u7b49\u7b49\u559d\u4e00\u53e3\u6703\u66f4\u597d \u{1F4A7}"],
+        thirsty: ["\u6211\u7684\u5c3e\u5df4\u5782\u4e0b\u4f86\u4e86\u2026\u559d\u6c34\u55ce\uff1f", "\u6211\u7684\u9c57\u7247\u4e79\u4e79\u7684 \u{1F4A7}"],
+        dehydrated: ["\u55da\u2026\u6211\u771f\u7684\u597d\u9700\u8981\u6c34", "\u597d\u6e34\u5594\u2026\u4e00\u5c0f\u53e3\u5c31\u597d\u5566\uff1f"]
       }
     },
-    sip: ["咕噔咕噔，谢谢！\u{1F4A7}", "啊，好舒服 ✨"],
-    cheer: ["耶！我觉得好多了 \u{1F308}", "哇，闪光回来了 ✨"],
-    gurgle: ["咕噜咕噜咕噜！嘿嘿 \u{1F4A6}", "咕噜噜噜 \u{1F4A6} 不要一口气喝完！"],
-    morph: (name) => `哦！我现在是${name}了 ✨`
+    sip: ["\u5495\u5695\u5495\u5695\uff0c\u8b1d\u8b1d\u4f60\uff01\u{1F4A7}", "\u554a\uff5e\u597d\u8212\u670d \u2728"],
+    cheer: ["\u8036\uff01\u6211\u89ba\u5f97\u597d\u591a\u4e86 \u{1F308}", "\u54c7\uff5e\u4eae\u4eae\u7684\u611f\u89ba\u56de\u4f86\u4e86 \u2728"],
+    gurgle: ["\u5495\u5695\u5495\u5695\u5495\u5695\uff01\u5603\u5603 \u{1F4A6}", "\u5495\u5695\u5695\u5695 \u{1F4A6} \u4e0d\u8981\u4e00\u53e3\u6c23\u559d\u5b8c\u5566\uff01"],
+    morph: (name) => `\u6b38\uff01\u6211\u73fe\u5728\u8b8a\u6210${name}\u4e86 \u2728`
   }
 };
 
@@ -1291,6 +1405,12 @@ const Time = {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   },
 
+  /** Fractional local hour, so the sun moves smoothly rather than in steps. */
+  hourOfDay(ts = Date.now()) {
+    const d = new Date(ts);
+    return d.getHours() + d.getMinutes() / 60;
+  },
+
   /** Drives the automatic light and dark switch. */
   isDaytime(ts = Date.now()) {
     const hour = new Date(ts).getHours();
@@ -1312,6 +1432,31 @@ const Time = {
     const hours = Math.floor(mins / 60);
     if (hours < 24) return rtf.format(-hours, "hour");
     return rtf.format(-Math.floor(hours / 24), "day");
+  }
+};
+
+/* ========= SKY ========= */
+const Sky = {
+  /**
+   * Position of one body on its arc at a given hour, or null when it is not in
+   * the sky. Progress runs 0 at rise, 0.5 at peak and 1 at set, interpolated in
+   * two halves so an off-centre peak still lands exactly at its stated hour.
+   */
+  position(arc, hour) {
+    let h = hour;
+    if (arc.set > 24 && h < arc.rise - 12) h += 24;   // moon, after midnight
+    if (h < arc.rise || h > arc.set) return null;
+
+    const progress = h <= arc.peak
+      ? 0.5 * (h - arc.rise) / (arc.peak - arc.rise)
+      : 0.5 + 0.5 * (h - arc.peak) / (arc.set - arc.peak);
+
+    const { left, right, horizon, apex } = Config.sky;
+    return {
+      progress,
+      x: left + progress * (right - left),
+      y: horizon - (horizon - apex) * Math.sin(Math.PI * progress)
+    };
   }
 };
 
@@ -1441,6 +1586,117 @@ const Audio_ = {
   morph() {
     this.tone({ freq: 220, to: 880, dur: 0.28, gain: 0.07 });
     this.noise({ start: 0.02, dur: 0.22, gain: 0.04, freq: 900 });
+  }
+};
+
+/* ========= AMBIENT ========= */
+/* Rare decorative life. Each kind schedules itself, spawns one element that
+   crosses the scene and removes itself, then schedules the next. Nothing is
+   scheduled while the tab is hidden or when reduced motion is requested, so a
+   backgrounded page cannot accumulate nodes. */
+const Ambient = {
+  timers: {},
+  host: null,
+
+  KINDS: {
+    bird: {
+      band: [6, 42],             // vertical band, percent from the top
+      size: [6, 11],             // width, percent of the scene
+      dur: [9000, 15000],
+      opacity: [0.45, 0.7],
+      markup: () =>
+        '<svg viewBox="0 0 26 10" aria-hidden="true">'
+        + '<path d="M1.5 7 Q6 1.5 11.5 6.5"/>'
+        + '<path d="M13.5 6.5 Q19.5 1 24.5 7"/>'
+        + "</svg>"
+    },
+    wind: {
+      band: [10, 64],            // the whole sky, not just behind the character
+      size: [16, 30],            // smaller than before, so it reads as distant
+      dur: [8000, 13000],
+      opacity: [0.28, 0.5],      // fainter, to keep the scene uncluttered
+      markup: () =>
+        '<svg viewBox="0 0 64 22" aria-hidden="true">'
+        + '<path d="M2 11 q13 -8 26 -1 q11 3 21 -4"/>'
+        + '<path d="M9 17.5 q12 -5 23 -0.5"/>'
+        + '<path d="M17 5 q9 -3 17 0"/>'
+        + "</svg>"
+    }
+  },
+
+  enabled() {
+    return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  },
+
+  /** Current interval range for a kind, or null if it should not appear now. */
+  rateFor(kind) {
+    const part = Time.isDaytime() ? "day" : "night";
+    return Config.ambient[kind] ? Config.ambient[kind][part] : null;
+  },
+
+  between([min, max]) {
+    return min + Math.random() * (max - min);
+  },
+
+  start(host) {
+    this.host = host || this.host;
+    Object.keys(this.KINDS).forEach((kind) => this.schedule(kind));
+  },
+
+  stop() {
+    Object.keys(this.timers).forEach((kind) => clearTimeout(this.timers[kind]));
+    this.timers = {};
+  },
+
+  /** Re-checks the rate every time, so dusk changes the rhythm on its own. */
+  schedule(kind, firstDelay = null) {
+    clearTimeout(this.timers[kind]);
+    if (!this.enabled()) return;
+
+    const rate = this.rateFor(kind);
+    /* Not this time of day: look again later rather than stopping for good. */
+    const delay = firstDelay !== null ? firstDelay
+                : rate ? this.between(rate)
+                : 60000;
+
+    this.timers[kind] = setTimeout(() => {
+      if (this.rateFor(kind) && document.visibilityState === "visible") {
+        this.spawn(kind);
+      }
+      this.schedule(kind);
+    }, delay);
+  },
+
+  spawn(kind) {
+    if (!this.host || !this.enabled()) return;
+    const spec = this.KINDS[kind];
+
+    const el = document.createElement("div");
+    el.className = `amb ${kind}`;
+    /* Every appearance picks its own direction, both kinds alike. */
+    if (Math.random() < 0.5) el.classList.add("rtl");
+    el.style.top = `${this.between(spec.band)}%`;
+    el.style.width = `${this.between(spec.size)}%`;
+    el.style.setProperty("--dur", `${Math.round(this.between(spec.dur))}ms`);
+    el.style.setProperty("--amb-op", this.between(spec.opacity).toFixed(2));
+
+    const flip = document.createElement("span");
+    flip.className = "amb-flip";
+    const bob = document.createElement("span");
+    bob.className = "amb-bob";
+    bob.style.setProperty("--bob", `${(2.6 + Math.random() * 2).toFixed(2)}s`);
+    if (kind === "bird") {
+      bob.style.setProperty("--flap", `${(0.5 + Math.random() * 0.4).toFixed(2)}s`);
+    }
+    bob.innerHTML = spec.markup();
+
+    flip.appendChild(bob);
+    el.appendChild(flip);
+    el.addEventListener("animationend", (e) => {
+      if (e.target === el) el.remove();
+    });
+    this.host.appendChild(el);
+    return el;
   }
 };
 
@@ -1645,7 +1901,7 @@ const UI = {
       "refillInput", "refillOut", "refillScale", "refillLabel",
       "soundInput", "soundLabel", "eggInput", "eggLabel",
       "autoThemeInput", "autoThemeLabel", "themeInput", "themeLabel",
-      "settingsFoot", "note", "secretBtn", "favicon"
+      "settingsFoot", "note", "secretBtn", "favicon", "sun", "moon", "ambient"
     ];
     ids.forEach((id) => { this.el[id] = document.getElementById(id); });
   },
@@ -1669,7 +1925,7 @@ const UI = {
     const sp = this.species();
     const name = sp.name;
 
-    document.documentElement.lang = State.data.locale;
+    document.documentElement.lang = t.tag;      // zh-TW, not zh
     document.title = `${name} ${t.titleSuffix}`;
     this.el.appTitle.textContent = `${name} ${t.titleSuffix}`;
     this.el.sceneCaption.textContent = t.caption(name, t.speciesWord[State.data.species]);
@@ -1799,6 +2055,22 @@ const UI = {
     return Time.isDaytime() ? "day" : "night";
   },
 
+  /** Puts the sun and the moon where the clock says they are. */
+  applySky() {
+    const hour = Time.hourOfDay();
+    [["sun", Config.sky.sun], ["moon", Config.sky.moon]].forEach(([key, arc]) => {
+      const el = this.el[key];
+      const at = Sky.position(arc, hour);
+      if (!at) {
+        el.dataset.visible = "no";
+        return;
+      }
+      el.style.left = `${at.x}%`;
+      el.style.top = `${at.y}%`;
+      el.dataset.visible = "yes";
+    });
+  },
+
   applyTheme() {
     const t = this.t();
     const theme = this.effectiveTheme();
@@ -1809,6 +2081,7 @@ const UI = {
     this.el.themeBtn.setAttribute("aria-label", night ? t.themeToDay : t.themeToNight);
     this.el.themeInput.checked = night;
     this.el.autoThemeInput.checked = State.data.themeMode === "auto";
+    this.applySky();          // rides the same ticker as the theme
   },
 
   applySound() {
@@ -1920,12 +2193,14 @@ const Events = {
         State.sync();
         State.save();
         this.stopRefresh();
+        Ambient.stop();
       }
     });
     window.addEventListener("pagehide", () => {
       State.sync();
       State.save();
       this.stopRefresh();
+      Ambient.stop();
     });
 
     /* First gesture anywhere unlocks audio, so the very first drink has sound. */
@@ -2006,6 +2281,7 @@ const Events = {
     UI.applyTheme();          // the clock may have crossed dawn or dusk
     UI.render();
     this.startRefresh();
+    Ambient.start();
 
     const after = State.band();
     if (lost > 1 && after !== before && State.bandRank(after) > State.bandRank(before)) {
@@ -2054,10 +2330,11 @@ function init() {
 
   Events.bind();
   Events.startRefresh();
+  Ambient.start(UI.el.ambient);
 
   /* The browser console stands in for a shell banner, so the running version
      is always identifiable without reading the source. */
-  console.log(`${UI.species().name} Water Friend ${Config.app.version} - ${Config.app.status}`);
+  console.log(`${UI.species().name} Aqua Buddy ${Config.app.version} - ${Config.app.status}`);
   if (migratedFrom) {
     console.log(`Adopted saved state from the old key "${migratedFrom}".`);
   }

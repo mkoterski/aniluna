@@ -1,4 +1,4 @@
-# Aniluna Water Friend - v0.15
+# Aniluna Aqua Buddy - v0.17
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -7,8 +7,8 @@ A tiny hydration companion that lives in one HTML file. Tap **"I drank water"**,
 the meter refills, and your pixel pet perks up. Leave them alone and they slowly
 droop. That is the whole app.
 
-Speaks German, English and Chinese. Comes as a unicorn called Aniluna, or a
-dinosaur called Anirex if you find the switch.
+Speaks German, Taiwanese Chinese and English. Comes as a unicorn called
+Aniluna, or a dinosaur called Anirex if you find the switch.
 
 **Play it:** https://mkoterski.github.io/aniluna/
 
@@ -30,10 +30,12 @@ dinosaur called Anirex if you find the switch.
 | Mood states | `hydrated` >=75, `okay` >=45, `thirsty` >=20, `dehydrated` <20, compared against the displayed percent |
 | Meter | Labelled **Hydration**: 100% is full, 0% is empty. The bar fills when you drink |
 | First run | Starts at 75%, not full, so a drink is the obvious next move and teaches the loop. Reset still fills to 100% |
-| Languages | German (default), English, Chinese. Covers every label, all speech, and relative times via `Intl.RelativeTimeFormat` |
+| Languages | German (default), Traditional Chinese (`zh-TW`) and English. Written as native copy rather than translations, and relative times come from `Intl.RelativeTimeFormat` |
 | Two creatures | A unicorn and a dinosaur, switched by an almost hidden `*` in the bottom right. Name, speech, favicon and synth voice all follow |
 | Light and dark | Automatic from the local clock, day 07:00 to 19:00. The top bar button sets an explicit override, and a settings toggle hands control back to the clock |
 | Stars | Always at night. In daylight only at the happiest level, where they turn warm gold so they read against a pale sky |
+| Sun and moon | Both travel one east-to-west arc: up from the left, highest at the peak hour, down to the right. Sun peaks at 12:00, moon rises after dusk and peaks at midnight |
+| Ambient life | Rare birds by day, rarer wind gusts by day and more of them at night. Random height, direction, size and speed, small and faint so the sky stays uncluttered |
 | Info | A small circled-i in the top bar opens two localised sentences explaining the loop |
 | Default decay | Full to completely empty in 2 hours, so the dehydrated band is entered just after 1 h 36 min |
 | Idle animation | Bob, head nod, tail swish, ear twitch, blink, sparkle. Amplitude and speed tuned per state |
@@ -50,7 +52,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.15", status: "DEVELOPMENT" },
+  app: { version: "v0.17", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -123,6 +125,58 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.17  2026-08-20  Rewrote the copy in every language as native writing rather
+                   than translation, and tuned the ambient life.
+
+                   Chinese moved from Simplified to Taiwanese Traditional. The
+                   Intl tag is now zh-TW and the document language carries the
+                   full tag, because bare "zh" does not tell a browser whether
+                   to pick Traditional or Simplified glyphs. Added Traditional
+                   font fallbacks and relabelled the button 繁中. The register
+                   is deliberately soft, using the sentence-final particles
+                   that read as cute rather than formal. Worth a native
+                   speaker's eye before showing it to anyone in Taiwan.
+
+                   German now leans on diminutives and warmth rather than
+                   literal equivalents: Schlückchen, Schwänzchen, "Neuer Tag,
+                   neues Glück", "Ganz doll durstig". The meter label went from
+                   Flüssigkeit, which reads oddly, to Hydration, which is the
+                   word actually used. English kept the same term rather than
+                   inventing a second one, and got a lighter, warmer pass.
+
+                   Ambient: gusts now roam the whole sky rather than the band
+                   behind the character, and they are smaller and fainter so a
+                   wider band does not crowd the scene. Both kinds already
+                   picked their direction per appearance; that is now stated in
+                   a comment so a later edit cannot quietly drop it.
+
+v0.16  2026-08-20  Renamed the product to Aqua Buddy in all three languages,
+                   as a brand name that stays in English.
+
+                   Added a sun and a moon on one shared east-to-west arc: up
+                   from the left at the rise hour, highest at the peak hour,
+                   down to the right at the set hour. Progress is interpolated
+                   in two halves, so an off-centre peak still lands exactly on
+                   its stated hour: the sun is highest at 12:00 despite an
+                   asymmetric 07:00 to 19:00 window, and the moon at midnight
+                   despite rising at 20:00. The moon's window crosses midnight,
+                   so its hours run past 24 and wrap. The bodies ride the same
+                   ticker as the automatic theme, so they never disagree with
+                   the sky they sit in.
+
+                   Added rare ambient life in a new AMBIENT module: birds by
+                   day only, wind gusts rarely by day and more often at night,
+                   with rates per effect and per daypart in Config.ambient.
+                   Each element crosses once and removes itself. The rate is
+                   re-checked when a timer fires rather than when it is set, so
+                   dusk changes the rhythm without any restart, and nothing is
+                   scheduled while the tab is hidden or under reduced motion,
+                   so a backgrounded page cannot accumulate nodes.
+
+                   Softened the rainbow from 0.78 to 0.45 opacity and put it
+                   above the sky layer, so a busy happiest-state daytime scene
+                   with sun, stars, rainbow, birds and sparkles still reads.
+
 v0.15  2026-08-20  Added a secret species switch, three languages, a clock
                    driven theme, an info button, and a gentler first run.
 
