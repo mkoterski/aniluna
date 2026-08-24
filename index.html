@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.20
+  index.html - Aniluna Aqua Buddy - v0.21
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -315,8 +315,12 @@ body {
 }
 :root[data-theme="night"] .stars { opacity: 0.9; }
 .scene[data-radiant="on"] .stars { opacity: 0.85; }
+/* At night the reward brightens the whole field. This is the static half of
+   the night reward, so something still happens under reduced motion, where no
+   shooting star is allowed to cross. */
+:root[data-theme="night"] .scene[data-radiant="on"] .stars { opacity: 1; }
 
-/* rainbow reward, only while the meter reads at or above Config.thresholds.rainbow */
+/* rainbow reward, only while the meter reads at or above Config.thresholds.reward */
 .rainbow {
   position: absolute;
   z-index: 1;                   /* over the sun and moon, under the character */
@@ -328,7 +332,9 @@ body {
   transition: opacity 0.9s ease, transform 0.9s ease;
   pointer-events: none;
 }
-.scene[data-radiant="on"] .rainbow {
+/* Day only. A rainbow needs a lit sky to read as one, so after dark the
+   reward is a shooting star instead, spawned by Ambient. */
+:root[data-theme="day"] .scene[data-radiant="on"] .rainbow {
   opacity: 0.45;
   transform: translateX(-50%) scale(1);
 }
@@ -388,7 +394,8 @@ body {
   86%  { opacity: var(--amb-op, 0.7); }
   100% { left: -25%; opacity: 0; }
 }
-.amb-bob { display: block; animation: amb-bob var(--bob, 3.4s) ease-in-out infinite; }
+.amb-bob { display: block; }
+.bird .amb-bob, .wind .amb-bob { animation: amb-bob var(--bob, 3.4s) ease-in-out infinite; }
 @keyframes amb-bob {
   0%, 100% { transform: translateY(-14%); }
   50%      { transform: translateY(14%); }
@@ -407,6 +414,32 @@ body {
   0%, 100% { transform: scaleY(1); }
   50%      { transform: scaleY(0.25); }
 }
+/* The reward star: a streak, so it gets its own diagonal keyframes rather
+   than the horizontal drift the other two share. Placed after .amb.rtl,
+   because both rules carry the same specificity and the later one wins. */
+.amb.star { animation-name: shoot; animation-timing-function: ease-out; }
+.amb.star.rtl { animation-name: shoot-rtl; }
+@keyframes shoot {
+  0%   { left: -14%; opacity: 0; transform: translateY(0); }
+  12%  { opacity: var(--amb-op, 0.9); }
+  78%  { opacity: var(--amb-op, 0.9); }
+  100% { left: 104%; opacity: 0; transform: translateY(var(--fall, 120px)); }
+}
+@keyframes shoot-rtl {
+  0%   { left: 104%; opacity: 0; transform: translateY(0); }
+  12%  { opacity: var(--amb-op, 0.9); }
+  78%  { opacity: var(--amb-op, 0.9); }
+  100% { left: -14%; opacity: 0; transform: translateY(var(--fall, 120px)); }
+}
+.star svg { display: block; width: 100%; height: auto; overflow: visible; }
+.star path {
+  fill: none;
+  stroke: var(--star);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.star circle { fill: var(--star); filter: drop-shadow(0 0 4px var(--star-glow)); }
+
 .wind svg { display: block; width: 100%; height: auto; overflow: visible; }
 .wind path {
   fill: none;
@@ -1119,7 +1152,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.20",
+    version: "v0.21",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -1158,7 +1191,8 @@ const Config = {
     hydrated: 75,
     okay: 45,
     thirsty: 20,
-    rainbow: 95                  // reward arc, compared against the displayed percent
+    reward: 95                   // rainbow by day, shooting star by night,
+                                 // compared against the displayed percent
   },
   limits: {                      // slider bounds, also used to snap saved values
     decayHours: { min: 0.5, max: 4, step: 0.5 },
@@ -1183,7 +1217,12 @@ const Config = {
      one appearance and the next. null means never at that time of day. */
   ambient: {
     bird: { day: [48000, 96000], night: null },
-    wind: { day: [150000, 260000], night: [42000, 84000] }
+    wind: { day: [150000, 260000], night: [42000, 84000] },
+    /* The night reward. Gated on app state rather than the clock, so it takes
+       `any` instead of a day/night split: see KINDS.star.when. `first` is the
+       delay for the star that follows entering the state, short because the
+       reward window at the default decay rate is only about six minutes. */
+    star: { any: [8000, 17000], first: [1600, 3200] }
   },
   burst: {                       // rapid-tap easter egg
     taps: 5,
@@ -1677,6 +1716,20 @@ const Ambient = {
         + '<path d="M13.5 6.5 Q19.5 1 24.5 7"/>'
         + "</svg>"
     },
+    /* The reward for a full meter after dark, in place of the rainbow. */
+    star: {
+      band: [7, 32],             // high in the sky, clear of the character
+      size: [13, 22],
+      dur: [1100, 1800],         // a streak, not a drift
+      opacity: [0.8, 1],
+      fall: [26, 46],            // drop across the crossing, percent of the scene
+      when: () => UI.isRadiant() && UI.effectiveTheme() === "night",
+      markup: () =>
+        '<svg viewBox="0 0 40 14" aria-hidden="true">'
+        + '<path d="M2 2 L29 9.4"/>'
+        + '<circle cx="33" cy="10.6" r="2.4"/>'
+        + "</svg>"
+    },
     wind: {
       band: [10, 64],            // the whole sky, not just behind the character
       size: [16, 30],            // smaller than before, so it reads as distant
@@ -1697,8 +1750,27 @@ const Ambient = {
 
   /** Current interval range for a kind, or null if it should not appear now. */
   rateFor(kind) {
-    const part = Time.isDaytime() ? "day" : "night";
-    return Config.ambient[kind] ? Config.ambient[kind][part] : null;
+    const spec = this.KINDS[kind];
+    if (spec.when && !spec.when()) return null;
+    const rates = Config.ambient[kind];
+    if (!rates) return null;
+    /* `any` means the rate does not depend on the time of day, because `when`
+       already decides when the kind may appear at all. */
+    if (rates.any) return rates.any;
+    return rates[Time.isDaytime() ? "day" : "night"];
+  },
+
+  /**
+   * Entering the reward state has to nudge the star's timer. The idle
+   * re-check below is a minute out, and a reward window can be shorter than
+   * that, so waiting for it would spend most of the window empty.
+   */
+  nudgeStar() {
+    const eligible = !!this.rateFor("star");
+    if (eligible && !this.starEligible) {
+      this.schedule("star", this.between(Config.ambient.star.first));
+    }
+    this.starEligible = eligible;
   },
 
   between([min, max]) {
@@ -1707,12 +1779,15 @@ const Ambient = {
 
   start(host) {
     this.host = host || this.host;
+    this.starEligible = false;
     Object.keys(this.KINDS).forEach((kind) => this.schedule(kind));
+    this.nudgeStar();          // a load into a rewarded night gets one soon
   },
 
   stop() {
     Object.keys(this.timers).forEach((kind) => clearTimeout(this.timers[kind]));
     this.timers = {};
+    this.starEligible = false;      // so a return to a rewarded night nudges again
   },
 
   /** Re-checks the rate every time, so dusk changes the rhythm on its own. */
@@ -1745,6 +1820,18 @@ const Ambient = {
     el.style.top = `${this.between(spec.band)}%`;
     el.style.width = `${this.between(spec.size)}%`;
     el.style.setProperty("--dur", `${Math.round(this.between(spec.dur))}ms`);
+    if (spec.fall) {
+      /* Percent of the scene height, resolved here rather than in CSS: a
+         translateY percentage resolves against the element's own height, which
+         is a fifth of the drop wanted, so the streak came out near-horizontal.
+         A host with no layout yet would compute 0 and fly the streak dead
+         flat, so in that case the keyframe's own fallback is left to stand. */
+      const height = this.host.clientHeight;
+      if (height > 0) {
+        const drop = height * this.between(spec.fall) / 100;
+        el.style.setProperty("--fall", `${Math.round(drop)}px`);
+      }
+    }
     el.style.setProperty("--amb-op", this.between(spec.opacity).toFixed(2));
 
     const flip = document.createElement("span");
@@ -2029,6 +2116,11 @@ const UI = {
     return Config.species[State.data.species];
   },
 
+  /** True while the meter earns its reward: a rainbow by day, a star by night. */
+  isRadiant() {
+    return this.el.scene.dataset.radiant === "on";
+  },
+
   /** The name in use: the owner's for this creature, else the built-in one. */
   name() {
     return State.data.names[State.data.species] || this.species().name;
@@ -2165,7 +2257,8 @@ const UI = {
     const band = State.band();
 
     this.el.scene.dataset.band = band;
-    this.el.scene.dataset.radiant = pct >= Config.thresholds.rainbow ? "on" : "off";
+    this.el.scene.dataset.radiant = pct >= Config.thresholds.reward ? "on" : "off";
+    Ambient.nudgeStar();       // the star is gated on this state, so it reacts here
     this.el.meterFill.style.width = `${pct}%`;
     this.el.meterValue.textContent = `${pct.toLocaleString(t.tag)}%`;
     this.el.meterBar.setAttribute("aria-valuenow", String(pct));
@@ -2223,6 +2316,7 @@ const UI = {
     this.el.themeInput.checked = night;
     this.el.autoThemeInput.checked = State.data.themeMode === "auto";
     this.applySky(theme);     // rides the same ticker as the theme
+    Ambient.nudgeStar();      // day or night decides which reward is allowed
   },
 
   applySound() {

@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.20
+# Aniluna Aqua Buddy - v0.21
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -41,7 +41,8 @@ Aniluna, or a dinosaur called Anirex if you find the switch.
 | Info | A small circled-i in the top bar opens two localised sentences explaining the loop |
 | Default decay | Full to completely empty in 2 hours, so the dehydrated band is entered just after 1 h 36 min |
 | Idle animation | Bob, head nod, tail swish, ear twitch, blink, sparkle. Amplitude and speed tuned per state |
-| Rainbow | Decorative reward, only while the meter reads 95% or above. At the 2 h default that is roughly the 6 minutes after topping up |
+| Rainbow | The daytime reward, only while the meter reads 95% or above and the sky is lit. At the 2 h default that is roughly the 6 minutes after topping up |
+| Shooting star | The same reward after dark, since a rainbow needs a lit sky to read as one. A streak crosses high above the character every 8 to 17 seconds while the meter earns it, and the whole starfield lifts to full brightness, which is what carries the reward under reduced motion |
 | Sound | Procedural Web Audio: sip, yippie, sad "oh", gurgle. Unlocked on first gesture |
 | Easter egg | 5 drink taps within 5 seconds triggers a blubber/gurgle |
 | Settings | Full-to-empty slider (0.5 to 4.0 hours, half-hour steps), refill slider (25/50/75/100%), sound, easter egg, day/night theme |
@@ -54,7 +55,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.20", status: "DEVELOPMENT" },
+  app: { version: "v0.21", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -153,228 +154,161 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
-v0.20  2026-08-24  Landed F11 and F13, the two the requester picked first.
+v0.21  2026-08-24  The reward after dark is a shooting star rather than a
+                   rainbow, and the threshold gating both is renamed.
 
-                   F11, editable names: a Name field at the top of the settings
-                   panel renames the creature on screen. Overrides live in
-                   State.data.names, one entry per species key, so each
-                   creature keeps its own name and switching species still
-                   changes it, as it did before. UI.name() resolves the
-                   override against Config.species[x].name and is now the only
-                   place that decides, so the title, the heading, the speech,
-                   the stats, the settings footer, the reset prompt, the
-                   console banner and every ARIA label follow from one call.
-                   Entries are trimmed, inner whitespace is collapsed, and the
-                   cap is Config.naming.maxLength of 24, applied by code point
-                   rather than by UTF-16 unit so a name ending in an emoji
-                   cannot be cut in half. Clearing the field deletes the
-                   override rather than storing a blank, which is what makes
-                   the built-in name reachable again, and the placeholder shows
-                   that name so the way back is visible. Commit is on change,
-                   meaning blur or Enter, not on every keystroke, because a
-                   half-typed name has no business in four ARIA labels. A save
-                   carrying junk under names is dropped rather than repaired,
-                   so it falls back to the built-in names.
+                   A rainbow needs a lit sky to read as one, so the arc is now
+                   gated on the resolved day theme and the night sky gets a
+                   streak instead: a new `star` kind in AMBIENT, crossing high
+                   above the character on its own diagonal keyframes, tail
+                   behind a bright head, in the same `--star` tokens as the
+                   starfield. Direction varies per appearance as it does for
+                   birds and gusts, and the bob is now scoped to those two,
+                   because a streak that wobbles reads as a bug.
 
-                   F13, tooltips: the four emoji-only buttons name themselves
-                   on hover and on keyboard focus. The text comes from a
-                   data-tip attribute written by the new UI.label(), which sets
-                   the accessible name and the tooltip from one string, so the
-                   two cannot drift as the copy changes. Rendered as a
-                   pseudo-element, which is not in the accessibility tree, so a
-                   screen reader still hears one name rather than two. Hover is
-                   gated behind (hover: hover) and (pointer: fine), and the
-                   secret switch opens its tooltip upwards because it sits in
-                   the footer. Touch is deliberately not covered: these buttons
-                   act on the first tap, so a tooltip needing a second one
-                   would only be in the way.
+                   Unlike the other kinds the star is gated on app state, not
+                   the clock, so rateFor() grew an optional when() per kind and
+                   an `any` rate for kinds whose frequency does not follow the
+                   time of day. The star's when() asks for the resolved theme,
+                   so it obeys the same rule as the sun and moon since v0.19: a
+                   night override at noon gets the night reward and no rainbow.
+                   Entering the rewarded state nudges the timer with a short
+                   first delay, because the idle re-check is a minute out while
+                   the reward window is about six minutes.
 
-                   Verified by driving the page: padding and inner double
-                   spaces collapse, the cap holds at 24 code points, an
-                   over-long emoji name survives whole, a rename reaches the
-                   title and the ARIA labels, the field and placeholder follow
-                   a species switch, clearing restores Aniluna, and all four
-                   tooltips match their accessible name across a theme flip and
-                   a locale change. Junk and non-object names values were
-                   tested against State.load() directly, because a file:// page
-                   served as a data: URL has no localStorage to round-trip
-                   through.
+                   Config.thresholds.rainbow is now .reward: the value gates
+                   two rewards, so a name promising one had become half-true.
+                   It stays at 95 against the displayed percent, confirmed over
+                   a literal 100. Thresholds are not persisted, so no save is
+                   affected and no migration is needed.
 
-v0.19  2026-08-24  Fixed B9: the sun and the moon are now gated on the resolved
-                   theme rather than on the clock alone. UI.applySky() takes
-                   the theme applyTheme() has already resolved and hides the
-                   body that would contradict the sky around it, so forcing
-                   night in the afternoon no longer paints a dark sky, stars
-                   and a lit sun at once. Root cause: applySky() read
-                   Time.hourOfDay() and nothing else, while the stars were
-                   gated on [data-theme="night"] in CSS, so an override moved
-                   the stars and left the sun where it was. The arcs and
-                   Sky.position() are untouched.
+                   Fixed before it shipped: the drop was a translateY
+                   percentage, which resolves against the element's own height
+                   of about 30 px rather than the scene's. Measured at a paused
+                   animation offset, the streak fell 13 px across a 424 px
+                   crossing, near enough to flat. It now converts to pixels
+                   against the ambient layer at spawn, 26 to 46 percent of the
+                   scene, and a host with no layout leaves the keyframe default
+                   standing rather than computing a flat zero.
 
-                   Forcing night before the moon's rise hour leaves an empty
-                   sky, by decision: feeding the arc a substitute hour would
-                   put the moon somewhere the clock never says it is. Automatic
-                   mode is unchanged, because the sun's arc already matched the
-                   theme's day hours exactly, and the gaps at 19:00 to 20:00
-                   and 05:00 to 07:00 were already empty.
+                   Under prefers-reduced-motion no star may cross, so the
+                   static half carries the reward alone: at night a full meter
+                   lifts the whole starfield to full opacity.
+
+v0.20  2026-08-24  Landed F11 and F13. F11: a Name field renames the creature
+                   on screen, one override per species key in State.data.names,
+                   resolved against the built-in name by the new UI.name(), so
+                   the title, speech, stats, banner and every ARIA label follow
+                   from one call. Entries are trimmed and capped at
+                   Config.naming.maxLength of 24 by code point, so a name
+                   ending in an emoji cannot be cut in half, and clearing the
+                   field deletes the override, which is what restores the
+                   built-in name. Commit is on blur or Enter, not per
+                   keystroke. F13: the four emoji-only buttons name themselves
+                   on hover and on keyboard focus, with UI.label() writing the
+                   accessible name and the tooltip from one string so the two
+                   cannot drift, as a pseudo-element so a screen reader still
+                   hears one name. Touch is not covered: these buttons act on
+                   the first tap.
+
+v0.19  2026-08-24  Fixed B9: the sun and the moon are gated on the resolved
+                   theme, not on the clock alone. Root cause: applySky() read
+                   Time.hourOfDay() and nothing else, while the stars followed
+                   [data-theme="night"] in CSS, so an override moved the stars
+                   and left the sun behind. Forcing night before the moon rises
+                   leaves an empty sky, by decision. Automatic mode unchanged.
 
 v0.18  2026-08-24  Trimmed the German settings footer to "Aniluna wohnt nur in
-                   diesem Browser." The dropped second sentence, "Nichts wird
-                   irgendwohin geschickt, versprochen.", protests too much in
-                   German, where an unprompted promise invites the doubt it
-                   means to settle. The first sentence already carries the
-                   whole point. English and Chinese keep their second sentence,
-                   because "promise" and the final 喔 land as warmth rather
-                   than reassurance, and per v0.17 the three locales are native
-                   copy rather than translations of one another.
-
-                   Docs: condensed this changelog and archived v0.14 and older
-                   below the rule (NXW-VER-7). Split the deferred work in two,
-                   so defects the app ships with are under Known issues and
-                   work never started stays under Roadmap, sharing one ID
-                   series. Added B6 to B10 while reading the code for that
-                   split, of which B9 matters: an explicit theme override
-                   leaves the sun and moon on their clock-driven arcs, so
-                   forcing night in the afternoon paints a dark sky, stars and
-                   a sun at once. Closed B1 as won't-fix on the requester's
-                   call, and corrected its description first: it never froze
-                   decay, because State.sync() re-stamps lastUpdateAt on every
-                   call.
-
-v0.17  2026-08-20  Rewrote the copy in every language as native writing rather
-                   than translation. Chinese moved to Taiwanese Traditional:
-                   the Intl tag and the document language are now zh-TW,
-                   because bare "zh" does not tell a browser whether to pick
-                   Traditional or Simplified glyphs. Added Traditional font
-                   fallbacks, relabelled the button 繁中, and chose a soft
-                   register built on the cute sentence-final particles; still
-                   worth a native speaker's eye. German leans on diminutives
-                   and warmth, and its meter label went from Flüssigkeit, which
-                   reads oddly, to Hydration, the word actually used. Ambient
-                   gusts now roam the whole sky rather than the band behind the
-                   character, and are smaller and fainter so the wider band
-                   does not crowd the scene.
-
-v0.16  2026-08-20  Renamed the product to Aqua Buddy in all three languages, as
-                   a brand name that stays in English. Added a sun and a moon
-                   on one shared east-to-west arc, with progress interpolated
-                   in two halves so an off-centre peak still lands exactly on
-                   its stated hour: the sun is highest at 12:00 inside an
-                   asymmetric 07:00 to 19:00 window, the moon at midnight
-                   inside a window that wraps past 24. Both ride the same
-                   ticker as the automatic theme, so they never disagree with
-                   the sky they sit in. Added rare ambient life in a new
-                   AMBIENT module: birds by day only, wind gusts rarely by day
-                   and more often at night, with rates per effect and daypart
-                   in Config.ambient. Each element crosses once and removes
-                   itself, and the rate is re-checked when a timer fires rather
-                   than when it is set, so dusk changes the rhythm without a
-                   restart and a hidden tab or reduced motion schedules
-                   nothing. Softened the rainbow from 0.78 to 0.45 opacity and
-                   moved it above the sky layer, so a busy daytime scene with
-                   sun, stars, rainbow, birds and sparkles still reads.
-
-v0.15  2026-08-20  Added a secret species switch, three languages, a clock
-                   driven theme, an info button, and a gentler first run.
-                   Species: an almost hidden asterisk in the bottom right flips
-                   between the unicorn Aniluna and a new dinosaur, Anirex
-                   (working title). Name, speech copy, favicon emoji and synth
-                   voice all follow from Config.species, and both sprites share
-                   the same group class names, so one animation system and the
-                   four mood-band token blocks drive either with no extra CSS.
-                   The switch is visually quiet but a real labelled button, so
-                   keyboards and screen readers reach it. Languages: German by
-                   default, English and Chinese, in a new STRINGS section with
-                   speech keyed by species; relative times go through
-                   Intl.RelativeTimeFormat and numbers through toLocaleString
-                   rather than hand-written strings. Renamed the sprite classes
-                   from .ina-* to .pet-* and the outline filter to petInk,
-                   since with two species the old prefix named the wrong thing.
-                   Theme: themeMode (auto, day, night) replaces the theme
-                   boolean; auto resolves against the local clock and is
-                   re-evaluated on the ticker and on return to the tab, so it
-                   flips at dusk while the page is open. The top bar button
-                   sets an override, a settings toggle hands control back to
-                   the clock, and older saves carrying theme are adopted as an
-                   explicit choice rather than discarded. Stars show always at
-                   night and in daylight only at or above the rainbow
-                   threshold, tinted warm gold so they read against a pale sky.
-                   First run starts hydration at Config.hydration.initial of 75
-                   so a new user has something to fix and learns the loop from
-                   one tap; reset still fills to 100. Info: a circled-i toggles
-                   a localised two-sentence explanation, wired with
-                   aria-expanded and aria-controls. Not changed: the page never
-                   reloads itself, because state is derived from timestamps and
-                   self-corrects when the tab becomes visible.
+                   diesem Browser." An unprompted promise invites the doubt it
+                   means to settle, and the first sentence already carries the
+                   point. English and Chinese keep theirs, where the phrasing
+                   lands as warmth rather than protest. Docs: condensed the
+                   changelog, split defects into Known issues and left work
+                   never started in Roadmap under one shared ID series, added
+                   B6 to B10, and closed B1 as won't-fix after correcting a
+                   description that overstated it.
 
 ────────────────────────────────────────────────────────────────────────────
 Archive: superseded development iterations (NXW-VER-7).
 
-v0.14  2026-08-20  Renamed the localStorage key from ina-water-friend/v1 to
-                   aniluna/v1, so nothing still carries the old working title.
-                   Config.legacyKeys and Storage.migrate() adopt a save found
-                   under an old key exactly once and never overwrite data
-                   already at the current key. Verified across a real reload,
-                   idempotent, a no-op on a clean install, and a corrupt legacy
-                   save falls back to defaults rather than breaking startup.
+v0.17  2026-08-20  Rewrote the copy in every language as native writing rather
+                   than translation. Chinese moved to Taiwanese Traditional,
+                   zh-TW in both the Intl tag and the document language,
+                   because bare "zh" does not tell a browser which glyphs to
+                   pick. German leans on diminutives, and its meter label went
+                   from Flüssigkeit to Hydration. Gusts now roam the whole
+                   sky, smaller and fainter.
+
+v0.16  2026-08-20  Renamed the product to Aqua Buddy, a brand name that stays
+                   in English. Added a sun and a moon on one east-to-west arc,
+                   interpolated in two halves so an off-centre peak still lands
+                   on its stated hour, riding the same ticker as the automatic
+                   theme. Added rare ambient life in a new AMBIENT module:
+                   birds by day, gusts more often at night, each crossing once
+                   and removing itself, with the rate re-checked when a timer
+                   fires so dusk changes the rhythm without a restart and
+                   nothing is scheduled while hidden or under reduced motion.
+                   Softened the rainbow to 0.45 opacity above the sky layer.
+
+v0.15  2026-08-20  Added a secret species switch, three languages, a clock
+                   driven theme, an info button and a gentler first run. Name,
+                   copy, favicon and voice all follow from Config.species, and
+                   both sprites share group class names so one animation system
+                   drives either. German, English and Chinese live in a new
+                   STRINGS section, with Intl.RelativeTimeFormat and
+                   toLocaleString rather than hand-written strings, and the
+                   sprite classes went from .ina-* to .pet-*. themeMode (auto,
+                   day, night) replaced the theme boolean and re-resolves on
+                   the ticker and on return to the tab, adopting older saves as
+                   an explicit choice. Stars show at night, and in daylight
+                   only at the reward level, tinted warm gold. First run starts
+                   at 75 so a new user has something to fix.
+
+v0.14  2026-08-20  Renamed the storage key to aniluna/v1, with
+                   Config.legacyKeys and Storage.migrate() adopting a save
+                   under an old key exactly once and never overwriting data
+                   already at the current one.
                    Fixed: mood bands were compared against the raw hydration
-                   float while the meter displayed the rounded percent, so a
-                   meter reading exactly 75% could sit in the okay band at
-                   74.997. State.band() now rounds first. Same class of bug as
-                   the v0.13 rainbow gating.
+                   float while the meter showed the rounded percent, so a meter
+                   reading 75% could sit in the okay band at 74.997.
+                   State.band() now rounds first.
 
-v0.13  2026-08-20  Renamed the visible meter label from "Thirst meter" to
-                   "Hydration": the bar fills when you drink, so labelling it
-                   thirst inverted the meaning, and 100% read as maximally
-                   thirsty. Root cause: the label was taken verbatim from the
-                   brief while the state, the mood copy and the ARIA name all
-                   used hydration, so the visible label was the only wrong half
-                   and disagreed with its own accessible name. A deliberate
-                   deviation from the brief's wording. Narrowed the rainbow to
-                   at or above the new Config.thresholds.rainbow of 95, gated
-                   on the displayed rounded percent so the arc agrees with the
-                   number on screen, and replaced the four per-band
-                   --rainbow-op tokens with one data-radiant attribute.
+v0.13  2026-08-20  Renamed the meter label from "Thirst meter" to "Hydration":
+                   the bar fills when you drink, so thirst inverted the
+                   meaning. Root cause: the label was taken from the brief
+                   while the state, the mood copy and the ARIA name all said
+                   hydration. Narrowed the reward to 95 and above, gated on the
+                   displayed percent, replacing four per-band opacity tokens
+                   with a single data-radiant attribute.
 
-v0.12  2026-08-20  Added a favicon. A hand-drawn 16x16 pixel unicorn head
-                   matching the sprite did not read as a unicorn at that size,
-                   so it was replaced with the unicorn emoji in an inline SVG
-                   data URI: 189 characters instead of 1163, and still one
-                   file. Renamed the repository to aniluna. Documented why
-                   storageKey kept the old working-title string.
+v0.12  2026-08-20  Added a favicon: the unicorn emoji in an inline SVG data
+                   URI, after a hand-drawn 16x16 pixel head did not read as a
+                   unicorn at that size. 189 characters instead of 1163, and
+                   still a single file. Renamed the repository to aniluna.
 
-v0.11  2026-08-20  Renamed the character to Aniluna, with every mention now
-                   coming from Config.character.name. Cut the default
-                   full-to-empty time from 4 hours to 2 so the mood states are
-                   reachable in a single sitting. Replaced both settings number
-                   inputs with sliders, full-to-empty from 0.5 to 4.0 hours in
-                   half-hour steps and refill at 25/50/75/100 percent; clamping
-                   now snaps onto the slider step instead of rounding to whole
-                   numbers, which would have silently destroyed a half-hour
-                   setting on the next load. Bounds and tick labels are
-                   generated from Config.limits so they cannot drift apart.
-                   Removed em dashes per NXW-NAM-6, and added the header block,
-                   version config and console banner.
-                   Fixed: a null or empty field in a saved state became 0
-                   rather than the default, so a partially corrupted save
-                   loaded as the fastest decay rate or an empty meter. Root
-                   cause: Number(null) is 0, not NaN, so the Number.isFinite
-                   guard accepted it. Coercion now goes through State.num,
-                   which treats null, undefined and "" as absent.
+v0.11  2026-08-20  Renamed the character to Aniluna, every mention coming from
+                   config. Cut the default full-to-empty time from 4 hours to 2
+                   so the mood states are reachable in one sitting. Replaced
+                   both settings number inputs with sliders, with clamping that
+                   snaps onto the step rather than rounding to whole numbers,
+                   and bounds and tick labels generated from Config.limits.
+                   Fixed: a null or empty field in a save became 0 rather than
+                   the default, because Number(null) is 0 and passed the
+                   Number.isFinite guard. Coercion now goes through State.num.
 
-v0.10  2026-08-19  Initial version. Single-file static app with timestamp
-                   driven hydration decay, four mood bands with per-state idle
+v0.10  2026-08-19  Initial version. Single-file static app: timestamp driven
+                   hydration decay, four mood bands with per-state idle
                    animation, a pixel unicorn drawn as SVG rects and outlined
-                   by one feMorphology filter, happy-state rainbow reward,
-                   procedural Web Audio sip/yippie/sad/gurgle unlocked on first
-                   gesture, the five-taps-in-five-seconds gurgle easter egg,
-                   day/night themes, and localStorage persistence that survives
-                   tab suspension and browser kills.
+                   by one feMorphology filter, a happy-state rainbow,
+                   procedural Web Audio unlocked on first gesture, the
+                   five-taps gurgle easter egg, day and night themes, and
+                   localStorage persistence that survives tab suspension and
+                   browser kills.
 ```
 
 ## Known issues
 
-Defects present in `v0.20`, as opposed to work never started, which is under
+Defects present in `v0.21`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
@@ -397,7 +331,7 @@ Accepted limitations, written down so they are not rediscovered as bugs:
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
 - No device test matrix has been run (B2) and the Traditional Chinese copy has
-  not been read by a native speaker (F2), so `v0.20` is a prototype in the
+  not been read by a native speaker (F2), so `v0.21` is a prototype in the
   literal sense: everything here was verified in one desktop browser.
 - B1 is closed as won't-fix, decided in v0.18. A system clock moved backwards
   forgives the decay for the span it skipped, but reaching that takes a
@@ -449,7 +383,7 @@ It is kept as authored, so it still uses the working title and em dashes.
 
 ## Status
 
-Prototype, `v0.20`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.21`, DEVELOPMENT. The loop works end to end and the app is
 usable. What it gets wrong today is listed under
 [Known issues](#known-issues); what has never been started is under
 [Roadmap](#roadmap), where the stretch goals from `BRIEF.md` live too, so
