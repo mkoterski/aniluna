@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.22
+  index.html - Aniluna Aqua Buddy - v0.23
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -570,19 +570,45 @@ body {
   50%      { transform: translateY(14%); }
 }
 .bird svg { display: block; width: 100%; height: auto; overflow: visible; }
-.bird path {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: flap var(--flap, 0.7s) ease-in-out infinite;
+.bird rect { fill: var(--ink); }
+/* A sprite flaps by swapping frames, so the poses swap: exactly one is up at
+   any moment and the change snaps rather than tweening. Smooth rotation was
+   tried and reads as a shape being bent, which no pixel bird does. The cycle
+   is up, mid, down, mid, so the mid pose carries two of the four slices, and
+   --phase offsets each bird in the flock so they do not beat in unison. */
+.bird .pose {
+  opacity: 0;
+  animation-duration: var(--flap, 0.7s);
+  animation-iteration-count: infinite;
+  animation-delay: var(--phase, 0s);
+  animation-timing-function: steps(1, end);
 }
-@keyframes flap {
-  0%, 100% { transform: scaleY(1); }
-  50%      { transform: scaleY(0.25); }
+.bird .pose-up   { animation-name: beat-up; }
+.bird .pose-mid  { animation-name: beat-mid; }
+.bird .pose-down { animation-name: beat-down; }
+@keyframes beat-up   { 0% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes beat-mid  { 0% { opacity: 0; } 25% { opacity: 1; } 50% { opacity: 0; } 75% { opacity: 1; } }
+@keyframes beat-down { 0%, 25% { opacity: 0; } 50% { opacity: 1; } 75%, 100% { opacity: 0; } }
+/* Gulls do not slide along one line. In the reference they cross at a slant,
+   climbing or settling as they go, so the flock gets its own keyframes: the
+   same horizontal crossing as the drifters plus a vertical run set per
+   appearance. Placed after .amb.rtl, which it has to outrank on document
+   order at equal specificity. */
+.amb.bird { animation-name: glide; }
+.amb.bird.rtl { animation-name: glide-rtl; }
+@keyframes glide {
+  0%   { left: -25%; opacity: 0; transform: translateY(0); }
+  14%  { opacity: var(--amb-op, 0.7); }
+  86%  { opacity: var(--amb-op, 0.7); }
+  100% { left: 118%; opacity: 0; transform: translateY(var(--glide, -40px)); }
 }
+@keyframes glide-rtl {
+  0%   { left: 118%; opacity: 0; transform: translateY(0); }
+  14%  { opacity: var(--amb-op, 0.7); }
+  86%  { opacity: var(--amb-op, 0.7); }
+  100% { left: -25%; opacity: 0; transform: translateY(var(--glide, -40px)); }
+}
+
 /* The reward star: a streak, so it gets its own diagonal keyframes rather
    than the horizontal drift the other two share. Placed after .amb.rtl,
    because both rules carry the same specificity and the later one wins. */
@@ -609,12 +635,71 @@ body {
 }
 .star circle { fill: var(--star); filter: drop-shadow(0 0 4px var(--star-glow)); }
 
-.wind svg { display: block; width: 100%; height: auto; overflow: visible; }
-.wind path {
+/* Wind from the reference frames: not a bundle of ribbons but a single
+   hairline trail that travels along its own path, sweeping in and curling
+   into an open loop, thin and semi-transparent on the sky. What moves is a
+   dash window walking the path, which is what draws the curve progressively
+   and reads as air moving rather than as a shape being slid across.
+
+   pathLength="100" normalises the geometry, so the dash lengths below are
+   percentages of the path and do not have to be measured. Two paths share the
+   geometry: a short bright core and a longer faint tail behind it, which is
+   how a stroke that cannot taper still gets a comet's weight.
+   --wind-stroke names the colour. */
+.wind svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  animation: curl-sway var(--sway, 4.2s) ease-in-out infinite;
+}
+.wind .trail {
   fill: none;
   stroke: var(--wind-stroke);
-  stroke-width: 1.4;
   stroke-linecap: round;
+  animation-duration: var(--flow, 3.4s);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.wind .tail { stroke-width: 0.85; stroke-dasharray: 46 100; opacity: 0.45;
+  animation-name: trail-run-tail; }
+.wind .core { stroke-width: 1.5;  stroke-dasharray: 15 100; opacity: 0.95;
+  animation-name: trail-run-core; }
+/* The visible dash covers path positions -offset to -offset+length, so to
+   walk the whole path the offset has to run from +length down to -100. The
+   first attempt ran 100 to -46, which put the dash far off the front at the
+   start and stopped it at position 61: the loop at the head of the path was
+   never drawn at all, and every gust came out as the straight sweep only.
+   One keyframe set per dash length, rather than a var() inside the keyframes,
+   because a var()-driven animated value is exactly what latched in Chrome
+   when the glitter prototype tried it. */
+@keyframes trail-run-core {
+  0%   { stroke-dashoffset: 15; opacity: 0; }
+  10%  { opacity: 1; }
+  82%  { opacity: 1; }
+  100% { stroke-dashoffset: -100; opacity: 0; }
+}
+@keyframes trail-run-tail {
+  0%   { stroke-dashoffset: 46; opacity: 0; }
+  10%  { opacity: 1; }
+  82%  { opacity: 1; }
+  100% { stroke-dashoffset: -100; opacity: 0; }
+}
+.wind .speck {
+  fill: var(--wind-stroke);
+  opacity: 0;
+  animation: speck-blink var(--flow, 3.4s) ease-in-out infinite;
+}
+.wind .speck:nth-of-type(2) { animation-delay: -1.1s; }
+.wind .speck:nth-of-type(3) { animation-delay: -2.3s; }
+@keyframes speck-blink {
+  0%, 100% { opacity: 0; }
+  40%      { opacity: 0.85; }
+  60%      { opacity: 0.3; }
+}
+@keyframes curl-sway {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50%      { transform: rotate(2.5deg); }
 }
 
 /* pixel sparkles */
@@ -1001,6 +1086,13 @@ input[type="range"]::-moz-range-thumb {
   .sparkle { animation: none !important; opacity: var(--sparkle-op, 1); transform: rotate(45deg); }
   .rainbow, .stars, .body { transition: none !important; }
   .amb { display: none !important; }
+  .wind svg, .wind .trail, .wind .speck { animation: none !important; }
+  .wind .trail { stroke-dashoffset: 0 !important; }
+  .wind .speck { opacity: 0.6 !important; }
+  /* Stopping the swap would leave all three poses stacked, so hold the flock
+     on the mid pose rather than on all of them. */
+  .bird .pose { animation: none !important; opacity: 0 !important; }
+  .bird .pose-mid { opacity: 1 !important; }
   .drop { animation: none !important; opacity: 0 !important; }
   .secret:hover, .secret:focus-visible { transform: none; }
   [data-tip]::after { transition: none !important; transform: none !important; }
@@ -1325,7 +1417,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.22",
+    version: "v0.23",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -2191,40 +2283,61 @@ const Ambient = {
   KINDS: {
     bird: {
       band: [6, 42],             // vertical band, percent from the top
-      size: [6, 11],             // width, percent of the scene
+      size: [16, 27],            // a flock needs room; each bird is a few percent
       dur: [9000, 15000],
-      opacity: [0.45, 0.7],
-      markup: () =>
-        '<svg viewBox="0 0 26 10" aria-hidden="true">'
-        + '<path d="M1.5 7 Q6 1.5 11.5 6.5"/>'
-        + '<path d="M13.5 6.5 Q19.5 1 24.5 7"/>'
-        + "</svg>"
-    },
-    /* The reward for a full meter after dark, in place of the rainbow. */
-    star: {
-      band: [7, 32],             // high in the sky, clear of the character
-      size: [13, 22],
-      dur: [1100, 1800],         // a streak, not a drift
-      opacity: [0.8, 1],
-      fall: [26, 46],            // drop across the crossing, percent of the scene
-      when: () => UI.isRadiant() && UI.effectiveTheme() === "night",
-      markup: () =>
-        '<svg viewBox="0 0 40 14" aria-hidden="true">'
-        + '<path d="M2 2 L29 9.4"/>'
-        + '<circle cx="33" cy="10.6" r="2.4"/>'
-        + "</svg>"
+      opacity: [0.5, 0.75],
+      /* Distant gulls in the Link's Awakening idiom, read off the frames the
+         requester supplied: a loose flock of stepped pixel marks that flap by
+         swapping frames, because a sprite flaps by changing frames and not by
+         rotating. Three poses, and the span changes with the beat as well as
+         the height: wings raised is a wide bowl, wings lowered a narrow peak.
+         A fixed span only ever reads as a dash bending. Built per appearance,
+         so no two flocks match. */
+      markup: () => {
+        const count = 3 + Math.floor(Math.random() * 3);        // 3 to 5 gulls
+        const up   = [[0,0],[1,1],[2,2],[3,3],[4,3],[5,2],[6,1],[7,0]];
+        const mid  = [[1,0],[2,1],[3,2],[4,2],[5,1],[6,0]];
+        const down = [[1,2],[2,1],[3,0],[4,0],[5,1],[6,2]];
+        const pose = (cls, cells) => `<g class="pose ${cls}">`
+          + cells.map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1"/>`).join("")
+          + "</g>";
+
+        let flock = "";
+        for (let i = 0; i < count; i++) {
+          const x = Math.round(Math.random() * 42);
+          const y = Math.round(Math.random() * 13);
+          /* A negative delay starts each gull part-way into the cycle, so a
+             flock does not beat in unison. */
+          const phase = -(Math.random() * 0.7).toFixed(2);
+          /* Size varies per gull, which is depth: the reference has near ones
+             large and high with small ones creeping along near the horizon. */
+          const depth = (0.7 + Math.random() * 0.6).toFixed(2);
+          flock += `<g transform="translate(${x} ${y}) scale(${depth})" style="--phase:${phase}s">`
+            + pose("pose-up", up) + pose("pose-mid", mid) + pose("pose-down", down)
+            + "</g>";
+        }
+        return '<svg viewBox="0 0 50 18" shape-rendering="crispEdges" aria-hidden="true">'
+          + flock + "</svg>";
+      }
     },
     wind: {
       band: [10, 64],            // the whole sky, not just behind the character
-      size: [16, 30],            // smaller than before, so it reads as distant
+      size: [22, 38],            // a trail that loops needs the room
       dur: [8000, 13000],
-      opacity: [0.28, 0.5],      // fainter, to keep the scene uncluttered
-      markup: () =>
-        '<svg viewBox="0 0 64 22" aria-hidden="true">'
-        + '<path d="M2 11 q13 -8 26 -1 q11 3 21 -4"/>'
-        + '<path d="M9 17.5 q12 -5 23 -0.5"/>'
-        + '<path d="M17 5 q9 -3 17 0"/>'
-        + "</svg>"
+      opacity: [0.6, 0.9],       // a hairline needs the help on a pale sky
+      /* One trail per gust, from the frames the requester supplied: a hairline
+         that travels along its own path, sweeping in from the left and curling
+         into an open loop at the head, with a few specks alongside. Two paths
+         on the same geometry, a short bright core and a longer faint tail, are
+         what give it a comet's weight without a taperable stroke. */
+      markup: () => {
+        const speck = (x, y, r) => `<circle class="speck" cx="${x}" cy="${y}" r="${r}"/>`;
+        return '<svg viewBox="0 0 120 56" aria-hidden="true">'
+          + '<path class="trail tail" pathLength="100" d="M2 40 C28 36 56 29 80 24 C95 20.8 108 23 108 31 C108 39 97 42 91 36 C85 30 92 23 101 23.6"/>'
+          + '<path class="trail core" pathLength="100" d="M2 40 C28 36 56 29 80 24 C95 20.8 108 23 108 31 C108 39 97 42 91 36 C85 30 92 23 101 23.6"/>'
+          + speck(22, 14, 0.9) + speck(58, 47, 0.7) + speck(96, 9, 0.8)
+          + "</svg>";
+      }
     }
   },
 
@@ -2325,6 +2438,20 @@ const Ambient = {
     bob.style.setProperty("--bob", `${(2.6 + Math.random() * 2).toFixed(2)}s`);
     if (kind === "bird") {
       bob.style.setProperty("--flap", `${(0.5 + Math.random() * 0.4).toFixed(2)}s`);
+      /* The vertical run across the crossing, up or down, as a share of the
+         scene rather than of the element: same reason as the star's --fall. */
+      const height = this.host.clientHeight;
+      if (height > 0) {
+        const run = height * (Math.random() * 0.3 - 0.19);
+        el.style.setProperty("--glide", `${Math.round(run)}px`);
+      }
+    }
+    if (kind === "wind") {
+      /* Sway and flow rate vary per gust, so two on screen at once do not move
+         as one. Custom properties inherit, so setting them here reaches the
+         svg and its ribbons. */
+      bob.style.setProperty("--sway", `${(3.4 + Math.random() * 2.2).toFixed(2)}s`);
+      bob.style.setProperty("--flow", `${(2.1 + Math.random() * 1.6).toFixed(2)}s`);
     }
     bob.innerHTML = spec.markup();
 

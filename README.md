@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.22
+# Aniluna Aqua Buddy - v0.23
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -38,10 +38,12 @@ Aniluna, or a dinosaur called Anirex if you find the switch.
 | Glitter mode | A theme rather than a switch: pink and lavender palette, a rounded typeface, a slow sheen, decorative ribbons, and an emoji particle canvas. The pointer trail needs a mouse and says so when there is none; under reduced motion the palette stays and the motion goes |
 | Stars | Always at night. In daylight only at the happiest level, where they turn warm gold so they read against a pale sky |
 | Sun and moon | Both travel one east-to-west arc: up from the left, highest at the peak hour, down to the right. Sun peaks at 12:00, moon rises after dusk and peaks at midnight |
-| Ambient life | Rare birds by day, rarer wind gusts by day and more of them at night. Random height, direction, size and speed, small and faint so the sky stays uncluttered |
+| Ambient life | Rare birds by day, rarer wind gusts by day and more of them at night. Random height, direction, size and speed |
+| Wind | One thin semi-transparent trail per gust, drawn from the reference footage: it travels along its own path, sweeping in and curling into an open loop, with a few specks alongside |
 | Info | A small circled-i in the top bar opens two localised sentences explaining the loop |
 | Default decay | Full to completely empty in 2 hours, so the dehydrated band is entered just after 1 h 36 min |
 | Idle animation | Bob, head nod, tail swish, ear twitch, blink, sparkle. Amplitude and speed tuned per state |
+| Gulls | A loose flock of three to five stepped pixel sprites in the Link's Awakening idiom, each at its own scale for depth, flapping by frame swap through wide bowl, shallow vee and narrow peak, crossing the sky at a slant |
 | Rainbow | The daytime reward, only while the meter reads 95% or above and the sky is lit. At the 2 h default that is roughly the 6 minutes after topping up |
 | Shooting star | The same reward after dark, since a rainbow needs a lit sky to read as one. A streak crosses high above the character every 8 to 17 seconds while the meter earns it, and the whole starfield lifts to full brightness, which is what carries the reward under reduced motion |
 | Sound | Procedural Web Audio: sip, yippie, sad "oh", gurgle. Unlocked on first gesture |
@@ -56,7 +58,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.22", status: "DEVELOPMENT" },
+  app: { version: "v0.23", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -135,6 +137,19 @@ mkdir -p .work
 
 Anything worth keeping moves out into `README.md`, `BRIEF.md` or `index.html`.
 
+`.work/haptics-lab.html` is the haptics lab for F4: it reports what the
+device and browser actually support, offers one candidate pattern per app
+event, and is blunt about the fact that `navigator.vibrate` returning true
+means the call was accepted rather than that anything buzzed. Nothing in it is
+judgeable on a desktop.
+
+`.work/anim-lab.html` is the animation lab: it spawns the ambient animations on
+demand, in any theme, at any speed, and freezes them mid-flight, because
+waiting minutes for a rare gust is no way to judge one. Every animation in it
+is a **copy** of the real one in `index.html`, which is the drift risk its own
+header warns about: judge in the lab, port back, then reload the lab from the
+app rather than letting the two wander apart.
+
 `.work/glitter-mode/` held the F12 prototype until v0.22 landed it, so that
 folder is throwaway again. Its four general findings are worth promoting into
 `web-prototype-findings.md` before it goes.
@@ -155,6 +170,66 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.23  2026-08-24  Redrew the wind and the gulls from frames pulled out of the
+                   two videos the requester supplied, and added two labs to
+                   .work/. Three attempts went into this, and only the frames
+                   settled it: reading a style from memory produced a stroked
+                   curl and then a bundle of tapered ribbons, and neither was
+                   what the footage shows.
+
+                   Wind, from 0:37 to 0:47 of the reference clip: one thin
+                   trail, not a bundle. A hairline travels along its own path,
+                   sweeping in and curling into an open loop at the head, with
+                   a few specks alongside. What moves is a dash window walking
+                   the path, so the curve draws itself rather than being slid
+                   across the screen. Two paths share the geometry, a short
+                   bright core and a longer faint tail, which is how a stroke
+                   that cannot taper still carries a comet's weight.
+
+                   Fixed in that work, found by pinning the dash at measured
+                   offsets rather than by watching it: the visible dash covers
+                   path positions -offset to -offset+length, so walking the
+                   whole path needs the offset to run from +length down to
+                   -100. The first version ran 100 to -46, which parked the
+                   dash off the front at the start and stopped it at position
+                   61, so the loop at the head of the path was never drawn at
+                   all and every gust came out as the straight sweep only.
+
+                   Gulls, from the first three seconds of the Link's Awakening
+                   clip: a distant gull is a stepped pixel mark of a few
+                   blocks, they fly as a loose flock rather than singly, and
+                   the flap is a frame swap rather than a rotation. Three
+                   poses, wings raised a wide four-row bowl, mid a shallow vee,
+                   wings lowered a narrow peak. The span changes with the beat
+                   as well as the height, which is what the earlier attempts
+                   missed: at a fixed span a bird only ever reads as a dash
+                   bending. A flock is three to five gulls, each at its own
+                   scale for depth and its own phase so they do not beat in
+                   unison, and it crosses at a slant on new glide keyframes
+                   instead of sliding along one line.
+
+                   Both are judged in .work/anim-lab.html, new here: it spawns
+                   any of the three ambient animations on demand, in day, night
+                   or glitter, at 0.1x to 2x speed, frozen mid-flight, with
+                   band guides and a running count. Waiting between 42 and 84
+                   seconds for a night gust is no way to judge one, and a 1.2
+                   second streak cannot be judged at full speed at all. Every
+                   animation in it is a copy of the real one here, which its
+                   header warns about, and the copies were verified identical
+                   to this file line for line. The header also records that
+                   slicing those blocks out by brace matching does not work: a
+                   kind closes with a four-space brace and KINDS with a
+                   two-space one, so a script grabbed the wrong one, merged two
+                   kinds and broke the file. Twice.
+
+                   Also new, .work/haptics-lab.html for F4: it reports what the
+                   device and browser actually support, offers one candidate
+                   pattern per app event, takes a hand-typed pattern, respects
+                   reduced motion behind a toggle, and says in its header that
+                   navigator.vibrate returning true means the call was accepted
+                   and not that anything buzzed. Neither lab is judgeable on a
+                   desktop, which is the point of both being on the phone.
+
 v0.22  2026-08-24  Landed F12, glitter mode, from the prototype in
                    `.work/glitter-mode/`.
 
@@ -381,7 +456,7 @@ v0.10  2026-08-19  Initial version. Single-file static app: timestamp driven
 
 ## Known issues
 
-Defects present in `v0.22`, as opposed to work never started, which is under
+Defects present in `v0.23`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
@@ -404,7 +479,7 @@ Accepted limitations, written down so they are not rediscovered as bugs:
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
 - No device test matrix has been run (B2) and the Traditional Chinese copy has
-  not been read by a native speaker (F2), so `v0.22` is a prototype in the
+  not been read by a native speaker (F2), so `v0.23` is a prototype in the
   literal sense: everything here was verified in one desktop browser.
 - B1 is closed as won't-fix, decided in v0.18. A system clock moved backwards
   forgives the decay for the span it skipped, but reaching that takes a
@@ -455,7 +530,7 @@ It is kept as authored, so it still uses the working title and em dashes.
 
 ## Status
 
-Prototype, `v0.22`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.23`, DEVELOPMENT. The loop works end to end and the app is
 usable. What it gets wrong today is listed under
 [Known issues](#known-issues); what has never been started is under
 [Roadmap](#roadmap), where the stretch goals from `BRIEF.md` live too, so
