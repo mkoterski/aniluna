@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.17
+  index.html - Aniluna Aqua Buddy - v0.18
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
   Status     : DEVELOPMENT
   Versioning : v0.x = development/testing, v1.x = production-ready
   Author     : Matthias Koterski
-  Date       : 2026-08-20
+  Date       : 2026-08-24
   Context    : Runs entirely in the browser. State lives in localStorage.
   Changelog  : see README.md, newest first
 -->
@@ -1063,7 +1063,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.17",
+    version: "v0.18",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -1178,7 +1178,7 @@ const Strings = {
     egg: "Blubber-\u00dcberraschung",
     autoTheme: "Der Tageszeit folgen",
     nightTheme: "Nachtmodus",
-    settingsFoot: (name) => `${name} wohnt nur in diesem Browser. Nichts wird irgendwohin geschickt, versprochen.`,
+    settingsFoot: (name) => `${name} wohnt nur in diesem Browser.`,
     note: (version) => `Prototyp ${version} \u00b7 eine Datei \u00b7 kein Konto, kein Server`,
     infoAria: "Was ist das hier?",
     infoBody: (name) => `${name} wird mit der Zeit ein bisschen durstig. Immer wenn du selbst Wasser trinkst, tippst du auf den gro\u00dfen Knopf: dann f\u00fcllt sich die Anzeige und ${name} strahlt wieder.`,
