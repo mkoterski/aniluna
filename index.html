@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.24
+  index.html - Aniluna Aqua Buddy - v0.25
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -1398,6 +1398,12 @@ input[type="range"]::-moz-range-thumb {
       <label for="eggInput" id="eggLabel"></label>
       <input id="eggInput" type="checkbox">
     </div>
+    <!-- Hidden where the API does not exist at all, so iOS is not offered a
+         switch that can never do anything. -->
+    <div class="setting" id="hapticsRow">
+      <label for="hapticsInput" id="hapticsLabel"></label>
+      <input id="hapticsInput" type="checkbox">
+    </div>
     <p class="setting glit-notice" id="trailNotice"></p>
 
     <p class="setting" style="min-height:0;padding-bottom:14px;font-size:0.76rem;color:var(--text-soft)"
@@ -1417,7 +1423,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.24",
+    version: "v0.25",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -1533,6 +1539,13 @@ const Config = {
        reward window at the default decay rate is only about six minutes. */
     star: { any: [8000, 17000], first: [1600, 3200] }
   },
+  /* Haptics, coarse by measurement rather than by taste. Measured on Android
+     10 in .work/haptics-lab.html: a phone motor cannot tell 12 ms from 22 ms
+     and cannot resolve a three-beat rhythm, so the app has exactly two
+     signals and nothing finer. A tick when the mood improves, a longer buzz
+     when it drops, far enough apart that any motor can render the difference. */
+  haptics: { better: [30], worse: [180] },
+
   burst: {                       // rapid-tap easter egg
     taps: 5,
     windowMs: 5000
@@ -1587,6 +1600,7 @@ const Strings = {
     refill: "Pro Schluck",
     sound: "T\u00f6ne",
     egg: "Blubber-\u00dcberraschung",
+    haptics: "Vibration",
     themesLabel: "Darstellung",
     themes: {
       auto: "Der Tageszeit folgen",
@@ -1656,6 +1670,7 @@ const Strings = {
     refill: "Per sip",
     sound: "Sounds",
     egg: "Gurgle surprise",
+    haptics: "Vibration",
     themesLabel: "Appearance",
     themes: {
       auto: "Follow the time of day",
@@ -1725,6 +1740,7 @@ const Strings = {
     refill: "\u6bcf\u6b21\u88dc\u5145",
     sound: "\u97f3\u6548",
     egg: "\u5495\u5695\u5f69\u86cb",
+    haptics: "\u9707\u52d5",
     themesLabel: "\u5916\u89c0",
     themes: {
       auto: "\u8ddf\u8457\u6642\u9593\u8d70",
@@ -1890,6 +1906,48 @@ const Sky = {
       x: left + progress * (right - left),
       y: horizon - (horizon - apex) * Math.sin(Math.PI * progress)
     };
+  }
+};
+
+/* ========= HAPTICS =========
+   Two signals, and never the only feedback for anything. Do Not Disturb
+   silences vibration outright with no signal to the page, navigator.vibrate
+   returning true only means the call was accepted, and iOS Safari has no
+   Vibration API at all, so every buzz here doubles something the screen
+   already said. Measured in .work/haptics-lab.html. */
+const Haptics = {
+  enabled: true,             // mirrors State.data.hapticsOn
+  suppressNext: false,
+
+  /** Absent on iOS Safari and on desktop Firefox, present with no motor on
+      desktop Chrome, which is why presence is not proof of anything. */
+  available() {
+    return typeof navigator.vibrate === "function";
+  },
+
+  reducedMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  },
+
+  buzz(pattern) {
+    /* Consumed even when haptics are off, so a suppression cannot leak into
+       the next change and swallow a buzz that should have happened. */
+    if (this.suppressNext) {
+      this.suppressNext = false;
+      return;
+    }
+    if (!this.enabled || !this.available() || this.reducedMotion()) return;
+    if (document.visibilityState !== "visible") return;
+    try {
+      navigator.vibrate(pattern);
+    } catch (err) {
+      /* A blocked call is normal, not an error worth reporting to anyone. */
+    }
+  },
+
+  /** The mood moved. Better is a tick, worse is a buzz. */
+  band(improved) {
+    this.buzz(improved ? Config.haptics.better : Config.haptics.worse);
   }
 };
 
@@ -2495,6 +2553,7 @@ const State = {
       refillAmount: Config.hydration.defaultRefillAmount,
       soundOn: true,
       easterEggOn: true,
+      hapticsOn: true,
       themeMode: "auto",              // "auto" | "day" | "night"
       species: Config.defaultSpecies,
       names: {},                      // species key -> owner's name, if any
@@ -2585,6 +2644,7 @@ const State = {
       refillAmount: this.clampStep(saved.refillAmount, base.refillAmount, Config.limits.refillAmount),
       soundOn: saved.soundOn !== false,
       easterEggOn: saved.easterEggOn !== false,
+      hapticsOn: saved.hapticsOn !== false,
       themeMode: this.oneOf(saved.themeMode, Config.themes.order, legacyTheme || base.themeMode),
       species: this.oneOf(saved.species, Object.keys(Config.species), base.species),
       names: this.cleanNames(saved.names),
@@ -2726,6 +2786,7 @@ const UI = {
       "decayInput", "decayOut", "decayScale", "decayLabel",
       "refillInput", "refillOut", "refillScale", "refillLabel",
       "soundInput", "soundLabel", "eggInput", "eggLabel",
+      "hapticsInput", "hapticsLabel", "hapticsRow",
       "settingsFoot", "note", "secretBtn", "favicon", "sun", "moon", "ambient",
       "nameLabel", "nameInput"
     ];
@@ -2795,6 +2856,7 @@ const UI = {
     this.el.refillLabel.textContent = t.refill;
     this.el.soundLabel.textContent = t.sound;
     this.el.eggLabel.textContent = t.egg;
+    this.el.hapticsLabel.textContent = t.haptics;
     this.el.themesLabel.textContent = t.themesLabel;
     this.renderThemes();
     this.el.settingsFoot.textContent = t.settingsFoot(name);
@@ -2892,8 +2954,15 @@ const UI = {
     this.el.statCount.textContent = s.todayCount.toLocaleString(t.tag);
     this.el.statLast.textContent = Time.relative(s.lastDrinkAt, now, t);
 
-    if (band !== this.lastBand && now >= this.speechLock) {
-      this.say(this.bandSpeech(band), 1200);
+    if (band !== this.lastBand) {
+      /* Not on the very first render: a fresh load has no previous band, and
+         arriving to a buzz would be startling rather than informative. */
+      if (this.lastBand !== null) {
+        Haptics.band(State.bandRank(band) < State.bandRank(this.lastBand));
+      }
+      /* The speech has its own lock, the buzz does not: one is a sentence
+         competing for the bubble, the other is a nudge. */
+      if (now >= this.speechLock) this.say(this.bandSpeech(band), 1200);
     }
     this.lastBand = band;
   },
@@ -3018,6 +3087,8 @@ const UI = {
     this.el.decayInput.value = s.decayHours;
     this.el.refillInput.value = s.refillAmount;
     this.el.eggInput.checked = s.easterEggOn;
+    this.el.hapticsInput.checked = s.hapticsOn;
+    this.el.hapticsRow.hidden = !Haptics.available();
     this.renderSettingsValues();
     this.applySound();
     this.applyTheme();
@@ -3096,6 +3167,15 @@ const Events = {
 
     UI.el.eggInput.addEventListener("change", (e) => {
       State.set({ easterEggOn: e.target.checked, tapHistory: [] });
+    });
+
+    UI.el.hapticsInput.addEventListener("change", (e) => {
+      const on = e.target.checked;
+      State.set({ hapticsOn: on });
+      Haptics.enabled = on;
+      /* Switching it on answers "did that work?" on the spot, which matters
+         when Do Not Disturb can silence the whole feature invisibly. */
+      if (on) Haptics.buzz(Config.haptics.better);
     });
 
     Config.locales.forEach((loc) => {
@@ -3251,6 +3331,10 @@ const Events = {
     const lost = State.sync();
     State.save();
     UI.applyTheme();          // the clock may have crossed dawn or dusk
+    /* Visual feedback first on return. A band that dropped while the tab was
+       away is real news, but arriving to a buzz is startling, and the mood
+       line and the sprite carry it anyway. */
+    Haptics.suppressNext = true;
     UI.render();
     this.startRefresh();
     Ambient.start();
@@ -3295,6 +3379,7 @@ function init() {
   State.save();
 
   Audio_.enabled = State.data.soundOn;
+  Haptics.enabled = State.data.hapticsOn;
   GlitEngine.init(UI.el.glitCanvas);
 
   UI.applySpecies();

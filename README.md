@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.24
+# Aniluna Aqua Buddy - v0.25
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -47,6 +47,7 @@ Aniluna, or a dinosaur called Anirex if you find the switch.
 | Rainbow | The daytime reward, only while the meter reads 95% or above and the sky is lit. At the 2 h default that is roughly the 6 minutes after topping up |
 | Shooting star | The same reward after dark, since a rainbow needs a lit sky to read as one. A streak crosses high above the character every 8 to 17 seconds while the meter earns it, and the whole starfield lifts to full brightness, which is what carries the reward under reduced motion |
 | Sound | Procedural Web Audio: sip, yippie, sad "oh", gurgle. Unlocked on first gesture |
+| Haptics | A 30 ms tick when the mood improves, a 180 ms buzz when it drops, and nothing finer, because a phone motor cannot resolve finer. Off in one tap, hidden where the API does not exist, silent under reduced motion, and never the only feedback for anything |
 | Easter egg | 5 drink taps within 5 seconds triggers a blubber/gurgle |
 | Settings | Full-to-empty slider (0.5 to 4.0 hours, half-hour steps), refill slider (25/50/75/100%), sound, easter egg, day/night theme |
 | Favicon | Unicorn emoji wrapped in an inline SVG data URI, so there is no icon asset to ship |
@@ -58,7 +59,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.24", status: "DEVELOPMENT" },
+  app: { version: "v0.25", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -170,6 +171,58 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.25  2026-08-24  Landed F4, haptics, on mood changes and nowhere else, with a
+                   settings switch that is on by default.
+
+                   Two signals and no more, which is a measurement rather than
+                   a taste: on the Android device tested in
+                   .work/haptics-lab.html a motor cannot tell 12 ms from 22 ms
+                   and cannot resolve a three-beat rhythm, so a subtle pattern
+                   language would have been decoration in the code and nothing
+                   on the thumb. The mood improving is a 30 ms tick, the mood
+                   dropping is a 180 ms buzz, far enough apart that any motor
+                   renders the difference. Both live in Config.haptics.
+
+                   Nothing here is the only feedback for anything, because it
+                   can be silently off: Do Not Disturb silences vibration
+                   outright while navigator.vibrate still returns true, iOS
+                   Safari has no Vibration API at all, and desktop Chrome
+                   accepts every call with no motor to honour it. Every buzz
+                   doubles something the mood line and the sprite already say.
+
+                   Four things it deliberately does not do. It does not buzz on
+                   the drink tap, so the improvement tick is not doubled by a
+                   tap tick a moment earlier; that is one config entry if it is
+                   wanted. It does not buzz on the first render after a load,
+                   because a fresh page has no previous band and arriving to a
+                   buzz is startling rather than informative. It does not buzz
+                   on return from a hidden tab, the same caution the audio
+                   already takes on arrival, using a one-shot suppression that
+                   is consumed even when haptics are off so it cannot leak into
+                   the next change. And it does nothing under
+                   prefers-reduced-motion, or while the page is not visible.
+
+                   The settings row hides itself where navigator.vibrate does
+                   not exist, so iOS is not shown a switch that can never do
+                   anything. Switching it on buzzes once as confirmation, which
+                   is the only way to tell a working feature from a Do Not
+                   Disturb that is swallowing it.
+
+                   The speech and the buzz are now separate: the mood line
+                   keeps its speech lock, which stops sentences fighting over
+                   the bubble, and the buzz has none, because a nudge is not
+                   competing for anything.
+
+                   Verified by loading the app and driving it rather than by
+                   parsing it, which is the lesson of v0.24: init completes,
+                   a drop across a band boundary sends [180], a rise sends
+                   [30], a change inside one band sends nothing, the toggle
+                   silences it and its own switch-on confirms, the arrival
+                   suppression fires once and the next change still buzzes, and
+                   reduced motion overrides all of it. The only thing that
+                   blocked a buzz in testing was the page being hidden, which
+                   is the guard working.
+
 v0.24  2026-08-24  Fixed: v0.23 did not start at all. Ambient.KINDS lost its
                    star entry, so Ambient.rateFor("star") read `.when` off
                    undefined and threw. nudgeStar() is called from both
@@ -490,7 +543,7 @@ v0.10  2026-08-19  Initial version. Single-file static app: timestamp driven
 
 ## Known issues
 
-Defects present in `v0.24`, as opposed to work never started, which is under
+Defects present in `v0.25`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
@@ -513,7 +566,7 @@ Accepted limitations, written down so they are not rediscovered as bugs:
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
 - No device test matrix has been run (B2) and the Traditional Chinese copy has
-  not been read by a native speaker (F2), so `v0.24` is a prototype in the
+  not been read by a native speaker (F2), so `v0.25` is a prototype in the
   literal sense: everything here was verified in one desktop browser.
 - B1 is closed as won't-fix, decided in v0.18. A system clock moved backwards
   forgives the decay for the span it skipped, but reaching that takes a
@@ -539,7 +592,6 @@ parked idea.
 | F1 | P1 | Confirm or replace the working titles | `Aniluna` and `Anirex` are both still working titles. One string each in `Config.species`, so the rename is cheap in code, but it is also the product name, the repo name and the storage key. Decide before `v1.0`. F11 softened this: an owner who dislikes the name can now overwrite it, so what is left to settle is the product and repository name rather than what the pet is called. |
 | F2 | P1 | Native-speaker pass on the Traditional Chinese copy | It is written as native copy rather than translation and the register is deliberately soft, but no Taiwanese speaker has read it yet. The German diminutives deserve a second pair of eyes too, less urgently, and v0.22 added Glitzermodus, its two trail notices and the Traditional Chinese 閃閃模式, none of which a native speaker has read. |
 | F3 | P2 | "While you were away" note | Brief stretch goal. After a long gap, one line about what happened instead of silently presenting a drooping pet. The data already exists: `lastDrinkAt`, and the points `State.sync()` returns. |
-| F4 | P2 | Haptics | Brief stretch goal. `navigator.vibrate` on the drink tap and the easter egg, gated by a toggle and suppressed under `prefers-reduced-motion`. Unsupported on iOS Safari, so it can only ever be additive. |
 | F5 | P2 | Real sprite art | Brief stretch goal. The creatures are SVG rects outlined by a single `feMorphology` filter. Per-state sprites would replace the shapes, not the animation system, because both species already share the `.pet-*` group classes. |
 | F6 | P2 | Undo the last drink | A mis-tap can currently only be corrected with a full reset, which also clears the daily count. Keeping the previous `hydration` and `lastDrinkAt` for one step would cover it. |
 | F8 | P2 | A third creature, a panda | Chosen, so this is no longer an open question about whether to add one. `Config.species` is already a map and `toggleSpecies()` already cycles it, so the config side is an entry with a name, the `🐼` emoji and voice parameters, plus a sprite that reuses the `.pet-*` group classes the animation system drives. Two real pieces of work behind that: the single `*` switch has to express three states rather than toggle two, and a panda has no horn or tail to animate, so the idle motion per mood band needs a panda equivalent rather than the same shapes recoloured. The name is F1's problem. |
@@ -564,7 +616,7 @@ It is kept as authored, so it still uses the working title and em dashes.
 
 ## Status
 
-Prototype, `v0.24`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.25`, DEVELOPMENT. The loop works end to end and the app is
 usable. What it gets wrong today is listed under
 [Known issues](#known-issues); what has never been started is under
 [Roadmap](#roadmap), where the stretch goals from `BRIEF.md` live too, so
