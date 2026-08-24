@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.21
+  index.html - Aniluna Aqua Buddy - v0.22
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -67,6 +67,20 @@
   --star:        #ffdf7a;          /* warm in daylight, so it reads on a pale sky */
   --star-glow:   rgba(255, 208, 92, 0.9);
   --wind-stroke: rgba(255, 255, 255, 0.85);
+
+  /* The typeface is a theme token because glitter changes it. The CJK faces
+     stay in every stack: the app ships Traditional Chinese copy, and a
+     rounded Latin face has no glyphs for it. */
+  --font-app: ui-rounded, "Segoe UI Variable Display", "Segoe UI",
+              "Noto Sans TC", "PingFang TC", "Microsoft JhengHei",
+              "Noto Sans SC", "PingFang SC", "Microsoft YaHei",
+              system-ui, -apple-system, sans-serif;
+
+  /* Effect knobs every theme carries. A theme that wants no decoration leaves
+     them at zero and pays nothing else, so there is one effect system rather
+     than one per theme. */
+  --sheen-opacity: 0;
+  --deco-display: none;
 }
 
 :root[data-theme="night"] {
@@ -163,10 +177,7 @@ body {
   align-items: flex-start;
   background: linear-gradient(170deg, var(--bg), var(--bg-2));
   color: var(--text);
-  font: 16px/1.45 ui-rounded, "Segoe UI Variable Display", "Segoe UI",
-        "Noto Sans TC", "PingFang TC", "Microsoft JhengHei",
-        "Noto Sans SC", "PingFang SC", "Microsoft YaHei",
-        system-ui, -apple-system, sans-serif;
+  font: 16px/1.45 var(--font-app);
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.5s ease, color 0.3s ease;
@@ -194,9 +205,164 @@ body {
   box-shadow: var(--shadow);
 }
 
+/* ==========================================================================
+   GLITTER THEME
+   From the prototype in .work/glitter-mode/, translated into this app's token
+   names: the demo host used its own vocabulary, so the palette moved but the
+   token names could not. Glitter is a theme and not a switch, which is why it
+   is a fourth value of themeMode rather than a boolean.
+
+   `:root[data-theme=...]` and not a bare attribute selector: a bare
+   `[data-theme="glitter"]` ties with `:root` on specificity, so whichever
+   came later would win. Two simple selectors beat one, whatever the order.
+   ========================================================================== */
+:root[data-theme="glitter"] {
+  /* unicorn, pink-forward */
+  --coat:        #fff2fa;
+  --coat-shade:  #ffd3ec;
+  --mane-1:      #ff6fc1;
+  --mane-2:      #a97bff;
+  --mane-3:      #7ad4ff;
+  --horn:        #ffd166;
+  --horn-shade:  #e8a83f;
+  --muzzle:      #ffe0f2;
+  --hoof:        #d98ecb;
+  /* dinosaur */
+  --skin:        #86e0b6;
+  --skin-shade:  #5cc196;
+  --belly:       #fdf0c7;
+  --spike:       #ff8fd0;
+  --spike-shade: #e0679f;
+  --claw:        #fff1b8;
+  /* shared */
+  --ink:         #4d1c3d;
+  --blush:       #ff7ab8;
+
+  --bg:          #f0cbe6;
+  --bg-2:        #dcc4ff;
+  --scene-1:     #ffd9f0;
+  --scene-2:     #ffc2e4;
+  --ground:      #f7b6dd;
+  --panel:       #fdf1f8;
+  --panel-edge:  #f0c3de;
+  --text:        #4d1c3d;
+  --text-soft:   #91567c;
+  --accent:      #7a58ef;
+  --accent-ink:  #ffffff;
+  --meter-bg:    #f9e3f2;
+  --meter-fill:  linear-gradient(90deg, #ff77c8, #b06bff);
+  --shadow:      0 4px 0 #eab3d8;
+  --focus:       #7a58ef;
+  --star:        #ffffff;
+  --star-glow:   rgba(255, 255, 255, 0.9);
+  --wind-stroke: rgba(255, 255, 255, 0.9);
+
+  /* The typeface is most of the effect. The particles are the garnish. */
+  --font-app: "Comic Sans MS", "Comic Neue", "Chalkboard SE", Quicksand,
+              "Noto Sans TC", "PingFang TC", "Microsoft JhengHei",
+              "Noto Sans SC", "PingFang SC", "Microsoft YaHei",
+              system-ui, sans-serif;
+
+  --sheen-opacity: 0.5;
+  --deco-display: inline;
+}
+
+/* ---------- glitter effect layers ---------- */
+
+/* One sheen for every theme, tuned by --sheen-opacity, so an inert theme
+   costs nothing beyond an element that paints nothing. */
+.glit-sheen {
+  position: fixed;
+  inset: -30%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--sheen-opacity);
+  background:
+    conic-gradient(from 0deg,
+      transparent 0deg, #ffffff96 22deg, transparent 52deg,
+      transparent 150deg, #ffe6f799 176deg, transparent 208deg,
+      transparent 300deg, #e9d5ff8c 328deg, transparent 358deg);
+  animation: glit-sheen-turn 34s linear infinite;
+}
+@keyframes glit-sheen-turn { to { transform: rotate(1turn); } }
+
+/* The particle canvas. Never interactive, never in the accessibility tree. */
+.glit-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* Decorative emoji sit in the markup as aria-hidden spans revealed by a
+   token, so no theme needs its own selector and no accessible name changes
+   with the theme. */
+.glit-deco { display: var(--deco-display); flex: none; }
+
+/* Sparkle specks on the drink button, glitter only via the token. */
+.glit-specks { position: relative; overflow: hidden; }
+.glit-specks::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--sheen-opacity);
+  background-image:
+    radial-gradient(1.5px 1.5px at 18% 30%, #fff 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 74% 22%, #fff 0%, transparent 100%),
+    radial-gradient(2px 2px at 52% 74%, #fff 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 88% 66%, #fff 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 33% 82%, #fff 0%, transparent 100%);
+}
+
+/* The theme control: a segmented pill. Four states, so it is a radiogroup
+   with a roving tabindex; a switch would have to lie about two of them. It
+   takes a row of its own, because four 44 px targets plus the two icon
+   buttons do not fit a phone-width top bar beside the title. */
+.glit-themes {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--meter-bg);
+}
+.glit-themes button {
+  min-width: 46px;
+  min-height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.14s ease;
+}
+/* The selected mode borrows the language buttons' idiom, --accent on
+   --accent-ink, rather than the prototype's near-white thumb: on the night
+   palette a --panel thumb sat on --meter-bg with almost no contrast, so the
+   selection was there and invisible. */
+.glit-themes button[aria-checked="true"] {
+  background: var(--accent);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.22);
+}
+.glit-themes button:active { transform: scale(0.92); }
+@media (hover: hover) and (pointer: fine) {
+  .glit-themes button:hover { background: rgb(255 255 255 / 0.45); }
+  .glit-themes button { min-height: 34px; }
+}
+
+/* Says out loud why the trail is missing, rather than looking broken. */
+.glit-notice { font-size: 0.76rem; color: var(--text-soft); }
+.glit-notice:empty { display: none; }
+
 /* ---------- top bar ---------- */
 .topbar {
   display: flex;
+  flex-wrap: wrap;              /* the theme pill takes a row of its own */
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
@@ -319,6 +485,8 @@ body {
    the night reward, so something still happens under reduced motion, where no
    shooting star is allowed to cross. */
 :root[data-theme="night"] .scene[data-radiant="on"] .stars { opacity: 1; }
+/* Glitter has its own sparkle, so the starfield stays out of its way. */
+:root[data-theme="glitter"] .scene[data-radiant="on"] .stars { opacity: 0; }
 
 /* rainbow reward, only while the meter reads at or above Config.thresholds.reward */
 .rainbow {
@@ -334,7 +502,8 @@ body {
 }
 /* Day only. A rainbow needs a lit sky to read as one, so after dark the
    reward is a shooting star instead, spawned by Ambient. */
-:root[data-theme="day"] .scene[data-radiant="on"] .rainbow {
+:root[data-theme="day"] .scene[data-radiant="on"] .rainbow,
+:root[data-theme="glitter"] .scene[data-radiant="on"] .rainbow {
   opacity: 0.45;
   transform: translateX(-50%) scale(1);
 }
@@ -835,18 +1004,29 @@ input[type="range"]::-moz-range-thumb {
   .drop { animation: none !important; opacity: 0 !important; }
   .secret:hover, .secret:focus-visible { transform: none; }
   [data-tip]::after { transition: none !important; transform: none !important; }
+  /* Glitter still looks like itself under reduced motion, it just holds
+     still: no sheen rotation, and the engine spawns nothing at all. */
+  .glit-sheen { animation: none !important; }
+  .glit-themes button { transition-duration: 1ms !important; }
 }
 </style>
 </head>
 <body>
+<div class="glit-sheen" aria-hidden="true"></div>
+<canvas class="glit-canvas" id="glitCanvas" aria-hidden="true"></canvas>
+
 <main class="app">
 
   <!-- ---------- top bar ---------- -->
   <header class="panel topbar">
+    <span class="glit-deco" aria-hidden="true">&#127872;</span>
     <h1 id="appTitle">Aniluna Aqua Buddy</h1>
     <button class="icon-btn" id="infoBtn" type="button" aria-expanded="false" aria-controls="infoCard">&#9432;</button>
-    <button class="icon-btn" id="themeBtn" type="button">&#127769;</button>
     <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true">&#128276;</button>
+    <div class="glit-themes" id="themes" role="radiogroup" aria-labelledby="themesLabel">
+      <span class="sr-only" id="themesLabel"></span>
+    </div>
+    <span class="sr-only" id="themeStatus" role="status"></span>
   </header>
 
   <!-- ---------- info card ---------- -->
@@ -1078,7 +1258,7 @@ input[type="range"]::-moz-range-thumb {
 
   <!-- ---------- actions ---------- -->
   <section class="actions">
-    <button class="btn btn-drink" id="drinkBtn" type="button"></button>
+    <button class="btn btn-drink glit-specks" id="drinkBtn" type="button"></button>
     <button class="btn btn-ghost" id="resetBtn" type="button"></button>
   </section>
 
@@ -1126,14 +1306,7 @@ input[type="range"]::-moz-range-thumb {
       <label for="eggInput" id="eggLabel"></label>
       <input id="eggInput" type="checkbox">
     </div>
-    <div class="setting">
-      <label for="autoThemeInput" id="autoThemeLabel"></label>
-      <input id="autoThemeInput" type="checkbox">
-    </div>
-    <div class="setting">
-      <label for="themeInput" id="themeLabel"></label>
-      <input id="themeInput" type="checkbox">
-    </div>
+    <p class="setting glit-notice" id="trailNotice"></p>
 
     <p class="setting" style="min-height:0;padding-bottom:14px;font-size:0.76rem;color:var(--text-soft)"
        id="settingsFoot"></p>
@@ -1152,7 +1325,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.21",
+    version: "v0.22",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -1176,6 +1349,50 @@ const Config = {
      breaking the title, the speech bubble and the meter label; an empty field
      restores the built-in name rather than leaving a hole in every sentence. */
   naming: { maxLength: 24 },
+
+  /* The theme control. "auto" is a mode rather than a theme: the mode is what
+     gets stored, the resolved theme is what lands on the element. Labels come
+     from Strings, so the icon and its accessible name cannot drift apart. */
+  themes: {
+    order: ["auto", "day", "night", "glitter"],
+    icons: { auto: "\u{1F552}", day: "\u2600\uFE0F", night: "\u{1F319}", glitter: "\u2728" },
+    sparkly: ["glitter"]
+  },
+
+  /* Glitter particle tuning, measured in the prototype under
+     .work/glitter-mode/. Every value that was worth tuning there is exposed
+     here rather than sitting in the engine body (NXW-NAM-4). */
+  glitter: {
+    emojiFont: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif',
+    /* Weighted by repetition so the mix stays editable without code. Kept
+       short on purpose: every distinct glyph costs one cached sprite. */
+    glyphs: ["\u2728", "\u2728", "\u{1F380}", "\u{1F497}", "\u{1F48E}", "\u{1F338}", "\u2B50", "\u{1F98B}"],
+    sprite: { base: 88, pad: 6 },     // px the glyph is rasterised at, once
+    canvas: { maxDpr: 2 },            // 3x screens doubled fill cost for no gain
+    trail: {
+      minDistance: 16,                // px of pointer travel between spawns
+      perSpawn: [1, 2],
+      maxParticles: 90,               // hard cap, oldest dropped first
+      requiresFinePointer: true       // a pointer trail needs a pointer
+    },
+    burst: {
+      onThemeEnter: 18,               // 44 visibly stuttered on entry
+      onClick: 10,
+      onTouchTap: 0,                  // 0 keeps touch devices to the theme alone
+      speed: [140, 460]               // px/s, radial
+    },
+    size: [12, 27],                   // px
+    life: [900, 1900],                // ms
+    gravity: 640,                     // px/s^2
+    drag: 0.965,                      // velocity retained per 60 Hz frame
+    spin: [-200, 200],                // deg/s
+    inheritPointer: 0.16,             // share of pointer velocity handed over
+    scatter: 110,                     // px/s random kick on spawn
+    riseKick: [-40, -170],            // initial vy, negative is upward
+    twinkle: { amp: 0.15, rate: 6.5 },
+    fadeFrom: 0.55,                   // fraction of life where fading starts
+    popIn: 110                        // ms of scale-up on spawn
+  },
 
   locales: ["de", "en", "zh"],
   defaultLocale: "de",
@@ -1278,15 +1495,21 @@ const Strings = {
     refill: "Pro Schluck",
     sound: "T\u00f6ne",
     egg: "Blubber-\u00dcberraschung",
-    autoTheme: "Der Tageszeit folgen",
-    nightTheme: "Nachtmodus",
+    themesLabel: "Darstellung",
+    themes: {
+      auto: "Der Tageszeit folgen",
+      day: "Tagmodus",
+      night: "Nachtmodus",
+      glitter: "Glitzermodus"
+    },
+    themeSelected: "ausgew\u00e4hlt",
+    trailReducedMotion: "Reduzierte Bewegung ist an, deshalb bleibt das Glitzern ruhig.",
+    trailNoPointer: "Die Glitzerspur folgt einer Maus und bleibt auf dem Touchscreen aus.",
     settingsFoot: (name) => `${name} wohnt nur in diesem Browser.`,
     note: (version) => `Prototyp ${version} \u00b7 eine Datei \u00b7 kein Konto, kein Server`,
     infoAria: "Was ist das hier?",
     infoBody: (name) => `${name} wird mit der Zeit ein bisschen durstig. Immer wenn du selbst Wasser trinkst, tippst du auf den gro\u00dfen Knopf: dann f\u00fcllt sich die Anzeige und ${name} strahlt wieder.`,
     infoTip: "Alles bleibt auf diesem Ger\u00e4t. Tempo und Schluckgr\u00f6\u00dfe kannst du unten anpassen.",
-    themeToDay: "Zum Tagmodus wechseln",
-    themeToNight: "Zum Nachtmodus wechseln",
     soundOn: "T\u00f6ne sind an",
     soundOff: "T\u00f6ne sind aus",
     secretAria: "Geheimer Schalter",
@@ -1341,15 +1564,21 @@ const Strings = {
     refill: "Per sip",
     sound: "Sounds",
     egg: "Gurgle surprise",
-    autoTheme: "Follow the time of day",
-    nightTheme: "Night theme",
+    themesLabel: "Appearance",
+    themes: {
+      auto: "Follow the time of day",
+      day: "Day mode",
+      night: "Night mode",
+      glitter: "Glitter mode"
+    },
+    themeSelected: "selected",
+    trailReducedMotion: "Reduced motion is on, so the glitter holds still.",
+    trailNoPointer: "The glitter trail follows a mouse, so it stays off on a touchscreen.",
     settingsFoot: (name) => `${name} lives only in this browser. Nothing is sent anywhere, promise.`,
     note: (version) => `Prototype ${version} \u00b7 single file \u00b7 no accounts, no server`,
     infoAria: "What is this?",
     infoBody: (name) => `${name} gets a little thirsty as time goes by. Whenever you drink water yourself, tap the big button: the meter fills back up and ${name} perks right up with it.`,
     infoTip: "Everything stays on this device. Pace and sip size are adjustable below.",
-    themeToDay: "Switch to day theme",
-    themeToNight: "Switch to night theme",
     soundOn: "Sounds are on",
     soundOff: "Sounds are off",
     secretAria: "Secret switch",
@@ -1404,15 +1633,21 @@ const Strings = {
     refill: "\u6bcf\u6b21\u88dc\u5145",
     sound: "\u97f3\u6548",
     egg: "\u5495\u5695\u5f69\u86cb",
-    autoTheme: "\u8ddf\u8457\u6642\u9593\u8b8a\u5316",
-    nightTheme: "\u591c\u9593\u6a21\u5f0f",
+    themesLabel: "\u5916\u89c0",
+    themes: {
+      auto: "\u8ddf\u8457\u6642\u9593\u8d70",
+      day: "\u65e5\u9593\u6a21\u5f0f",
+      night: "\u591c\u9593\u6a21\u5f0f",
+      glitter: "\u9583\u9583\u6a21\u5f0f"
+    },
+    themeSelected: "\u5df2\u9078\u64c7",
+    trailReducedMotion: "\u4f60\u958b\u4e86\u6e1b\u5c11\u52d5\u614b\uff0c\u6240\u4ee5\u9583\u9583\u6703\u5b89\u975c\u4e00\u9ede\u3002",
+    trailNoPointer: "\u9583\u9583\u7684\u5c3e\u5df4\u6703\u8ddf\u8457\u6ed1\u9f20\uff0c\u89f8\u63a7\u87a2\u5e55\u4e0a\u4e0d\u6703\u51fa\u73fe\u3002",
     settingsFoot: (name) => `${name}\u53ea\u4f4f\u5728\u9019\u500b\u7009\u89bd\u5668\u88e1\uff0c\u4e0d\u6703\u4e0a\u50b3\u4efb\u4f55\u6771\u897f\u5594\u3002`,
     note: (version) => `\u539f\u578b ${version} \u00b7 \u55ae\u4e00\u6a94\u6848 \u00b7 \u6c92\u6709\u5e33\u865f\uff0c\u6c92\u6709\u4f3c\u670d\u5668`,
     infoAria: "\u9019\u662f\u4ec0\u9ebc\u5440\uff1f",
     infoBody: (name) => `\u6642\u9593\u4e00\u904e\uff0c${name}\u5c31\u6703\u6f38\u6f38\u8b8a\u6e34\u3002\u4f60\u81ea\u5df1\u559d\u6c34\u7684\u6642\u5019\u5c31\u9ede\u4e00\u4e0b\u5927\u6309\u9215\uff0c\u6c34\u5206\u5c31\u6703\u56de\u4f86\uff0c${name}\u4e5f\u6703\u9a6c\u4e0a\u6709\u7cbe\u795e\u5594\uff01`,
     infoTip: "\u6240\u6709\u8cc7\u6599\u53ea\u7559\u5728\u9019\u53f0\u88dd\u7f6e\u4e0a\u3002\u901f\u5ea6\u548c\u6bcf\u6b21\u7684\u4efd\u91cf\u53ef\u4ee5\u5728\u4e0b\u9762\u8abf\u6574\u3002",
-    themeToDay: "\u5207\u63db\u5230\u767d\u5929\u6a21\u5f0f",
-    themeToNight: "\u5207\u63db\u5230\u591c\u6668\u6a21\u5f0f",
     soundOn: "\u97f3\u6548\u958b\u8457",
     soundOff: "\u97f3\u6548\u95dc\u4e86",
     secretAria: "\u795e\u79d8\u7684\u5c0f\u958b\u95dc",
@@ -1563,6 +1798,255 @@ const Sky = {
       x: left + progress * (right - left),
       y: horizon - (horizon - apex) * Math.sin(Math.PI * progress)
     };
+  }
+};
+
+/* ========= GLITTER =========
+   Ported from the prototype in .work/glitter-mode/, whose engine was measured
+   rather than guessed: caching each emoji as a sprite instead of calling
+   fillText per particle per frame took a 90-particle burst from 0.958 ms to
+   0.155 ms a frame. The prototype's own storage and theme-mode machinery is
+   deliberately left behind, because this app already owns both.
+   Tuning lives in Config.glitter. */
+
+/* Both preferences are live queries, not one-time reads: a 2-in-1 changes
+   pointer class when its keyboard folds away, and the motion preference can
+   change while the page is open. */
+const GlitCaps = {
+  motion: window.matchMedia("(prefers-reduced-motion: reduce)"),
+  fine:   window.matchMedia("(pointer: fine)"),
+  hover:  window.matchMedia("(hover: hover)"),
+
+  get reducedMotion() { return this.motion.matches; },
+
+  /** A mouse or trackpad, as opposed to a finger. */
+  get finePointer() { return this.fine.matches && this.hover.matches; },
+
+  /** The trail is the part that makes no sense without a pointer. */
+  get trailSupported() {
+    return !this.reducedMotion &&
+           (!Config.glitter.trail.requiresFinePointer || this.finePointer);
+  },
+
+  onChange(fn) {
+    [this.motion, this.fine, this.hover].forEach((q) => q.addEventListener("change", fn));
+  }
+};
+
+/* One offscreen canvas per glyph, blitted after that. fillText on a colour
+   emoji re-rasterises from the font on every call, which is what made the
+   first burst stutter. */
+const GlitSprites = {
+  cache: new Map(),
+
+  get(glyph) {
+    const hit = this.cache.get(glyph);
+    if (hit) return hit;
+
+    const { base, pad } = Config.glitter.sprite;
+    const side = base + pad * 2;
+    const c = document.createElement("canvas");
+    c.width = side;
+    c.height = side;
+
+    const g = c.getContext("2d");
+    g.font = base + "px " + Config.glitter.emojiFont;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText(glyph, side / 2, side / 2);
+
+    this.cache.set(glyph, c);
+    return c;
+  },
+
+  /** Build every sprite up front so no burst ever pays for rasterising. */
+  prewarm() {
+    new Set(Config.glitter.glyphs).forEach((glyph) => this.get(glyph));
+    return this.cache.size;
+  }
+};
+
+/* One canvas, one rAF loop, no DOM churn. The loop starts on demand and stops
+   itself once the last particle is gone, so an inert theme costs nothing. */
+const GlitEngine = {
+  canvas: null,
+  ctx: null,
+  particles: [],
+  running: false,
+  lastFrame: 0,
+  enabled: false,                 // set from the resolved theme in applyTheme
+  pointer: { x: 0, y: 0, vx: 0, vy: 0, last: 0, travelled: 0, seen: false },
+
+  init(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext("2d");
+    this.resize();
+    GlitSprites.prewarm();
+    window.addEventListener("resize", () => this.resize());
+  },
+
+  resize() {
+    const dpr = Math.min(Config.glitter.canvas.maxDpr, Math.max(1, window.devicePixelRatio || 1));
+    this.canvas.width = Math.round(window.innerWidth * dpr);
+    this.canvas.height = Math.round(window.innerHeight * dpr);
+    this.canvas.style.width = window.innerWidth + "px";
+    this.canvas.style.height = window.innerHeight + "px";
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  },
+
+  /** Particles at all: the theme wants them and motion is not reduced. */
+  get active() {
+    return this.enabled && !GlitCaps.reducedMotion;
+  },
+
+  /** The trail specifically, which also needs a pointer to follow. */
+  get trailActive() {
+    return this.enabled && GlitCaps.trailSupported;
+  },
+
+  spawn(x, y, opts) {
+    if (!this.active || !this.ctx) return;
+    const g = Config.glitter;
+    const o = opts || {};
+    const now = performance.now();
+    const angle = o.angle !== undefined ? o.angle : Math.random() * Math.PI * 2;
+    const speed = o.speed !== undefined ? o.speed : 0;
+    const between = ([min, max]) => min + Math.random() * (max - min);
+
+    this.particles.push({
+      x: x,
+      y: y,
+      vx: (o.vx || 0) + Math.cos(angle) * speed + between([-g.scatter, g.scatter]),
+      vy: (o.vy || 0) + Math.sin(angle) * speed + between([g.riseKick[1], g.riseKick[0]]),
+      size: between(g.size),
+      sprite: GlitSprites.get(g.glyphs[Math.floor(Math.random() * g.glyphs.length)]),
+      rot: Math.random() * Math.PI * 2,
+      spin: between(g.spin) * Math.PI / 180,
+      phase: Math.random() * Math.PI * 2,
+      born: now,
+      life: between(g.life)
+    });
+
+    /* Cap by dropping the oldest, which are already fading out anyway. */
+    const over = this.particles.length - g.trail.maxParticles;
+    if (over > 0) this.particles.splice(0, over);
+
+    this.start();
+  },
+
+  burst(x, y, count) {
+    if (!this.active || count <= 0) return;
+    const speed = Config.glitter.burst.speed;
+    for (let i = 0; i < count; i++) {
+      /* Even angular spread with jitter reads fuller than pure random. */
+      const angle = (i / count) * Math.PI * 2 + (Math.random() * 0.5 - 0.25);
+      this.spawn(x, y, { angle: angle, speed: speed[0] + Math.random() * (speed[1] - speed[0]) });
+    }
+  },
+
+  burstFrom(el, count) {
+    if (!el) return;
+    const box = el.getBoundingClientRect();
+    this.burst(box.left + box.width / 2, box.top + box.height / 2, count);
+  },
+
+  /** The burst a tap or click earns, which is nothing on a touch screen. */
+  tapCount() {
+    const burst = Config.glitter.burst;
+    return GlitCaps.finePointer ? burst.onClick : burst.onTouchTap;
+  },
+
+  trackPointer(ev) {
+    const g = Config.glitter;
+    const pt = this.pointer;
+    const now = performance.now();
+    const dt = (now - pt.last) / 1000;
+
+    if (pt.seen) {
+      /* Distance always accumulates. A 1000 Hz mouse lands several moves in
+         the same millisecond, and gating distance on dt made those vanish,
+         which thinned the trail on exactly the fastest hardware. */
+      pt.travelled += Math.hypot(ev.clientX - pt.x, ev.clientY - pt.y);
+      if (dt > 0 && dt < 0.2) {
+        pt.vx = (ev.clientX - pt.x) / dt;
+        pt.vy = (ev.clientY - pt.y) / dt;
+      }
+    }
+    pt.x = ev.clientX;
+    pt.y = ev.clientY;
+    pt.last = now;
+    pt.seen = true;
+
+    if (!this.trailActive) return;
+    if (pt.travelled < g.trail.minDistance) return;
+    pt.travelled = 0;
+
+    const span = g.trail.perSpawn;
+    const count = span[0] + Math.floor(Math.random() * (span[1] - span[0] + 1));
+    for (let i = 0; i < count; i++) {
+      this.spawn(pt.x, pt.y, { vx: pt.vx * g.inheritPointer, vy: pt.vy * g.inheritPointer });
+    }
+  },
+
+  start() {
+    if (this.running) return;
+    this.running = true;
+    this.lastFrame = performance.now();
+    requestAnimationFrame((t) => this.frame(t));
+  },
+
+  clear() {
+    this.particles.length = 0;
+    if (this.ctx) this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  },
+
+  frame(now) {
+    const g = Config.glitter;
+    /* Clamp dt so a backgrounded tab does not teleport every particle off
+       screen the moment it comes back. */
+    const dt = Math.min(0.05, Math.max(0, (now - this.lastFrame) / 1000));
+    this.lastFrame = now;
+
+    const ctx = this.ctx;
+    const drag = Math.pow(g.drag, dt * 60);
+    const spriteScale = (g.sprite.base + g.sprite.pad * 2) / g.sprite.base;
+
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+    const alive = [];
+    for (const pcl of this.particles) {
+      const age = now - pcl.born;
+      const t = age / pcl.life;
+      if (t >= 1) continue;
+
+      pcl.vy += g.gravity * dt;
+      pcl.vx *= drag;
+      pcl.vy *= drag;
+      pcl.x += pcl.vx * dt;
+      pcl.y += pcl.vy * dt;
+      pcl.rot += pcl.spin * dt;
+
+      if (pcl.y - pcl.size > window.innerHeight) continue;
+
+      const fade = t < g.fadeFrom ? 1 : 1 - (t - g.fadeFrom) / (1 - g.fadeFrom);
+      const pop = Math.min(1, age / g.popIn);
+      const twinkle = 1 + g.twinkle.amp *
+        Math.sin(age / 1000 * g.twinkle.rate * Math.PI * 2 + pcl.phase);
+      const draw = pcl.size * pop * twinkle * spriteScale;
+
+      ctx.save();
+      ctx.globalAlpha = fade;
+      ctx.translate(pcl.x, pcl.y);
+      ctx.rotate(pcl.rot);
+      ctx.drawImage(pcl.sprite, -draw / 2, -draw / 2, draw, draw);
+      ctx.restore();
+
+      alive.push(pcl);
+    }
+    this.particles = alive;
+
+    if (this.particles.length > 0) requestAnimationFrame((t) => this.frame(t));
+    else this.running = false;
   }
 };
 
@@ -1960,7 +2444,7 @@ const State = {
       refillAmount: this.clampStep(saved.refillAmount, base.refillAmount, Config.limits.refillAmount),
       soundOn: saved.soundOn !== false,
       easterEggOn: saved.easterEggOn !== false,
-      themeMode: this.oneOf(saved.themeMode, ["auto", "day", "night"], legacyTheme || base.themeMode),
+      themeMode: this.oneOf(saved.themeMode, Config.themes.order, legacyTheme || base.themeMode),
       species: this.oneOf(saved.species, Object.keys(Config.species), base.species),
       names: this.cleanNames(saved.names),
       locale: this.oneOf(saved.locale, Config.locales, base.locale),
@@ -2091,7 +2575,8 @@ const UI = {
 
   cache() {
     const ids = [
-      "appTitle", "infoBtn", "infoCard", "infoBody", "infoTip", "themeBtn", "soundBtn",
+      "appTitle", "infoBtn", "infoCard", "infoBody", "infoTip", "soundBtn",
+      "themes", "themesLabel", "themeStatus", "trailNotice", "glitCanvas",
       "scene", "sceneCaption", "speech", "drops",
       "meterHeading", "meterValue", "meterBar", "meterFill", "meterLabel", "moodLine",
       "statCountLabel", "statCount", "statLastLabel", "statLast",
@@ -2100,7 +2585,6 @@ const UI = {
       "decayInput", "decayOut", "decayScale", "decayLabel",
       "refillInput", "refillOut", "refillScale", "refillLabel",
       "soundInput", "soundLabel", "eggInput", "eggLabel",
-      "autoThemeInput", "autoThemeLabel", "themeInput", "themeLabel",
       "settingsFoot", "note", "secretBtn", "favicon", "sun", "moon", "ambient",
       "nameLabel", "nameInput"
     ];
@@ -2170,8 +2654,8 @@ const UI = {
     this.el.refillLabel.textContent = t.refill;
     this.el.soundLabel.textContent = t.sound;
     this.el.eggLabel.textContent = t.egg;
-    this.el.autoThemeLabel.textContent = t.autoTheme;
-    this.el.themeLabel.textContent = t.nightTheme;
+    this.el.themesLabel.textContent = t.themesLabel;
+    this.renderThemes();
     this.el.settingsFoot.textContent = t.settingsFoot(name);
 
     this.el.note.textContent = t.note(Config.app.version);
@@ -2276,8 +2760,66 @@ const UI = {
   /** Resolves themeMode against the clock, so "auto" follows the time of day. */
   effectiveTheme() {
     const mode = State.data.themeMode;
-    if (mode === "day" || mode === "night") return mode;
+    if (mode !== "auto") return mode;          // day, night or glitter
     return Time.isDaytime() ? "day" : "night";
+  },
+
+  /**
+   * Which sky the resolved theme is: glitter is a lit one, so it keeps the sun
+   * and the rainbow and leaves the moon, the starfield and the shooting star
+   * to the dark. Without this the sky would simply empty out in glitter,
+   * because every gate asks for "day" or "night" by name.
+   */
+  skyTheme() {
+    return this.effectiveTheme() === "night" ? "night" : "day";
+  },
+
+  /**
+   * Builds the theme pill. Four modes, so it is a radiogroup rather than a
+   * switch, and the icon is decorative while the accessible name carries the
+   * meaning. Rebuilt on a locale change, which is why it is here and not in
+   * applyTheme.
+   */
+  renderThemes() {
+    const t = this.t();
+    this.el.themes.querySelectorAll("button").forEach((b) => b.remove());
+    Config.themes.order.forEach((mode) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.setAttribute("role", "radio");
+      btn.dataset.mode = mode;
+      btn.innerHTML = '<span aria-hidden="true">' + Config.themes.icons[mode] + "</span>";
+      this.label(btn, t.themes[mode]);         // accessible name and tooltip
+      this.el.themes.appendChild(btn);
+    });
+    this.markThemes();
+  },
+
+  /** Marks the selected mode, not the resolved theme: "auto" is a choice too. */
+  markThemes() {
+    const t = this.t();
+    const mode = State.data.themeMode;
+    this.el.themes.querySelectorAll("button").forEach((btn) => {
+      const on = btn.dataset.mode === mode;
+      btn.setAttribute("aria-checked", String(on));
+      btn.tabIndex = on ? 0 : -1;              // one tab stop, arrows move inside
+    });
+    this.el.themeStatus.textContent = `${t.themes[mode]} ${t.themeSelected}`;
+    this.updateTrailNotice();
+  },
+
+  /** Says why the glitter trail is missing rather than looking broken. */
+  updateTrailNotice() {
+    const t = this.t();
+    if (!GlitEngine.enabled) {
+      this.el.trailNotice.textContent = "";
+    } else if (GlitCaps.reducedMotion) {
+      this.el.trailNotice.textContent = t.trailReducedMotion;
+    } else if (!GlitCaps.trailSupported) {
+      this.el.trailNotice.textContent = t.trailNoPointer;
+    } else {
+      this.el.trailNotice.textContent = "";
+    }
   },
 
   /**
@@ -2306,17 +2848,18 @@ const UI = {
   },
 
   applyTheme() {
-    const t = this.t();
     const theme = this.effectiveTheme();
-    const night = theme === "night";
+    const sparkly = Config.themes.sparkly.includes(theme);
 
     document.documentElement.dataset.theme = theme;
-    this.el.themeBtn.textContent = night ? "☀️" : "\u{1F319}";
-    this.label(this.el.themeBtn, night ? t.themeToDay : t.themeToNight);
-    this.el.themeInput.checked = night;
-    this.el.autoThemeInput.checked = State.data.themeMode === "auto";
-    this.applySky(theme);     // rides the same ticker as the theme
-    Ambient.nudgeStar();      // day or night decides which reward is allowed
+    GlitEngine.enabled = sparkly;
+    /* Only on the way out, because applyTheme also runs on the UI ticker. */
+    if (!sparkly && this.lastTheme === "glitter") GlitEngine.clear();
+    this.lastTheme = theme;
+
+    this.markThemes();
+    this.applySky(this.skyTheme());   // rides the same ticker as the theme
+    Ambient.nudgeStar();              // the sky decides which reward is allowed
   },
 
   applySound() {
@@ -2376,18 +2919,35 @@ const Events = {
     UI.el.secretBtn.addEventListener("click", () => this.onSecret());
     UI.el.infoBtn.addEventListener("click", () => UI.toggleInfo());
 
-    /* The top bar button sets an explicit choice, which turns auto off. */
-    UI.el.themeBtn.addEventListener("click", () => {
-      State.set({ themeMode: UI.effectiveTheme() === "night" ? "day" : "night" });
-      UI.applyTheme();
+    UI.el.themes.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-mode]");
+      if (btn) this.setThemeMode(btn.dataset.mode, btn);
     });
-    UI.el.themeInput.addEventListener("change", (e) => {
-      State.set({ themeMode: e.target.checked ? "night" : "day" });
-      UI.applyTheme();
+    UI.el.themes.addEventListener("keydown", (e) => {
+      const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      if (!step) return;
+      e.preventDefault();
+      const order = Config.themes.order;
+      const from = order.indexOf(State.data.themeMode);
+      const next = order[(from + step + order.length) % order.length];
+      this.setThemeMode(next);
+      const btn = UI.el.themes.querySelector(`button[data-mode="${next}"]`);
+      if (btn) btn.focus();
     });
-    UI.el.autoThemeInput.addEventListener("change", (e) => {
-      State.set({ themeMode: e.target.checked ? "auto" : UI.effectiveTheme() });
-      UI.applyTheme();
+
+    /* Guarded in JS as well as in CSS: CSS alone would hide the result of the
+       work rather than skip it. */
+    window.addEventListener("pointermove", (e) => GlitEngine.trackPointer(e), { passive: true });
+
+    document.addEventListener("click", (e) => {
+      if (e.target.closest("[data-mode]")) return;      // the pill bursts itself
+      if (!e.target.closest("button, .card, .panel")) return;
+      GlitEngine.burst(e.clientX, e.clientY, GlitEngine.tapCount());
+    });
+
+    GlitCaps.onChange(() => {
+      if (!GlitCaps.trailSupported) GlitEngine.clear();
+      UI.updateTrailNotice();
     });
 
     UI.el.soundBtn.addEventListener("click", () => this.setSound(!State.data.soundOn));
@@ -2441,6 +3001,7 @@ const Events = {
         State.save();
         this.stopRefresh();
         Ambient.stop();
+        GlitEngine.clear();       // nothing should be mid-flight on return
       }
     });
     window.addEventListener("pagehide", () => {
@@ -2458,6 +3019,28 @@ const Events = {
     };
     window.addEventListener("pointerdown", unlockOnce);
     window.addEventListener("keydown", unlockOnce);
+  },
+
+  /**
+   * One entry point for the pill, so the burst that greets glitter happens
+   * exactly on the change and not on every re-render. Compares resolved
+   * themes, not modes: leaving auto at dusk is a real change of theme even
+   * though the stored mode never moved.
+   */
+  setThemeMode(mode, origin) {
+    if (!Config.themes.order.includes(mode) || mode === State.data.themeMode) return;
+    const before = UI.effectiveTheme();
+    State.set({ themeMode: mode });
+    UI.applyTheme();
+    const after = UI.effectiveTheme();
+
+    const sparkly = Config.themes.sparkly;
+    if (sparkly.includes(after) && !sparkly.includes(before)) {
+      const count = GlitCaps.finePointer
+        ? Config.glitter.burst.onThemeEnter
+        : Config.glitter.burst.onTouchTap;
+      GlitEngine.burstFrom(origin || UI.el.themes, count);
+    }
   },
 
   setSound(on) {
@@ -2530,6 +3113,9 @@ const Events = {
     UI.render();
     this.startRefresh();
     Ambient.start();
+    /* A page that was suspended may have missed a resize, and a canvas sized
+       for the old viewport draws in the wrong place. */
+    GlitEngine.resize();
 
     const after = State.band();
     if (lost > 1 && after !== before && State.bandRank(after) > State.bandRank(before)) {
@@ -2568,6 +3154,7 @@ function init() {
   State.save();
 
   Audio_.enabled = State.data.soundOn;
+  GlitEngine.init(UI.el.glitCanvas);
 
   UI.applySpecies();
   UI.applyLimits();

@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.21
+# Aniluna Aqua Buddy - v0.22
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -34,7 +34,8 @@ Aniluna, or a dinosaur called Anirex if you find the switch.
 | Two creatures | A unicorn and a dinosaur, switched by an almost hidden `*` in the bottom right. Name, speech, favicon and synth voice all follow |
 | Naming | Each creature can be renamed in the settings, up to 24 characters. The name flows into the title, the speech, the stats and every ARIA label. Clearing the field restores the built-in name |
 | Tooltips | The emoji-only buttons name themselves on hover and on keyboard focus, from the same string as their accessible name |
-| Light and dark | Automatic from the local clock, day 07:00 to 19:00. The top bar button sets an explicit override, and a settings toggle hands control back to the clock |
+| Three themes plus auto | A segmented pill in the top bar: follow the clock, day, night, or glitter. Auto resolves against the local clock, day 07:00 to 19:00, and re-resolves at dusk while the page is open |
+| Glitter mode | A theme rather than a switch: pink and lavender palette, a rounded typeface, a slow sheen, decorative ribbons, and an emoji particle canvas. The pointer trail needs a mouse and says so when there is none; under reduced motion the palette stays and the motion goes |
 | Stars | Always at night. In daylight only at the happiest level, where they turn warm gold so they read against a pale sky |
 | Sun and moon | Both travel one east-to-west arc: up from the left, highest at the peak hour, down to the right. Sun peaks at 12:00, moon rises after dusk and peaks at midnight |
 | Ambient life | Rare birds by day, rarer wind gusts by day and more of them at night. Random height, direction, size and speed, small and faint so the sky stays uncluttered |
@@ -55,7 +56,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.21", status: "DEVELOPMENT" },
+  app: { version: "v0.22", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -99,7 +100,8 @@ The single script is split into labelled sections:
 
 | Section | Responsibility |
 |---|---|
-| `CONFIG` | Version, constants, defaults, thresholds, slider limits, storage key, copy |
+| `CONFIG` | Version, constants, defaults, thresholds, slider limits, storage key, theme list, glitter tuning, copy |
+| `GLITTER` | `GlitCaps` for live pointer and motion queries, `GlitSprites` for the one-per-glyph sprite cache, `GlitEngine` for the particle canvas |
 | `STORAGE` | Read/write/clear the JSON blob in `localStorage`, and one-time migration from a legacy key |
 | `TIME` | Relative time labels, local day key |
 | `AUDIO` | Context setup, gesture unlock, procedural sounds |
@@ -133,10 +135,9 @@ mkdir -p .work
 
 Anything worth keeping moves out into `README.md`, `BRIEF.md` or `index.html`.
 
-One exception is live right now: `.work/glitter-mode/` holds the F12 prototype,
-two demos and a notes file with measured numbers behind them. It is the only
-thing in `.work/` that is not throwaway, and "deleting the folder is always
-safe" does not apply to it until F12 either lands or is dropped.
+`.work/glitter-mode/` held the F12 prototype until v0.22 landed it, so that
+folder is throwaway again. Its four general findings are worth promoting into
+`web-prototype-findings.md` before it goes.
 
 ## Versioning and changelog
 
@@ -154,6 +155,78 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.22  2026-08-24  Landed F12, glitter mode, from the prototype in
+                   `.work/glitter-mode/`.
+
+                   Glitter is a theme and not a switch, which is the finding
+                   that shaped the work: themeMode takes a fourth value and the
+                   top bar button plus the two settings checkboxes are replaced
+                   by one segmented pill, auto / day / night / glitter, built as
+                   a radiogroup with a roving tabindex because a switch would
+                   have to lie about two of the four. Icons are decorative, the
+                   accessible name carries the meaning, and both come from the
+                   same UI.label() call as the tooltips, so a locale change
+                   moves all three together. A status line announces the choice
+                   for screen readers.
+
+                   The theme itself is one `:root[data-theme="glitter"]` token
+                   block. The prototype's palette moved across but its token
+                   names could not, because the demo host used its own
+                   vocabulary, so the block is written in this app's names and
+                   covers the creature palette as well as the page.
+
+                   Two integration points the prototype could not have known
+                   about. The typeface is now a `--font-app` token so a theme
+                   can change it, and glitter's rounded stack keeps the CJK
+                   faces after the Latin ones, because the app ships
+                   Traditional Chinese copy and Comic Sans has no glyphs for
+                   it. And glitter is a lit sky, so the new UI.skyTheme() maps
+                   it to day: it keeps the sun and the rainbow, and leaves the
+                   moon, the starfield and the shooting star to the dark.
+                   Without that every sky gate would have missed, since each
+                   asks for "day" or "night" by name, and glitter would have
+                   had an empty sky and no reward.
+
+                   The engine is ported as it was measured: GlitCaps for live
+                   pointer and motion queries, GlitSprites for the sprite cache
+                   that took a 90-particle burst from 0.958 ms to 0.155 ms a
+                   frame, GlitEngine for one canvas, one rAF loop that stops
+                   itself when the last particle dies. Tuning sits in
+                   Config.glitter rather than in the engine body (NXW-NAM-4).
+                   Left behind deliberately: the prototype's own storage and
+                   theme-mode machinery, which would have been a second theme
+                   system arguing with this one.
+
+                   The trail needs a pointer, so it is gated on (pointer: fine)
+                   and (hover: hover) in JS as well as in CSS, since CSS alone
+                   would hide the result of the work rather than skip it. On a
+                   touch screen the theme applies and the trail says why it is
+                   absent. Under reduced motion nothing spawns and the sheen
+                   holds still, but the palette, the typeface and the ribbons
+                   stay: the mode is still observable, it just does not move.
+                   Leaving glitter clears the canvas, and a hidden tab clears
+                   it too so nothing is mid-flight on return, where the canvas
+                   is also re-sized in case a suspended page missed a resize.
+
+                   Verified by driving the page: the pill is a radiogroup of
+                   four localised radios with one tab stop, arrow keys walk it,
+                   entering glitter swaps palette, typeface, sheen and ribbons
+                   and enables the engine, a burst makes particles and the cap
+                   holds at 90, simulated pointer travel spawns a trail,
+                   leaving glitter clears every particle and re-enables the
+                   night reward, and spawning under an inert theme is a no-op.
+                   Seven sprites are prewarmed from eight glyph slots, which
+                   matches the prototype. Confirmed by eye afterwards in all
+                   three themes, which is also where v0.21's shooting star was
+                   first seen in flight rather than measured.
+
+                   Fixed after looking at it: the selected button borrowed the
+                   prototype's near-white thumb, which on the night palette
+                   resolved to --panel sitting on --meter-bg with almost no
+                   contrast, so the selection was there and invisible. It now
+                   uses --accent on --accent-ink, the same idiom the language
+                   buttons already use for "this one is chosen".
+
 v0.21  2026-08-24  The reward after dark is a shooting star rather than a
                    rainbow, and the threshold gating both is renamed.
 
@@ -308,7 +381,7 @@ v0.10  2026-08-19  Initial version. Single-file static app: timestamp driven
 
 ## Known issues
 
-Defects present in `v0.21`, as opposed to work never started, which is under
+Defects present in `v0.22`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
@@ -331,7 +404,7 @@ Accepted limitations, written down so they are not rediscovered as bugs:
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
 - No device test matrix has been run (B2) and the Traditional Chinese copy has
-  not been read by a native speaker (F2), so `v0.21` is a prototype in the
+  not been read by a native speaker (F2), so `v0.22` is a prototype in the
   literal sense: everything here was verified in one desktop browser.
 - B1 is closed as won't-fix, decided in v0.18. A system clock moved backwards
   forgives the decay for the span it skipped, but reaching that takes a
@@ -355,13 +428,12 @@ parked idea.
 | ID | Pri | Item | Notes |
 |---|---|---|---|
 | F1 | P1 | Confirm or replace the working titles | `Aniluna` and `Anirex` are both still working titles. One string each in `Config.species`, so the rename is cheap in code, but it is also the product name, the repo name and the storage key. Decide before `v1.0`. F11 softened this: an owner who dislikes the name can now overwrite it, so what is left to settle is the product and repository name rather than what the pet is called. |
-| F2 | P1 | Native-speaker pass on the Traditional Chinese copy | It is written as native copy rather than translation and the register is deliberately soft, but no Taiwanese speaker has read it yet. The German diminutives deserve a second pair of eyes too, less urgently. |
+| F2 | P1 | Native-speaker pass on the Traditional Chinese copy | It is written as native copy rather than translation and the register is deliberately soft, but no Taiwanese speaker has read it yet. The German diminutives deserve a second pair of eyes too, less urgently, and v0.22 added Glitzermodus, its two trail notices and the Traditional Chinese 閃閃模式, none of which a native speaker has read. |
 | F3 | P2 | "While you were away" note | Brief stretch goal. After a long gap, one line about what happened instead of silently presenting a drooping pet. The data already exists: `lastDrinkAt`, and the points `State.sync()` returns. |
 | F4 | P2 | Haptics | Brief stretch goal. `navigator.vibrate` on the drink tap and the easter egg, gated by a toggle and suppressed under `prefers-reduced-motion`. Unsupported on iOS Safari, so it can only ever be additive. |
 | F5 | P2 | Real sprite art | Brief stretch goal. The creatures are SVG rects outlined by a single `feMorphology` filter. Per-state sprites would replace the shapes, not the animation system, because both species already share the `.pet-*` group classes. |
 | F6 | P2 | Undo the last drink | A mis-tap can currently only be corrected with a full reset, which also clears the daily count. Keeping the previous `hydration` and `lastDrinkAt` for one step would cover it. |
 | F8 | P2 | A third creature, a panda | Chosen, so this is no longer an open question about whether to add one. `Config.species` is already a map and `toggleSpecies()` already cycles it, so the config side is an entry with a name, the `🐼` emoji and voice parameters, plus a sprite that reuses the `.pet-*` group classes the animation system drives. Two real pieces of work behind that: the single `*` switch has to express three states rather than toggle two, and a panda has no horn or tail to animate, so the idle motion per mood band needs a panda equivalent rather than the same shapes recoloured. The name is F1's problem. |
-| F12 | P2 | Glitter mode | Prototyped and measured in `.work/glitter-mode/`, two self-contained demos plus notes, one of them already shaped like Aniluna in German. The finding that decides the work: glitter is a theme, not a switch, so `themeMode` grows a fourth value and the day/night button plus auto checkbox are replaced by a segmented `auto / day / night / glitter` control, which the prototype builds as a `radiogroup` with roving tabindex. The theme itself is one `:root[data-theme="glitter"]` token block including `--font-app`; the particle canvas is separate, gated behind `(pointer: fine)` and `(hover: hover)` and off under reduced motion. Blocks marked `SHARED GLITTER BLOCK` and `SHARED GLITTER ENGINE` are what moves across. "Glitzermodus" needs the F2 treatment. |
 | F7 | P3 | Richer scene changes between moods | Brief stretch goal. The sky already carries sun, moon, stars and ambient life, but the mood bands change the character rather than the world around it. |
 | F9 | P3 | Reminder experiments | Brief stretch goal, and the one that fights the constraints: without a service worker there is no notification once the tab is closed, and a service worker means a second file, which breaks the single-file promise. Parked until someone decides which of the two matters more. |
 | F10 | P3 | Prune `Config.legacyKeys` | Drop `ina-water-friend/v1` once no browser can plausibly still hold a save under it. Harmless until then, so this is bookkeeping rather than work. |
@@ -383,7 +455,7 @@ It is kept as authored, so it still uses the working title and em dashes.
 
 ## Status
 
-Prototype, `v0.21`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.22`, DEVELOPMENT. The loop works end to end and the app is
 usable. What it gets wrong today is listed under
 [Known issues](#known-issues); what has never been started is under
 [Roadmap](#roadmap), where the stretch goals from `BRIEF.md` live too, so
