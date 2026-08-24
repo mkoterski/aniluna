@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.19
+# Aniluna Aqua Buddy - v0.20
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -32,6 +32,8 @@ Aniluna, or a dinosaur called Anirex if you find the switch.
 | First run | Starts at 75%, not full, so a drink is the obvious next move and teaches the loop. Reset still fills to 100% |
 | Languages | German (default), Traditional Chinese (`zh-TW`) and English. Written as native copy rather than translations, and relative times come from `Intl.RelativeTimeFormat` |
 | Two creatures | A unicorn and a dinosaur, switched by an almost hidden `*` in the bottom right. Name, speech, favicon and synth voice all follow |
+| Naming | Each creature can be renamed in the settings, up to 24 characters. The name flows into the title, the speech, the stats and every ARIA label. Clearing the field restores the built-in name |
+| Tooltips | The emoji-only buttons name themselves on hover and on keyboard focus, from the same string as their accessible name |
 | Light and dark | Automatic from the local clock, day 07:00 to 19:00. The top bar button sets an explicit override, and a settings toggle hands control back to the clock |
 | Stars | Always at night. In daylight only at the happiest level, where they turn warm gold so they read against a pale sky |
 | Sun and moon | Both travel one east-to-west arc: up from the left, highest at the peak hour, down to the right. Sun peaks at 12:00, moon rises after dusk and peaks at midnight |
@@ -52,7 +54,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.19", status: "DEVELOPMENT" },
+  app: { version: "v0.20", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -70,7 +72,15 @@ const Config = {
 ```
 
 Change a `name` and the title, heading, speech, status text and ARIA labels all
-follow. Both creature names are working titles and each is a single string. The `limits` block drives the slider bounds, their tick labels and the
+follow. Both creature names are working titles and each is a single string.
+
+Since v0.20 there are two layers. `Config.species[x].name` is the built-in
+default, and `State.data.names` holds the owner's override, one entry per
+species key, set from the Name field in the settings panel. `UI.name()` is the
+single place that resolves the two, so nothing else needs to know which is in
+play. An empty field deletes the override rather than storing a blank, which is
+what makes the built-in name reachable again, and `Config.naming.maxLength`
+caps the field and the save path alike. The `limits` block drives the slider bounds, their tick labels and the
 clamping of saved values, so widening a slider is a one-line change.
 
 `storageKey` is `aniluna/v1`. Renaming a storage key normally costs everyone
@@ -122,6 +132,11 @@ mkdir -p .work
 
 Anything worth keeping moves out into `README.md`, `BRIEF.md` or `index.html`.
 
+One exception is live right now: `.work/glitter-mode/` holds the F12 prototype,
+two demos and a notes file with measured numbers behind them. It is the only
+thing in `.work/` that is not throwaway, and "deleting the folder is always
+safe" does not apply to it until F12 either lands or is dropped.
+
 ## Versioning and changelog
 
 This project follows the NeXtWind script standards (`nxw-script-standards.md` in
@@ -138,6 +153,53 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.20  2026-08-24  Landed F11 and F13, the two the requester picked first.
+
+                   F11, editable names: a Name field at the top of the settings
+                   panel renames the creature on screen. Overrides live in
+                   State.data.names, one entry per species key, so each
+                   creature keeps its own name and switching species still
+                   changes it, as it did before. UI.name() resolves the
+                   override against Config.species[x].name and is now the only
+                   place that decides, so the title, the heading, the speech,
+                   the stats, the settings footer, the reset prompt, the
+                   console banner and every ARIA label follow from one call.
+                   Entries are trimmed, inner whitespace is collapsed, and the
+                   cap is Config.naming.maxLength of 24, applied by code point
+                   rather than by UTF-16 unit so a name ending in an emoji
+                   cannot be cut in half. Clearing the field deletes the
+                   override rather than storing a blank, which is what makes
+                   the built-in name reachable again, and the placeholder shows
+                   that name so the way back is visible. Commit is on change,
+                   meaning blur or Enter, not on every keystroke, because a
+                   half-typed name has no business in four ARIA labels. A save
+                   carrying junk under names is dropped rather than repaired,
+                   so it falls back to the built-in names.
+
+                   F13, tooltips: the four emoji-only buttons name themselves
+                   on hover and on keyboard focus. The text comes from a
+                   data-tip attribute written by the new UI.label(), which sets
+                   the accessible name and the tooltip from one string, so the
+                   two cannot drift as the copy changes. Rendered as a
+                   pseudo-element, which is not in the accessibility tree, so a
+                   screen reader still hears one name rather than two. Hover is
+                   gated behind (hover: hover) and (pointer: fine), and the
+                   secret switch opens its tooltip upwards because it sits in
+                   the footer. Touch is deliberately not covered: these buttons
+                   act on the first tap, so a tooltip needing a second one
+                   would only be in the way.
+
+                   Verified by driving the page: padding and inner double
+                   spaces collapse, the cap holds at 24 code points, an
+                   over-long emoji name survives whole, a rename reaches the
+                   title and the ARIA labels, the field and placeholder follow
+                   a species switch, clearing restores Aniluna, and all four
+                   tooltips match their accessible name across a theme flip and
+                   a locale change. Junk and non-object names values were
+                   tested against State.load() directly, because a file:// page
+                   served as a data: URL has no localStorage to round-trip
+                   through.
+
 v0.19  2026-08-24  Fixed B9: the sun and the moon are now gated on the resolved
                    theme rather than on the clock alone. UI.applySky() takes
                    the theme applyTheme() has already resolved and hides the
@@ -312,7 +374,7 @@ v0.10  2026-08-19  Initial version. Single-file static app with timestamp
 
 ## Known issues
 
-Defects present in `v0.19`, as opposed to work never started, which is under
+Defects present in `v0.20`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
@@ -335,7 +397,7 @@ Accepted limitations, written down so they are not rediscovered as bugs:
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
 - No device test matrix has been run (B2) and the Traditional Chinese copy has
-  not been read by a native speaker (F2), so `v0.19` is a prototype in the
+  not been read by a native speaker (F2), so `v0.20` is a prototype in the
   literal sense: everything here was verified in one desktop browser.
 - B1 is closed as won't-fix, decided in v0.18. A system clock moved backwards
   forgives the decay for the span it skipped, but reaching that takes a
@@ -358,13 +420,14 @@ parked idea.
 
 | ID | Pri | Item | Notes |
 |---|---|---|---|
-| F1 | P1 | Confirm or replace the working titles | `Aniluna` and `Anirex` are both still working titles. One string each in `Config.species`, so the rename is cheap in code, but it is also the product name, the repo name and the storage key. Decide before `v1.0`. |
+| F1 | P1 | Confirm or replace the working titles | `Aniluna` and `Anirex` are both still working titles. One string each in `Config.species`, so the rename is cheap in code, but it is also the product name, the repo name and the storage key. Decide before `v1.0`. F11 softened this: an owner who dislikes the name can now overwrite it, so what is left to settle is the product and repository name rather than what the pet is called. |
 | F2 | P1 | Native-speaker pass on the Traditional Chinese copy | It is written as native copy rather than translation and the register is deliberately soft, but no Taiwanese speaker has read it yet. The German diminutives deserve a second pair of eyes too, less urgently. |
 | F3 | P2 | "While you were away" note | Brief stretch goal. After a long gap, one line about what happened instead of silently presenting a drooping pet. The data already exists: `lastDrinkAt`, and the points `State.sync()` returns. |
 | F4 | P2 | Haptics | Brief stretch goal. `navigator.vibrate` on the drink tap and the easter egg, gated by a toggle and suppressed under `prefers-reduced-motion`. Unsupported on iOS Safari, so it can only ever be additive. |
-| F5 | P2 | Real sprite art | Brief stretch goal. Both creatures are SVG rects outlined by a single `feMorphology` filter. Per-state sprites would replace the shapes, not the animation system, because both species already share the `.pet-*` group classes. |
+| F5 | P2 | Real sprite art | Brief stretch goal. The creatures are SVG rects outlined by a single `feMorphology` filter. Per-state sprites would replace the shapes, not the animation system, because both species already share the `.pet-*` group classes. |
 | F6 | P2 | Undo the last drink | A mis-tap can currently only be corrected with a full reset, which also clears the daily count. Keeping the previous `hydration` and `lastDrinkAt` for one step would cover it. |
-| F8 | P3 | A third creature | `Config.species` is already a map and `toggleSpecies()` already cycles it, so this is a config entry plus a sprite. The single `*` switch would need to express three states instead of toggling two. |
+| F8 | P2 | A third creature, a panda | Chosen, so this is no longer an open question about whether to add one. `Config.species` is already a map and `toggleSpecies()` already cycles it, so the config side is an entry with a name, the `🐼` emoji and voice parameters, plus a sprite that reuses the `.pet-*` group classes the animation system drives. Two real pieces of work behind that: the single `*` switch has to express three states rather than toggle two, and a panda has no horn or tail to animate, so the idle motion per mood band needs a panda equivalent rather than the same shapes recoloured. The name is F1's problem. |
+| F12 | P2 | Glitter mode | Prototyped and measured in `.work/glitter-mode/`, two self-contained demos plus notes, one of them already shaped like Aniluna in German. The finding that decides the work: glitter is a theme, not a switch, so `themeMode` grows a fourth value and the day/night button plus auto checkbox are replaced by a segmented `auto / day / night / glitter` control, which the prototype builds as a `radiogroup` with roving tabindex. The theme itself is one `:root[data-theme="glitter"]` token block including `--font-app`; the particle canvas is separate, gated behind `(pointer: fine)` and `(hover: hover)` and off under reduced motion. Blocks marked `SHARED GLITTER BLOCK` and `SHARED GLITTER ENGINE` are what moves across. "Glitzermodus" needs the F2 treatment. |
 | F7 | P3 | Richer scene changes between moods | Brief stretch goal. The sky already carries sun, moon, stars and ambient life, but the mood bands change the character rather than the world around it. |
 | F9 | P3 | Reminder experiments | Brief stretch goal, and the one that fights the constraints: without a service worker there is no notification once the tab is closed, and a service worker means a second file, which breaks the single-file promise. Parked until someone decides which of the two matters more. |
 | F10 | P3 | Prune `Config.legacyKeys` | Drop `ina-water-friend/v1` once no browser can plausibly still hold a save under it. Harmless until then, so this is bookkeeping rather than work. |
@@ -386,7 +449,7 @@ It is kept as authored, so it still uses the working title and em dashes.
 
 ## Status
 
-Prototype, `v0.19`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.20`, DEVELOPMENT. The loop works end to end and the app is
 usable. What it gets wrong today is listed under
 [Known issues](#known-issues); what has never been started is under
 [Roadmap](#roadmap), where the stretch goals from `BRIEF.md` live too, so

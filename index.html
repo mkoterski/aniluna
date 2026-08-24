@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.19
+  index.html - Aniluna Aqua Buddy - v0.20
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -225,6 +225,43 @@ body {
 }
 .icon-btn:active { transform: scale(0.92); }
 .icon-btn[aria-pressed="false"] { opacity: 0.5; }
+
+/* ---------- tooltips ----------
+   The icon buttons carry no visible text, so each one names itself on hover.
+   The text comes from data-tip, which UI.label() writes from the same string
+   as the aria-label, so the two cannot drift apart. A pseudo-element is not
+   in the accessibility tree, so a screen reader still hears one name, not two.
+   Hover and keyboard focus only: on touch these buttons act on the first tap,
+   and a tooltip that needs a second one would just be in the way. */
+[data-tip] { position: relative; }
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  padding: 5px 9px;
+  border: 2px solid var(--panel-edge);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(-3px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  pointer-events: none;          /* never steals the pointer from its button */
+}
+[data-tip]:focus-visible::after { opacity: 1; transform: translateY(0); }
+@media (hover: hover) and (pointer: fine) {
+  [data-tip]:hover::after { opacity: 1; transform: translateY(0); }
+}
+/* The secret switch sits in the footer, so its tooltip opens upwards and to
+   the left, which is the only direction with room. */
+.secret[data-tip]::after { top: auto; bottom: calc(100% + 6px); }
 
 /* ---------- info card ---------- */
 .info {
@@ -617,6 +654,19 @@ details.settings[open] summary::before { transform: rotate(90deg); }
 }
 .setting label { flex: 1; }
 .setting input[type="checkbox"] { width: 26px; height: 26px; accent-color: var(--accent); }
+.setting input[type="text"] {
+  flex: none;
+  width: 52%;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 2px solid var(--panel-edge);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.86rem;
+  text-align: right;
+}
 
 .setting-slider { display: block; padding: 10px 14px 12px; }
 .setting-row { display: flex; align-items: baseline; gap: 10px; }
@@ -751,6 +801,7 @@ input[type="range"]::-moz-range-thumb {
   .amb { display: none !important; }
   .drop { animation: none !important; opacity: 0 !important; }
   .secret:hover, .secret:focus-visible { transform: none; }
+  [data-tip]::after { transition: none !important; transform: none !important; }
 }
 </style>
 </head>
@@ -1003,6 +1054,11 @@ input[type="range"]::-moz-range-thumb {
     <summary id="settingsSummary"></summary>
 
     <div class="setting">
+      <label for="nameInput" id="nameLabel"></label>
+      <input id="nameInput" type="text" autocomplete="off" spellcheck="false" enterkeyhint="done">
+    </div>
+
+    <div class="setting">
       <label id="langLabel">Sprache</label>
       <div class="langs" role="group" aria-labelledby="langLabel">
         <button class="lang-btn" id="langDe" type="button" data-locale="de" aria-pressed="true">DE</button>
@@ -1063,7 +1119,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.19",
+    version: "v0.20",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -1082,6 +1138,11 @@ const Config = {
     }
   },
   defaultSpecies: "unicorn",
+
+  /* The owner may rename each creature. The cap is what keeps a long name from
+     breaking the title, the speech bubble and the meter label; an empty field
+     restores the built-in name rather than leaving a hole in every sentence. */
+  naming: { maxLength: 24 },
 
   locales: ["de", "en", "zh"],
   defaultLocale: "de",
@@ -1172,6 +1233,8 @@ const Strings = {
     lastDrink: "Letzter Schluck",
     settings: "Einstellungen",
     language: "Sprache",
+    nameSetting: "Name",
+    renamed: (name) => `sch\u00f6n, ich hei\u00dfe jetzt ${name} \u2728`,
     fullToEmpty: "Von voll zu leer",
     refill: "Pro Schluck",
     sound: "T\u00f6ne",
@@ -1233,6 +1296,8 @@ const Strings = {
     lastDrink: "Last sip",
     settings: "Settings",
     language: "Language",
+    nameSetting: "Name",
+    renamed: (name) => `lovely, I'm ${name} now \u2728`,
     fullToEmpty: "Full to empty",
     refill: "Per sip",
     sound: "Sounds",
@@ -1294,6 +1359,8 @@ const Strings = {
     lastDrink: "\u4e0a\u4e00\u6b21",
     settings: "\u8a2d\u5b9a",
     language: "\u8a9e\u8a00",
+    nameSetting: "\u540d\u5b57",
+    renamed: (name) => `\u6211\u73fe\u5728\u53eb${name}\u56c9 \u2728`,
     fullToEmpty: "\u5f9e\u6eff\u5230\u7a7a",
     refill: "\u6bcf\u6b21\u88dc\u5145",
     sound: "\u97f3\u6548",
@@ -1718,6 +1785,7 @@ const State = {
       easterEggOn: true,
       themeMode: "auto",              // "auto" | "day" | "night"
       species: Config.defaultSpecies,
+      names: {},                      // species key -> owner's name, if any
       locale: Config.defaultLocale,
       tapHistory: []
     };
@@ -1740,6 +1808,36 @@ const State = {
     const clamped = Math.min(max, Math.max(min, n));
     const snapped = min + Math.round((clamped - min) / step) * step;
     return Math.round(snapped * 100) / 100;      // drop floating point dust
+  },
+
+  /**
+   * Trim, collapse inner runs of whitespace, cap at the configured length.
+   * Returns "" for anything absent or not a string, which is what the callers
+   * read as "no custom name".
+   */
+  cleanName(value) {
+    if (typeof value !== "string") return "";
+    /* Cap by code point rather than by UTF-16 unit: slicing mid-surrogate
+       would leave half an emoji behind. Only a hand-edited save can reach
+       that, since the input caps the field itself, but it renders as a
+       replacement glyph when it does. */
+    const clean = value.trim().replace(/\s+/g, " ");
+    return Array.from(clean).slice(0, Config.naming.maxLength).join("");
+  },
+
+  /**
+   * Custom names are held per species, so each creature keeps its own. Keys
+   * outside Config.species and values that clean to nothing are dropped rather
+   * than repaired, so a junk save falls back to the built-in names.
+   */
+  cleanNames(value) {
+    const out = {};
+    if (!value || typeof value !== "object") return out;
+    Object.keys(Config.species).forEach((key) => {
+      const clean = this.cleanName(value[key]);
+      if (clean) out[key] = clean;
+    });
+    return out;
   },
 
   oneOf(value, allowed, fallback) {
@@ -1777,6 +1875,7 @@ const State = {
       easterEggOn: saved.easterEggOn !== false,
       themeMode: this.oneOf(saved.themeMode, ["auto", "day", "night"], legacyTheme || base.themeMode),
       species: this.oneOf(saved.species, Object.keys(Config.species), base.species),
+      names: this.cleanNames(saved.names),
       locale: this.oneOf(saved.locale, Config.locales, base.locale),
       tapHistory: Array.isArray(saved.tapHistory) ? saved.tapHistory.filter(Number.isFinite) : []
     };
@@ -1869,6 +1968,20 @@ const State = {
     this.save();
   },
 
+  /**
+   * Rename the creature currently on screen. An empty entry deletes the
+   * override instead of storing a blank, which is what restores the built-in
+   * name. Returns the name that was actually kept.
+   */
+  setName(raw) {
+    const clean = this.cleanName(raw);
+    const names = { ...this.data.names };
+    if (clean) names[this.data.species] = clean;
+    else delete names[this.data.species];
+    this.set({ names });
+    return clean;
+  },
+
   /** Flip between the two creatures. Returns the new species key. */
   toggleSpecies() {
     const keys = Object.keys(Config.species);
@@ -1901,7 +2014,8 @@ const UI = {
       "refillInput", "refillOut", "refillScale", "refillLabel",
       "soundInput", "soundLabel", "eggInput", "eggLabel",
       "autoThemeInput", "autoThemeLabel", "themeInput", "themeLabel",
-      "settingsFoot", "note", "secretBtn", "favicon", "sun", "moon", "ambient"
+      "settingsFoot", "note", "secretBtn", "favicon", "sun", "moon", "ambient",
+      "nameLabel", "nameInput"
     ];
     ids.forEach((id) => { this.el[id] = document.getElementById(id); });
   },
@@ -1915,6 +2029,21 @@ const UI = {
     return Config.species[State.data.species];
   },
 
+  /** The name in use: the owner's for this creature, else the built-in one. */
+  name() {
+    return State.data.names[State.data.species] || this.species().name;
+  },
+
+  /**
+   * One string, two consumers: the accessible name and the hover tooltip.
+   * Writing both from one call is what stops the visible label and the
+   * spoken one from drifting apart as the copy changes.
+   */
+  label(el, text) {
+    el.setAttribute("aria-label", text);
+    el.dataset.tip = text;
+  },
+
   pick(list) {
     return list[Math.floor(Math.random() * list.length)];
   },
@@ -1923,7 +2052,7 @@ const UI = {
   applyText() {
     const t = this.t();
     const sp = this.species();
-    const name = sp.name;
+    const name = this.name();
 
     document.documentElement.lang = t.tag;      // zh-TW, not zh
     document.title = `${name} ${t.titleSuffix}`;
@@ -1942,6 +2071,8 @@ const UI = {
     this.el.statLastLabel.textContent = t.lastDrink;
 
     this.el.settingsSummary.textContent = t.settings;
+    this.el.nameLabel.textContent = t.nameSetting;
+    this.el.nameInput.placeholder = sp.name;      // the built-in name, as the way back
     this.el.langLabel.textContent = t.language;
     this.el.decayLabel.textContent = t.fullToEmpty;
     this.el.refillLabel.textContent = t.refill;
@@ -1952,10 +2083,10 @@ const UI = {
     this.el.settingsFoot.textContent = t.settingsFoot(name);
 
     this.el.note.textContent = t.note(Config.app.version);
-    this.el.infoBtn.setAttribute("aria-label", t.infoAria);
+    this.label(this.el.infoBtn, t.infoAria);
     this.el.infoBody.textContent = t.infoBody(name);
     this.el.infoTip.textContent = t.infoTip;
-    this.el.secretBtn.setAttribute("aria-label", t.secretAria);
+    this.label(this.el.secretBtn, t.secretAria);
 
     Config.locales.forEach((loc) => {
       const btn = this.el["lang" + loc[0].toUpperCase() + loc.slice(1)];
@@ -1981,6 +2112,7 @@ const UI = {
   /** Slider bounds and their tick labels both come from Config. */
   applyLimits() {
     const locale = Strings[State.data.locale].tag;
+    this.el.nameInput.maxLength = Config.naming.maxLength;
     const apply = (input, scale, limit, format) => {
       input.min = limit.min;
       input.max = limit.max;
@@ -2087,7 +2219,7 @@ const UI = {
 
     document.documentElement.dataset.theme = theme;
     this.el.themeBtn.textContent = night ? "☀️" : "\u{1F319}";
-    this.el.themeBtn.setAttribute("aria-label", night ? t.themeToDay : t.themeToNight);
+    this.label(this.el.themeBtn, night ? t.themeToDay : t.themeToNight);
     this.el.themeInput.checked = night;
     this.el.autoThemeInput.checked = State.data.themeMode === "auto";
     this.applySky(theme);     // rides the same ticker as the theme
@@ -2098,12 +2230,13 @@ const UI = {
     const on = State.data.soundOn;
     this.el.soundBtn.textContent = on ? "\u{1F514}" : "\u{1F515}";
     this.el.soundBtn.setAttribute("aria-pressed", String(on));
-    this.el.soundBtn.setAttribute("aria-label", on ? t.soundOn : t.soundOff);
+    this.label(this.el.soundBtn, on ? t.soundOn : t.soundOff);
     this.el.soundInput.checked = on;
   },
 
   syncSettingsInputs() {
     const s = State.data;
+    this.el.nameInput.value = s.names[s.species] || "";
     this.el.decayInput.value = s.decayHours;
     this.el.refillInput.value = s.refillAmount;
     this.el.eggInput.checked = s.easterEggOn;
@@ -2175,6 +2308,17 @@ const Events = {
       if (btn) btn.addEventListener("click", () => this.setLocale(loc));
     });
 
+    /* Commit on change, which is blur or Enter, rather than on every
+       keystroke: a half-typed name has no business in the title, the speech
+       bubble and four ARIA labels. */
+    UI.el.nameInput.addEventListener("change", (e) => {
+      const kept = State.setName(e.target.value);
+      e.target.value = kept;        // show what survived trimming and the cap
+      UI.applyText();
+      UI.render();
+      UI.say(UI.t().renamed(UI.name()), 2200);
+    });
+
     UI.el.decayInput.addEventListener("input", () => UI.renderSettingsValues());
     UI.el.decayInput.addEventListener("change", (e) => {
       State.sync();          // bill the time already elapsed at the old rate
@@ -2241,12 +2385,13 @@ const Events = {
   /** The almost hidden switch: become the other creature. */
   onSecret() {
     Audio_.unlock();
-    const next = State.toggleSpecies();
+    State.toggleSpecies();
     UI.applySpecies();
     UI.applyText();
+    UI.syncSettingsInputs();       // the name field belongs to the new creature
     UI.render();
     UI.flash("is-morphing", Config.ui.morphFeedbackMs);
-    UI.say(UI.t().morph(Config.species[next].name), 2600);
+    UI.say(UI.t().morph(UI.name()), 2600);
     Audio_.morph();
   },
 
@@ -2275,7 +2420,7 @@ const Events = {
   },
 
   onReset() {
-    if (!window.confirm(UI.t().resetConfirm(UI.species().name))) return;
+    if (!window.confirm(UI.t().resetConfirm(UI.name()))) return;
     State.reset();
     UI.lastBand = null;
     UI.render();
@@ -2343,7 +2488,7 @@ function init() {
 
   /* The browser console stands in for a shell banner, so the running version
      is always identifiable without reading the source. */
-  console.log(`${UI.species().name} Aqua Buddy ${Config.app.version} - ${Config.app.status}`);
+  console.log(`${UI.name()} Aqua Buddy ${Config.app.version} - ${Config.app.status}`);
   if (migratedFrom) {
     console.log(`Adopted saved state from the old key "${migratedFrom}".`);
   }
