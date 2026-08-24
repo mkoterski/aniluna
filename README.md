@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.25
+# Aniluna Aqua Buddy - v0.27
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -31,12 +31,12 @@ Aniluna, or a dinosaur called Anirex if you find the switch.
 | Meter | Labelled **Hydration**: 100% is full, 0% is empty. The bar fills when you drink |
 | First run | Starts at 75%, not full, so a drink is the obvious next move and teaches the loop. Reset still fills to 100% |
 | Languages | German (default), Traditional Chinese (`zh-TW`) and English. Written as native copy rather than translations, and relative times come from `Intl.RelativeTimeFormat` |
-| Two creatures | A unicorn and a dinosaur, switched by an almost hidden `*` in the bottom right. Name, speech, favicon and synth voice all follow |
+| Three creatures | A unicorn and the panda Wan Wan, chosen in the settings, plus a dinosaur reachable only through the almost hidden `*` in the bottom right. Name, speech, favicon and synth voice all follow from one config entry each |
 | Naming | Each creature can be renamed in the settings, up to 24 characters. The name flows into the title, the speech, the stats and every ARIA label. Clearing the field restores the built-in name |
 | Tooltips | The emoji-only buttons name themselves on hover and on keyboard focus, from the same string as their accessible name |
 | Three themes plus auto | A segmented pill in the top bar: follow the clock, day, night, or glitter. Auto resolves against the local clock, day 07:00 to 19:00, and re-resolves at dusk while the page is open |
 | Glitter mode | A theme rather than a switch: pink and lavender palette, a rounded typeface, a slow sheen, decorative ribbons, and an emoji particle canvas. The pointer trail needs a mouse and says so when there is none; under reduced motion the palette stays and the motion goes |
-| Stars | Always at night. In daylight only at the happiest level, where they turn warm gold so they read against a pale sky |
+| Stars | Always at night, brighter when the meter is topped out. In daylight only for a few seconds after a drink fills the meter to 100%, tinted warm gold so they read against a pale sky. The rest of the daytime sky belongs to the wind and the birds |
 | Sun and moon | Both travel one east-to-west arc: up from the left, highest at the peak hour, down to the right. Sun peaks at 12:00, moon rises after dusk and peaks at midnight |
 | Ambient life | Rare birds by day, rarer wind gusts by day and more of them at night. Random height, direction, size and speed |
 | Wind | One thin semi-transparent trail per gust, drawn from the reference footage: it travels along its own path, sweeping in and curling into an open loop, with a few specks alongside |
@@ -59,7 +59,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.25", status: "DEVELOPMENT" },
+  app: { version: "v0.27", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -138,6 +138,12 @@ mkdir -p .work
 
 Anything worth keeping moves out into `README.md`, `BRIEF.md` or `index.html`.
 
+`.work/panda-lab.html` is the third-species lab for F8: a panda drawn to the
+same rules as the other two, picked from a settings radiogroup rather than from
+the secret asterisk, with all three shown side by side at the same mood band so
+a new silhouette can be judged against the old ones. The tokens, the sprite and
+its visibility change are what would move into `index.html`.
+
 `.work/haptics-lab.html` is the haptics lab for F4: it reports what the
 device and browser actually support, offers one candidate pattern per app
 event, and is blunt about the fact that `navigator.vibrate` returning true
@@ -171,6 +177,110 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.27  2026-08-24  Landed F8. A third creature, the panda Wan Wan, chosen from
+                   the settings, with the dinosaur moved behind the secret
+                   switch and its tooltip removed.
+
+                   The panda is drawn to the same contract as the other two, so
+                   the shared group class names and the four mood-band token
+                   blocks drive it with no new animation code: an 18 wide head
+                   on a 12 wide body, big round ears, large stepped eye patches,
+                   blush at the edge of the cheeks. Its markings are charcoal
+                   rather than black, because the feMorphology outline floods
+                   with --ink and a black creature would lose its edges. Token
+                   sets for all three themes, including a plum-warmed glitter
+                   set so it belongs to that palette rather than sitting on it.
+
+                   The dinosaur was redrawn in the same pass, from a second
+                   reference: 4x4 eyes with two highlights each, the largest of
+                   the three, a wide pale muzzle with nostrils and teeth, orange
+                   blush from the existing spike token rather than a new colour,
+                   rounder head plates, and a thick tail curling upward instead
+                   of the thin taper it had. Its head is now 18 wide like the
+                   others, which is most of why it used to look less cute than
+                   the unicorn beside it.
+
+                   Two decisions from the requester shape the switching. The
+                   settings offer the unicorn and the panda; the dinosaur is
+                   reachable only through the almost hidden switch in the
+                   footer, marked by `secret: true` in Config.species so nothing
+                   else in the code needs to know which creature that is. The
+                   switch is a detour rather than a cycle: State.pickedSpecies
+                   remembers what the settings chose and pressing the switch
+                   again returns there, so it cannot strand anyone on a creature
+                   the settings do not offer. While the dinosaur is out, neither
+                   picker option is marked, which is the honest answer.
+
+                   The switch also loses its tooltip: a hover label reading
+                   "Geheimer Schalter" is not a secret. It keeps its ARIA name,
+                   because a focusable button needs one, so the trade is that
+                   the secret is kept from a mouse rather than from everyone.
+
+                   Fixed while porting the sprite work, both found by looking at
+                   the result rather than at the code. Hiding a sprite with
+                   el.hidden = true does nothing: hidden is a property of
+                   HTMLElement and these are SVG elements, so the assignment
+                   sets a harmless expando, no attribute lands, and the
+                   unselected creature renders behind the chosen one, showing as
+                   a stray horn and mane behind the panda. And the creature
+                   radios report aria-checked while the language buttons report
+                   aria-pressed, so the selected-style rule had to answer to
+                   both; keyed on the first alone, the chosen creature had no
+                   highlight at all.
+
+                   Also replaced the visibility CSS. Pairing selectors needed
+                   one rule per ordered pair, two for two species and six for
+                   three, and CSS cannot compare two attribute values, so each
+                   sprite now carries data-species and applySpecies sets the
+                   attribute the single rule keys off.
+
+v0.26  2026-08-24  Daylight stars are a moment now, not a state. They rode
+                   data-radiant, which is the meter at 95 or above, so a lit
+                   sky kept a starfield in it for the whole of that band, about
+                   six minutes at the default decay rate. The requester asked
+                   for the moment the meter reaches 100 instead, so a drink
+                   that tops it right out earns Config.ui.dayStarsMs of stars,
+                   4.5 seconds, and the rest of the daytime sky is left to the
+                   wind and the birds, which are what the random ambient
+                   animations are for.
+
+                   A timer rather than a tighter threshold, because the meter
+                   starts falling the instant it is full: gating on exactly 100
+                   would have tied the length of the celebration to the decay
+                   rate, giving about 7 seconds at the 2 hour default and 2 at
+                   the fastest setting. Only a drink triggers it. Reset also
+                   fills the meter but is housekeeping rather than an
+                   achievement, so it stays quiet.
+
+                   Night is untouched: stars always, and brighter still when
+                   the meter earns it. Glitter keeps no starfield at all, and
+                   the rule that used to force that to zero is gone with the
+                   one it was cancelling, since nothing raises the starfield in
+                   glitter any more.
+
+                   Verified in the browser: at 97 percent in daylight the sky
+                   is empty where it used to be starry, a drink to 100 brings
+                   the field to 0.85 and the timer takes it away, night still
+                   reads 0.9 and 1, and glitter stays at 0.
+
+                   Also rewrote BRIEF.md, on the requester's call, from a
+                   pre-build spec into a brief describing the app as it stands.
+                   Its implementation order, acceptance criteria and closing
+                   instruction to the implementer are gone as spent, along with
+                   citation markers pointing at sources this repository never
+                   carried; the working title, the thirst-meter wording and the
+                   em dashes are gone too. It now documents the second
+                   creature, editable names, three languages, four themes, the
+                   sun and moon arc, the ambient wind and gulls, both meter
+                   rewards and haptics, and it points here for the changelog,
+                   the roadmap and the known issues rather than restating them.
+                   Its own version log continues at v0.7, which tracks the
+                   document and not the app.
+
+                   Fixed a comment that had stopped being true: the themeMode
+                   field in State.defaults() still listed three values after
+                   glitter became the fourth in v0.22.
+
 v0.25  2026-08-24  Landed F4, haptics, on mood changes and nowhere else, with a
                    settings switch that is on by default.
 
@@ -543,7 +653,7 @@ v0.10  2026-08-19  Initial version. Single-file static app: timestamp driven
 
 ## Known issues
 
-Defects present in `v0.25`, as opposed to work never started, which is under
+Defects present in `v0.27`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
@@ -566,7 +676,7 @@ Accepted limitations, written down so they are not rediscovered as bugs:
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
 - No device test matrix has been run (B2) and the Traditional Chinese copy has
-  not been read by a native speaker (F2), so `v0.25` is a prototype in the
+  not been read by a native speaker (F2), so `v0.27` is a prototype in the
   literal sense: everything here was verified in one desktop browser.
 - B1 is closed as won't-fix, decided in v0.18. A system clock moved backwards
   forgives the decay for the span it skipped, but reaching that takes a
@@ -594,7 +704,6 @@ parked idea.
 | F3 | P2 | "While you were away" note | Brief stretch goal. After a long gap, one line about what happened instead of silently presenting a drooping pet. The data already exists: `lastDrinkAt`, and the points `State.sync()` returns. |
 | F5 | P2 | Real sprite art | Brief stretch goal. The creatures are SVG rects outlined by a single `feMorphology` filter. Per-state sprites would replace the shapes, not the animation system, because both species already share the `.pet-*` group classes. |
 | F6 | P2 | Undo the last drink | A mis-tap can currently only be corrected with a full reset, which also clears the daily count. Keeping the previous `hydration` and `lastDrinkAt` for one step would cover it. |
-| F8 | P2 | A third creature, a panda | Chosen, so this is no longer an open question about whether to add one. `Config.species` is already a map and `toggleSpecies()` already cycles it, so the config side is an entry with a name, the `🐼` emoji and voice parameters, plus a sprite that reuses the `.pet-*` group classes the animation system drives. Two real pieces of work behind that: the single `*` switch has to express three states rather than toggle two, and a panda has no horn or tail to animate, so the idle motion per mood band needs a panda equivalent rather than the same shapes recoloured. The name is F1's problem. |
 | F7 | P3 | Richer scene changes between moods | Brief stretch goal. The sky already carries sun, moon, stars and ambient life, but the mood bands change the character rather than the world around it. |
 | F9 | P3 | Reminder experiments | Brief stretch goal, and the one that fights the constraints: without a service worker there is no notification once the tab is closed, and a service worker means a second file, which breaks the single-file promise. Parked until someone decides which of the two matters more. |
 | F10 | P3 | Prune `Config.legacyKeys` | Drop `ina-water-friend/v1` once no browser can plausibly still hold a save under it. Harmless until then, so this is bookkeeping rather than work. |
@@ -611,12 +720,20 @@ Defects already in the app are not here, they are under
 
 ## Docs
 
-[`BRIEF.md`](BRIEF.md) is the full product brief, including its own version log.
-It is kept as authored, so it still uses the working title and em dashes.
+[`BRIEF.md`](BRIEF.md) is the product brief: what the app is, who it is for,
+how it is meant to feel, and the rules it holds itself to. Rewritten at v0.26
+to describe the app as built, so it no longer reads as a spec addressed to an
+implementer who has not started yet. It keeps its own version log, which tracks
+the document rather than the app.
+
+The split between the two is deliberate. The brief states the intent, this file
+states the state: the changelog, the roadmap, the known issues, the code map
+and how to run it all live here. Where they disagree, this file describes what
+exists and the brief describes what was wanted, and the gap is worth a look.
 
 ## Status
 
-Prototype, `v0.25`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.27`, DEVELOPMENT. The loop works end to end and the app is
 usable. What it gets wrong today is listed under
 [Known issues](#known-issues); what has never been started is under
 [Roadmap](#roadmap), where the stretch goals from `BRIEF.md` live too, so

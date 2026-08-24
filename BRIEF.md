@@ -1,60 +1,107 @@
-# Ina Water Friend — Complete Build Brief for Claude Code
+# Aniluna Aqua Buddy - Product Brief
+
+This is the product brief: what the app is, who it is for, how it is meant to
+feel, and which rules it holds itself to. It describes `index.html` as built at
+**v0.27**.
+
+It deliberately does not duplicate [`README.md`](README.md), which owns the
+operational detail: the changelog, the roadmap of deferred work, the known
+issues, the code map and the instructions for running it. Where the two could
+overlap, the brief states the intent and the README states the state. If they
+ever disagree, the README is describing what exists and this document is
+describing what was wanted, and the difference is worth a look.
 
 ## Version log
 
-### v0.6 — 2026-08-19
+Newest first. This log tracks the brief, not the app.
+
+### v0.8 - 2026-08-24
+
+- Updated for app v0.27: a third creature, the panda Wan Wan, chosen from the
+  settings, with the dinosaur moved behind the secret switch and marked
+  `secret: true` in config. Documented that the switch is a detour rather than
+  a cycle, that a sprite declares its own species rather than the stylesheet
+  pairing them, and why the markings on a black and white animal are charcoal.
+- Noted that the secret switch keeps its accessible name but has no tooltip.
+
+### v0.7 - 2026-08-24
+
+- Rewrote the document from a pre-build spec into a brief describing the app as
+  it now stands at v0.26. The original was addressed to an implementer who had
+  not started yet, so its implementation order, acceptance criteria and closing
+  instruction have been dropped as spent, along with citation markers that
+  pointed at sources this repository never carried.
+- Renamed throughout: the character is Aniluna, the product is Aqua Buddy, and
+  the meter is Hydration rather than a thirst meter. The last of those was a
+  deliberate departure from the original brief, made in app v0.13 because a
+  meter that fills when you drink cannot be labelled thirst.
+- Documented everything added since the MVP: a second creature and editable
+  names, three languages, four themes including glitter, the sun and moon arc,
+  the ambient wind and gull animations, the night and day meter rewards, and
+  haptics.
+- Removed em dashes in favour of hyphens, per the NeXtWind script standards
+  (NXW-NAM-6), which the original predated.
+
+### v0.6 - 2026-08-19
 - Consolidated all concept, UX, architecture, timer, audio, animation, and maintainability guidance into one complete brief.
-- Added requirement for a dedicated version log/change log in the brief.
+- Added requirement for a dedicated version log in the brief.
 - Added top-level config object requirement for easy character renaming.
 - Added happy-state rainbow reward idea as a decorative state-specific effect.
-- Added idle animation requirement across hydration states to make the character feel more alive.
+- Added idle animation requirement across hydration states.
 
-### v0.5 — 2026-08-19
-- Added explicit idle animation guidance with different behavior for hydrated, okay, thirsty, and dehydrated states.
+### v0.5 - 2026-08-19
+- Added explicit idle animation guidance per hydration state.
 - Added reduced-motion requirement for idle loops and decorative animation.
 
-### v0.4 — 2026-08-19
+### v0.4 - 2026-08-19
 - Added happy-state rainbow visual reward concept.
 - Clarified that the rainbow should be decorative, subtle, and tied only to the happiest state.
-- Added note that the character name is still a working title and should be configurable.
+- Added note that the character name is a working title and should be configurable.
 
-### v0.3 — 2026-08-19
+### v0.3 - 2026-08-19
 - Added procedural sound effect requirements.
 - Added five-taps-in-five-seconds blubber/gurgle easter egg.
-- Clarified Web Audio unlock behavior for mobile browsers.
+- Clarified Web Audio unlock behaviour for mobile browsers.
 
-### v0.2 — 2026-08-19
+### v0.2 - 2026-08-19
 - Added modular single-file architecture guidance.
 - Added localStorage persistence and timestamp-driven hydration decay requirements.
-- Added mobile browser background-timer behavior notes.
+- Added mobile browser background-timer behaviour notes.
 
-### v0.1 — 2026-08-19
-- Defined the core concept: a cute single-screen hydration companion app with a unicorn character and thirst meter.
+### v0.1 - 2026-08-19
+- Defined the core concept: a cute single-screen hydration companion with a unicorn character and a meter.
 - Established the static hosting target: GitHub Pages or similar no-server hosting.
 
 ## Purpose
 
-This document is the full implementation brief for Claude Code to build a small static hydration companion app as a single HTML file. The intended hosting model is GitHub Pages or any similar static host, which works well for simple HTML apps with no backend and client-side persistence via `localStorage`.[cite:13][cite:19]
-
-The app is a cute, mobile-first browser companion centered on a unicorn character named **Ina** as a working title. The key inspiration is the emotional loop of Focus Friend, which is publicly described as a cozy, character-centered companion app, but the implementation here should remain much simpler and hydration-only.[cite:11][cite:12][cite:18]
+A small static hydration companion in a single HTML file, hostable on GitHub
+Pages or any similar static host, with no backend and with persistence in
+`localStorage`. The point is the emotional loop of a cozy character companion,
+kept much smaller in scope than the apps that inspired it: hydration only, one
+screen, no accounts.
 
 ## Product summary
 
-Build a tiny one-screen hydration companion app that feels more like a handheld virtual pet than a productivity dashboard. The user logs drinking water, a thirst meter refills, the character visibly perks up, and the app responds with cute visual and sound feedback. Pixel-art or pixel-inspired presentation is preferred because it suits a playful habit interface and reads well on mobile screens.[cite:2][cite:8]
+A one-screen hydration companion that feels like a handheld virtual pet rather
+than a productivity dashboard. The user logs a drink, the meter refills, the
+creature visibly perks up, and the app answers with visual, audible and haptic
+feedback. The presentation is pixel-art: the creatures are drawn as SVG rects
+outlined by a single `feMorphology` filter, which reads well on a phone and
+suits a playful habit interface.
 
 ## Core product goals
 
 - Make hydration logging feel cute, lightweight, and emotionally rewarding.
-- Keep the MVP extremely simple and static-host friendly.
+- Keep the app extremely simple and static-host friendly.
 - Avoid backend infrastructure entirely.
-- Make the app feel alive through character state, idle motion, and responsive feedback.
-- Keep the code maintainable even though it is only one HTML file.
+- Make the app feel alive through character state, idle motion, ambient life
+  and responsive feedback.
+- Keep the code maintainable even though it is only one file.
 
 ## Non-goals
 
-The MVP should **not** become a full wellness dashboard, multi-screen mobile app, or account-based tracker.
-
-Avoid adding:
+This is not a wellness dashboard, a multi-screen app, or an account-based
+tracker. It stays away from:
 
 - User accounts.
 - Cloud sync.
@@ -65,440 +112,354 @@ Avoid adding:
 
 ## Hard constraints
 
-- Single `index.html` file only.
-- Inline CSS and JavaScript.
-- No server-side code.
-- No framework required.
-- Must run entirely in the browser.
-- Must be mobile-first.
-- Must persist state locally.
-- Must survive browser suspension/closure through timestamp recalculation rather than a real background timer.[cite:19][cite:21][cite:27]
+- A single `index.html` file, with the CSS and JavaScript inline.
+- No server-side code, no framework, no build step, not even an icon file.
+- Runs entirely in the browser, mobile-first.
+- State persists locally.
+- Survives browser suspension and closure through timestamp recalculation
+  rather than through a background timer that will not be allowed to run.
 
-## Character naming configuration
+## The creatures
 
-The character name should be easy to change. It must not be hardcoded throughout the code.
+Three of them, from one config entry each. The unicorn **Aniluna** and the panda
+**Wan Wan** are chosen in the settings. The dinosaur **Anirex** is reachable only
+through the almost hidden `*` in the footer, and that switch is a detour rather
+than a cycle: pressing it again returns to whatever the settings picked, so it
+cannot strand anyone on a creature the settings do not offer. Aniluna and Anirex
+are still working titles.
 
-### Requirement
+`Config.species` holds the name, the favicon emoji, the synth voice and a
+`secret` flag per creature, so a fourth one is a config entry plus a sprite and
+nothing in the code needs to know which creature is the hidden one. All three
+sprites use the same group class names, so one animation system and one set of
+mood-band tokens drive any of them. Each sprite declares its own species in
+`data-species` and `applySpecies` hides the others: pairing CSS selectors
+instead needs one rule per ordered pair, which does not scale past two.
 
-Use a top-level config object for naming, such as:
+The markings on a black and white animal are charcoal rather than black, because
+the outline filter floods with `--ink` and a truly black creature would lose its
+edges against it.
 
-```js
-const Config = {
-  character: {
-    name: "Ina"
-  },
-  hydration: {
-    max: 100,
-    defaultDecayHours: 4,
-    defaultRefillAmount: 25
-  }
-};
-```
-
-### Naming usage
-
-Read the configured name into:
-
-- The page title.
-- Main heading.
-- Speech bubble text where appropriate.
-- `aria-label` values.
-- Status/helper text that references the character.
-
-This makes working-title changes easy during iteration.
+Since v0.20 the owner can rename the creature on screen from the settings
+panel, up to `Config.naming.maxLength` of 24 characters. Overrides live per
+species in `State.data.names`, so each creature keeps its own name, and
+`UI.name()` is the single place that resolves an override against the built-in
+name. Clearing the field restores the built-in name. Every visible string takes
+the name as an argument, so the title, heading, speech, stats, settings footer,
+reset prompt, console banner and every ARIA label follow from that one call.
 
 ## Core user loop
 
-The basic loop should be:
-
 1. Time passes.
-2. Ina’s thirst meter drops.
-3. Ina becomes more droopy and less vibrant.
-4. The user taps “I drank water”.
+2. The Hydration meter drops.
+3. The creature droops and loses saturation.
+4. The user taps "I drank water".
 5. The meter refills.
-6. Ina perks up visually and may play a cute sound.
+6. The creature perks up, says something, and may play a sound, a buzz, or
+   show a reward in the sky.
 
-This follows the emotional companion pattern seen in publicly described cozy character apps while staying much smaller in scope.[cite:11][cite:12][cite:18]
+## Features as built
 
-## Required features
+### Interface
 
-### Core interface
+- One-screen layout: top bar, scene, meter, stats, actions, settings, footer.
+- A **Hydration** meter with a visible percentage. It fills when you drink, so
+  100% is full and 0% is empty. It is deliberately not called a thirst meter.
+- A large drink button, a reset button, a drinks-today stat and a relative
+  last-drink stat.
+- An info button that opens two localised sentences explaining the loop.
+- Tooltips on the icon-only buttons, on hover and on keyboard focus, written
+  from the same string as the accessible name so the two cannot drift. The
+  secret switch is the exception: it keeps an accessible name, because a
+  focusable button needs one, but has no tooltip, since a hover label reading
+  "secret switch" is not a secret.
 
-- One-screen hydration companion UI.
-- Character scene with Ina centered.
-- Thirst meter with visible percentage.
-- Main drink button.
-- Drinks-today stat.
-- Last-drink relative time stat.
-- Reset button.
-- Compact settings area.
-- Theme toggle.
-- Sound toggle.
+### Logic
 
-### Core logic
-
-- Hydration decay over time.
-- Refill on drink action.
-- Daily count rollover.
-- Persistence in `localStorage`.
-- Timestamp-based recalculation after tab suspension or browser closure.[cite:19][cite:21][cite:27]
-
-### Character states
-
-Use exactly four main hydration states for the MVP:
-
-- Hydrated
-- Okay
-- Thirsty
-- Dehydrated
-
-This keeps the logic and visual art manageable while still creating strong emotional feedback.[cite:2][cite:8]
+- Hydration decay over elapsed time, from timestamps.
+- Refill on the drink action, capped at 100.
+- Daily count with a local-calendar rollover.
+- Persistence of one serialised object in `localStorage`, with adoption of
+  saves written under an older key name.
 
 ### Settings
 
-Include at least:
-
-- Decay hours
-- Refill amount percent
-- Sound on/off
-- Gurgle easter egg on/off
-- Theme toggle
-
-## Visual direction
-
-The app should feel like a tiny browser pet or handheld toy, not a data tool. Pixel-art or pixel-inspired UI is preferred. For an MVP, CSS-based chunky shapes are acceptable before replacing them with custom sprites, because validating the emotional loop first is more important than perfect art in the first iteration.[cite:2][cite:8]
-
-### Layout structure
-
-Recommended structure:
-
-- Top bar with title and toggles.
-- Main scene card with background, Ina, and optional decorative effects.
-- Meter block underneath the scene.
-- Stats block.
-- Action buttons.
-- Compact settings section.
-- Optional note or prototype info section.
-
-This keeps the main interaction obvious and aligns with lightweight mobile habit UI patterns.[cite:1][cite:3]
+- The creature's name.
+- The creature: the unicorn or the panda. The dinosaur is not offered here,
+  only through the switch.
+- Language: German, English or Traditional Chinese.
+- Full-to-empty time, a slider from 0.5 to 4.0 hours in half-hour steps.
+- Refill amount, a four-stop slider at 25, 50, 75 and 100 percent.
+- Sound on or off.
+- Gurgle easter egg on or off.
+- Vibration on or off, hidden where the browser has no Vibration API.
 
 ## Mood and state design
 
-### Hydrated
+Four bands, compared against the displayed percentage so the number on screen,
+the mood line, the sprite and the rewards always agree:
 
-- Bright colors.
-- Upright, happy posture.
-- Sparkles visible.
-- Rainbow may appear as a reward decoration.
-- Speech tone is cheerful.
+| Band | From | Feel |
+|---|---|---|
+| Hydrated | 75 | Bright, upright, sparkles at full strength, cheerful speech |
+| Okay | 45 | Calm and comfortable, mild sparkle, gentle motion |
+| Thirsty | 20 | Mild droop, muted saturation, asks for water gently |
+| Dehydrated | below 20 | Subdued, low posture, almost no sparkle, sad but soft |
 
-### Okay
+Each band is a block of CSS tokens covering the palette, the sparkle opacity
+and the idle animation timing, so a band change retunes the whole scene without
+per-band component code.
 
-- Calm and comfortable.
-- Slightly less energetic.
-- Reduced sparkle intensity.
-- Gentle breathing or tail motion.
+## Idle animation
 
-### Thirsty
+Subtle looped motion carries the personality: bobbing, breathing, blinking,
+tail swish, ear twitch and sparkle twinkle. The band tunes amplitude, speed and
+opacity rather than swapping animations. Movement uses `transform` and
+`opacity` only, never layout, because this is a persistent companion UI on a
+phone.
 
-- Mild droop.
-- More muted saturation.
-- Reduced idle energy.
-- Speech asks for water gently.
+## Sky
 
-### Dehydrated
+The sky is not wallpaper. It carries the time of day and the state of the
+meter.
 
-- Very subdued.
-- Stronger droop or lower posture.
-- Almost no sparkle.
-- Very slow idle movement.
-- Sadder but still soft speech tone.
+- **Sun and moon** travel one shared east-to-west arc, interpolated in two
+  halves so an off-centre peak still lands on its stated hour: the sun is
+  highest at 12:00 inside an asymmetric 07:00 to 19:00 window, the moon at
+  midnight inside a window that wraps past 24.
+- **Starfield** shows all night, brighter still when the meter is topped out.
+  In daylight it appears only for 4.5 seconds after a drink fills the meter to
+  100%, because a lit sky should not keep a starfield in it for minutes.
+- **Rainbow** is the daytime reward, above `Config.thresholds.reward` of 95.
+- **Shooting star** is the same reward after dark, since a rainbow needs a lit
+  sky to read as one. One thin trail travels along its own path and curls into
+  an open loop at the head.
 
-## Idle animation requirement
+Which reward appears follows the resolved theme rather than the clock, so an
+override that darkens the sky at noon gets the night reward.
 
-Idle animation must be part of the MVP to make the character feel alive. Subtle, looped motion is enough: gentle bobbing, breathing, blinking, tail swish, ear twitch, and sparkle twinkle can carry a lot of personality without making the interface noisy. Accessibility guidance for modern web motion strongly supports offering reduced or simplified motion when users request it.[cite:43][cite:45][cite:50]
+## Ambient life
 
-### State-specific idle animation
+The random animations are **wind** and **gulls**. Both are rare, both cross
+once and remove themselves, and their rates live per effect and per daypart in
+`Config.ambient`. The rate is re-checked when a timer fires rather than when it
+is set, so dusk changes the rhythm without a restart, and nothing is scheduled
+while the tab is hidden or under reduced motion.
 
-| State | Idle behavior |
-|---|---|
-| Hydrated | Slightly bouncier bob, lively tail swish, brighter sparkles |
-| Okay | Calm breathing, mild tail motion, occasional blink |
-| Thirsty | Slower bob, weaker sparkle, visible droop |
-| Dehydrated | Very slow breathing, minimal movement, almost no sparkle |
+- **Wind** is one thin semi-transparent trail per gust, drawn as a dash window
+  walking along a looping path so the curve draws itself.
+- **Gulls** are a loose flock of three to five stepped pixel sprites, each at
+  its own scale for depth and its own phase, flapping by frame swap through a
+  wide bowl, a shallow vee and a narrow peak. The flock crosses at a slant.
 
-### Implementation guidance
+Both were drawn from reference footage rather than from memory, and both are
+tuned in `.work/anim-lab.html`, which spawns them on demand at any speed.
 
-- Base animation system should be reusable.
-- State classes should tune amplitude, speed, opacity, and posture.
-- Prefer `transform` and `opacity` changes over layout-affecting animation.
-- Keep movement subtle because this is a persistent companion UI on mobile.[cite:45][cite:50]
+## Themes
 
-### Reduced motion
+`themeMode` takes four values, chosen from a segmented pill in the top bar:
+`auto`, `day`, `night` and `glitter`. Auto resolves against the local clock,
+day from 07:00 to 19:00, and re-resolves on the UI ticker and on return to the
+tab, so it flips at dusk while the page is open.
 
-Idle and decorative animation must respect `prefers-reduced-motion`. This media feature is designed to detect system-level requests to minimize non-essential motion and is broadly supported in modern browsers.[cite:43][cite:55][cite:57]
+Glitter is a theme rather than a switch, which is why it is a fourth value and
+not a checkbox: a pink and lavender palette, a rounded typeface, a slow sheen,
+decorative ribbons and an emoji particle canvas. Its pointer trail needs a
+pointer and says so when there is none. Under reduced motion the palette and
+typeface stay and the motion stops.
 
-Example fallback:
+The control is a `radiogroup` with a roving tabindex, because a switch would
+have to lie about two of the four states.
 
-```css
-@media (prefers-reduced-motion: reduce) {
-  .ina,
-  .ina * {
-    animation: none !important;
-    transition: none !important;
-  }
-}
-```
+## Sound design
 
-## Happy-state rainbow
+Procedural Web Audio, no audio files. A sip on every drink, a happy cheer when
+a drink improves the band, a sad note when the creature falls to dehydrated,
+and the gurgle for the easter egg. Each creature has its own voice parameters,
+so the dinosaur is lower and rougher than the unicorn.
 
-A fully happy or fully hydrated Ina may show a rainbow as a decorative reward effect. This is a good emotional cue because it marks the happiest state clearly without changing the core mechanics. Decorative motion should still be minimized or removed for reduced-motion users.[cite:43][cite:45][cite:62]
+Mobile browsers need a gesture before audio can start, so the context is
+unlocked on the first tap or keypress anywhere, not on load. On return from a
+suspended tab the app prefers visual feedback and will not play a sound unless
+a gesture has already unlocked the context.
 
-### Rainbow behavior
+## Haptics
 
-- Only show rainbow in the happiest state, or briefly when entering it.
-- Keep the rainbow subtle and soft.
-- Use it as a reward detail, not as always-on background decoration.
-- Remove or simplify it under reduced-motion settings.[cite:60][cite:61][cite:62]
+Two signals and nothing finer, which is a measurement rather than a taste. On
+the Android device tested in `.work/haptics-lab.html`, a phone motor cannot
+tell 12 ms from 22 ms and cannot resolve a three-beat rhythm, so:
+
+- The mood improving is a 30 ms tick.
+- The mood dropping is a 180 ms buzz.
+
+Haptics is never the only feedback for anything, because it can be silently
+off: Do Not Disturb silences vibration outright while `navigator.vibrate` still
+returns true, iOS Safari has no Vibration API at all, and desktop Chrome
+accepts every call with no motor to honour it. Every buzz doubles something the
+mood line and the sprite already show.
+
+It stays quiet on the drink tap, on the first render after a load, on return
+from a hidden tab, under reduced motion, and while the page is not visible.
+
+## Languages and copy
+
+German by default, English, and Traditional Chinese with the `zh-TW` tag,
+because a bare `zh` does not tell a browser whether to pick Traditional or
+Simplified glyphs. Each locale is written as native copy rather than as a
+translation of the German, with its own register. Relative times come from
+`Intl.RelativeTimeFormat` and numbers from `toLocaleString`, so the grammar and
+the decimal separators are right in all three.
+
+The Traditional Chinese has not been read by a native speaker. That is tracked
+as F2.
 
 ## Persistence model
 
-Use `localStorage` with a single serialized state object. This is a common and appropriate no-server persistence model for static HTML apps.[cite:16][cite:19]
+One serialised object in `localStorage` under `aniluna/v1`. The `/vN` suffix is
+the state-shape version: bumping it deliberately abandons old saves rather than
+migrating them. `Config.legacyKeys` lists names the app used to write under, and
+`Storage.migrate()` adopts the first one it finds exactly once, never
+overwriting data already at the current key.
 
-### Suggested state shape
+Current shape:
 
 ```js
 {
-  hydration: 100,
-  lastUpdateAt: 1724100000000,
-  lastDrinkAt: 1724100000000,
+  hydration: 75,
+  lastUpdateAt: 1756000000000,
+  lastDrinkAt: null,
   todayCount: 0,
-  dayKey: "2026-08-19",
-  decayHours: 4,
+  dayKey: "2026-08-24",
+  decayHours: 2,
   refillAmount: 25,
   soundOn: true,
   easterEggOn: true,
-  theme: "day",
+  hapticsOn: true,
+  themeMode: "auto",        // "auto" | "day" | "night" | "glitter"
+  species: "unicorn",
+  names: {},                // species key -> the owner's name, if any
+  locale: "de",
   tapHistory: []
 }
 ```
 
-## Timer and background behavior
+Every field is coerced through a guard on load, so a partial or corrupted save
+falls back to defaults rather than breaking startup. Absent values are treated
+as absent rather than as zero, which is not what `Number()` would do.
 
-### Important rule
+## Timer and background behaviour
 
-Do **not** rely on `setInterval()` as the source of truth for hydration decay. Browsers commonly throttle or pause timers in inactive tabs, and mobile browsers may suspend or kill pages entirely. Page lifecycle behavior on mobile also makes unload-style assumptions unreliable.[cite:21][cite:27][cite:28]
+**Do not** rely on `setInterval` as the source of truth for decay. Browsers
+throttle timers in inactive tabs and mobile browsers suspend or kill pages
+outright.
 
-### Correct implementation
+Instead: store `lastUpdateAt`, and on every sync take the elapsed time from
+`Date.now()`, convert it to hydration loss, re-stamp, render and persist. A
+15-second interval runs only while the page is visible, and only to refresh the
+relative-time label and re-resolve the clock theme. It is never the state
+engine.
 
-Use timestamps:
+Lifecycle uses `visibilitychange` and `pagehide`, which are the signals mobile
+browsers actually deliver. `beforeunload` and `unload` often never fire there.
 
-- Store `lastUpdateAt`.
-- When the page becomes visible, calculate elapsed time from `Date.now()`.
-- Convert elapsed time to hydration loss.
-- Update `lastUpdateAt`.
-- Re-render and persist state.[cite:21][cite:27][cite:28]
-
-### Visible refresh
-
-A light interval may still be used while the page is visible to keep relative time labels fresh, but that interval is only for UI refresh. It must not be treated as the true state engine.[cite:21][cite:28]
-
-### Lifecycle hooks
-
-Use:
-
-- `visibilitychange`
-- `pagehide`
-
-The Page Visibility API is the more reliable lifecycle signal for modern mobile scenarios than assuming `beforeunload` or similar events will always fire.[cite:22][cite:25][cite:27]
-
-## Sound design
-
-The app should use procedural sound effects generated with the Web Audio API rather than requiring external audio files. Web Audio is well suited to lightweight in-browser synthesized sound design.[cite:31][cite:39]
-
-### Required sounds
-
-- Happy “yippie” sound.
-- Sad “oh” sound.
-- Brief cute drinking/sipping sounds.
-- Blubber/gurgle easter egg sound.
-
-### Mobile audio constraints
-
-Mobile browsers generally require a user gesture before audio can begin. The audio context should therefore be created or resumed on the first tap or button interaction, not on page load.[cite:32][cite:36][cite:40]
-
-### Audio behavior guidance
-
-- Drink button normally plays sip sounds.
-- If a drink action improves Ina into a better mood band, optionally play the happy yippie.
-- If Ina becomes dehydrated after time away, prefer visual feedback first; avoid aggressive autoplay sound on load.
-- Keep sounds cute and brief, never harsh or loud.[cite:33][cite:36][cite:39]
+The page never reloads itself. State is derived from timestamps, so it
+self-corrects whenever the tab becomes visible.
 
 ## Rapid-tap easter egg
 
-Add a hidden event: if the player taps the drink action five times within five seconds, trigger a cute blubber/gurgle sound.
+Five drink taps inside a rolling five-second window trigger a gurgle and a
+playful line. Tap timestamps are filtered to the window, the trigger clears the
+history, and the whole thing can be switched off in settings.
 
-### Behavior
+## Code structure
 
-- Track recent drink tap timestamps.
-- Keep only taps inside the rolling five-second window.
-- Trigger when five taps are present.
-- Clear tap history after trigger.
-- Optionally show playful speech text such as “blub blub blub! heehee 💦”.
-
-### Example logic
-
-```js
-state.tapHistory = state.tapHistory.filter(ts => now - ts <= 5000);
-state.tapHistory.push(now);
-const burstTriggered = state.tapHistory.length >= 5;
-if (burstTriggered) state.tapHistory = [];
-```
-
-## Maintainable code structure
-
-Even though the deliverable is one file, the code must be organized modularly. This will make future edits easier and reduce prompt drift during iterative development.[cite:31][cite:39]
-
-### Required internal structure
-
-```js
-/* ========= CONFIG ========= */
-/* ========= STORAGE ========= */
-/* ========= TIME ========= */
-/* ========= AUDIO ========= */
-/* ========= STATE ========= */
-/* ========= UI ========= */
-/* ========= EVENTS ========= */
-/* ========= INIT ========= */
-```
-
-### Module responsibilities
+One file, but organised. Each section carries a banner comment:
 
 | Module | Responsibility |
 |---|---|
-| Config | Constants, defaults, storage key, character name |
-| Storage | Save/load JSON state |
-| Time | Relative time helpers, day key logic |
-| Audio | Context setup, unlock logic, procedural sounds |
-| State | Decay, refill, thresholds, toggles, tap history |
-| UI | DOM references, rendering, text, scene state, status updates |
-| Events | Input handlers, visibility handlers, refresh interval |
-| Init | Startup sequence |
+| `CONFIG` | Version, constants, defaults, thresholds, slider limits, storage key, theme list, glitter and haptics tuning |
+| `STRINGS` | Every user-facing string, one entry per locale, speech keyed by species |
+| `STORAGE` | Read, write, clear, and the one-time legacy-key migration |
+| `TIME` | Day key, fractional hour, daytime test, localised relative time |
+| `SKY` | Position of one body on its arc at a given hour |
+| `HAPTICS` | Capability checks and the two buzzes |
+| `GLITTER` | Live pointer and motion queries, the sprite cache, the particle canvas |
+| `AUDIO` | Context setup, gesture unlock, procedural sounds per voice |
+| `AMBIENT` | The wind, gull and shooting-star kinds, their rates and their spawner |
+| `STATE` | Decay, refill, bands, coercion guards, toggles, tap history |
+| `UI` | Element cache, rendering, text, theme, sky, the name, the theme control |
+| `EVENTS` | Input handlers, lifecycle handlers, the visible-only refresh ticker |
+| `INIT` | Startup sequence and the console banner |
 
-## Suggested thresholds
+Every configurable value lives in `Config` rather than in the body of the code.
 
-Use these hydration bands:
+## Thresholds and defaults
 
-- `>= 75`: hydrated
-- `>= 45`: okay
-- `>= 20`: thirsty
-- `< 20`: dehydrated
+- Bands: 75 hydrated, 45 okay, 20 thirsty, below 20 dehydrated.
+- Reward threshold: 95, for the rainbow by day and the shooting star at night.
+- First run starts at 75, not full, so a new user has something to fix and
+  learns the loop from a single tap.
+- Full to empty in 2 hours by default, so the mood states are reachable in one
+  sitting. Adjustable from 0.5 to 4.0.
+- Refill 25% by default.
 
-These bands give clear readable transitions without overcomplicating the mood model.
+## Layout and styling constraints
 
-## Suggested layout and styling constraints
-
-- Max width around 420–430 px for comfortable mobile framing.
-- Large primary drink button.
-- Minimum touch targets around 44x44 px.
-- Soft pastel palette with strong readable contrast.
+- Maximum width 424 px, for comfortable mobile framing.
+- A large primary drink button.
+- Touch targets of at least 44 px.
+- A soft pastel palette with readable contrast, in every theme.
 - Rounded, toy-like panels.
-- Pixel-art or pixel-inspired details.
-- Fast first paint and minimal complexity.[cite:1][cite:3]
+- Pixel-art details, sharpened with `shape-rendering: crispEdges`.
+- Fast first paint and minimal complexity.
 
 ## UX writing guidance
 
-### Tone
+Kind, playful, non-judgemental. The creature speaks in the first person and
+never nags.
 
-Use kind, playful, non-judgmental copy.
+Good: "Ich glitzere vor Glück ✨", "Ein Schlückchen später wär schön 💧",
+"oh... ich brauche wirklich Wasser".
 
-Good examples:
-
-- “I feel sparkly and happy ✨”
-- “A little sip later would be lovely 💧”
-- “I’m a bit droopy... water soon?”
-- “oh... I really need some water”
-
-Avoid:
-
-- Shame-based copy.
-- Alarmist health copy.
-- Productivity-speak.
-- Dense explanatory text.
+Avoid shame-based copy, alarmist health claims, productivity-speak, and dense
+explanatory text.
 
 ## Interaction rules
 
-### Drink action
+### Drink
 
-On tap:
+Unlock audio, sync elapsed decay, add the refill amount, stamp the last drink,
+increment today's count, process the rapid-tap window, re-render, then play the
+sip or the gurgle, and the cheer if the band improved. If the meter is now
+full, the daylight starfield appears for a few seconds.
 
-1. Unlock audio if needed.
-2. Sync elapsed-time decay.
-3. Increase hydration by refill amount.
-4. Update last drink timestamp.
-5. Increment today count.
-6. Process rapid-tap easter egg.
-7. Re-render UI.
-8. Play sip or gurgle event.
-9. Optionally play yippie on a mood improvement.
+### Reset
 
-### Reset action
-
-- Refill hydration to 100.
-- Reset today count.
-- Reset tap history.
-- Update timestamps.
-- Re-render UI.
+Fill to 100, clear today's count and the tap history, re-stamp, re-render.
+Reset is housekeeping rather than an achievement, so it does not celebrate.
 
 ## Accessibility requirements
 
-- Respect `prefers-reduced-motion` for idle and decorative animations.[cite:43][cite:45]
-- Avoid autoplay sound on load due to user comfort and mobile browser policy.[cite:32][cite:36]
-- Keep controls finger-friendly.
-- Use labels and `aria-label`s where needed.
-- Preserve readable contrast and clear status communication.
+- `prefers-reduced-motion` is respected for idle motion, ambient life, glitter
+  particles and haptics. The glitter palette and typeface stay; only the motion
+  stops.
+- No autoplay audio, for comfort and because mobile browsers forbid it.
+- Touch targets of at least 44 px.
+- Every icon-only control has a localised accessible name, written from the
+  same string as its tooltip.
+- The theme control is a radiogroup with a roving tabindex and one tab stop.
+- The meter reports its value and its mood as an accessible name.
+- Screen readers hear each control named once, not twice.
 
-## Suggested implementation order
+## What this brief does not decide
 
-1. Build the base one-screen HTML structure.
-2. Add config-driven character naming.
-3. Implement modular JS sections.
-4. Add storage and timestamp decay.
-5. Add render logic and state classes.
-6. Add sound engine and mobile-safe unlock.
-7. Add idle animations and reduced-motion fallback.
-8. Add happy rainbow reward.
-9. Add rapid-tap gurgle easter egg.
-10. Polish UI and copy.
+Deferred work, defects and the test matrix live in the README, not here:
 
-## Acceptance criteria for Claude Code
+- [Known issues](README.md#known-issues) for the defects the current version
+  ships with.
+- [Roadmap](README.md#roadmap) for work that has not been started, including
+  the panda, real sprite art, the "while you were away" note, reminder
+  experiments, and the native-speaker pass on the Chinese copy.
 
-The implementation is successful when all of the following are true:
-
-- The app is a single `index.html` file.
-- It runs with no backend.
-- It is hostable directly on GitHub Pages.[cite:13][cite:19]
-- Hydration decays correctly after closing and reopening the browser because timestamps are recalculated.[cite:21][cite:27]
-- The character has four clearly readable mood states.
-- Idle animation differs by state.
-- Reduced-motion users are respected.[cite:43][cite:45]
-- The character name can be changed from a config object.
-- Sound effects work after user interaction.
-- The five-taps easter egg works.
-- The happy state can display a rainbow.
-- The code is clearly separated into modular sections.
-- Settings and state persist locally.
-
-## Stretch goals
-
-Only after the MVP is working:
-
-- Replace CSS character shapes with real pixel sprite states.
-- Add tiny haptics on supported devices.
-- Add a brief “while you were away” return note.
-- Improve environmental scene changes between moods.
-- Add optional reminder experiments.
-
-## Final instruction to Claude Code
-
-Build a charming, mobile-first, single-file static web app that feels like a tiny hydration companion pet rather than a tracker dashboard. Keep the code modular, the interaction loop emotionally rewarding, and the implementation robust for mobile browser suspension by relying on timestamps and local persistence instead of pretending background timers exist. Use sound, idle animation, and a happy-state rainbow as delight features, while respecting reduced-motion and mobile browser audio constraints.[cite:21][cite:27][cite:31][cite:43]
+Promotion to `v1.0` is gated on a confirmed device test run, which has not
+happened yet.

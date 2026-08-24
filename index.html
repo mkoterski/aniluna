@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.25
+  index.html - Aniluna Aqua Buddy - v0.27
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -44,6 +44,17 @@
   --spike:       #f2a35e;
   --spike-shade: #d3833f;
   --claw:        #f7e6a8;
+  /* panda. Same slot pattern as the other two: a body colour, a shade for the
+     underside, one accent family for the markings, a muzzle and a paw. The
+     markings are charcoal rather than black so the feMorphology outline still
+     separates from them, which is the one place a black and white animal
+     fights this style. */
+  --fur:         #fffafd;
+  --fur-shade:   #ece3f0;
+  --patch:       #4a4356;
+  --patch-shade: #3a3444;
+  --snout:       #fff3f9;
+  --paw:         #3a3444;
   /* shared */
   --ink:         #2a2036;
   --eye-glint:   #ffffff;
@@ -99,6 +110,12 @@
   --spike:       #e0894a;
   --spike-shade: #b96a33;
   --claw:        #e8d79a;
+  --fur:         #efe6f7;
+  --fur-shade:   #cdc0dd;
+  --patch:       #3b3450;
+  --patch-shade: #2c2740;
+  --snout:       #e2d6ee;
+  --paw:         #2c2740;
   --ink:         #1b1526;
   --blush:       #ef7ba6;
 
@@ -234,6 +251,14 @@ body {
   --spike:       #ff8fd0;
   --spike-shade: #e0679f;
   --claw:        #fff1b8;
+  /* panda, pink-forward like the rest of glitter: the markings warm towards
+     plum so the creature belongs to the palette rather than sitting on it. */
+  --fur:         #fff6fb;
+  --fur-shade:   #ffd9ef;
+  --patch:       #6b3f63;
+  --patch-shade: #55304f;
+  --snout:       #fff0f8;
+  --paw:         #55304f;
   /* shared */
   --ink:         #4d1c3d;
   --blush:       #ff7ab8;
@@ -480,13 +505,16 @@ body {
   filter: drop-shadow(0 0 3px var(--star-glow));
 }
 :root[data-theme="night"] .stars { opacity: 0.9; }
-.scene[data-radiant="on"] .stars { opacity: 0.85; }
+/* Daylight stars are a moment, not a state. They used to ride data-radiant,
+   which meant the whole time the meter read 95 or above, so a bright sky kept
+   a starfield in it for minutes. Now they are a few seconds of celebration
+   when the meter is topped right out, and the rest of the daytime sky is left
+   to the wind and the birds. */
+:root[data-theme="day"] .scene[data-daystars="on"] .stars { opacity: 0.85; }
 /* At night the reward brightens the whole field. This is the static half of
    the night reward, so something still happens under reduced motion, where no
    shooting star is allowed to cross. */
 :root[data-theme="night"] .scene[data-radiant="on"] .stars { opacity: 1; }
-/* Glitter has its own sparkle, so the starfield stays out of its way. */
-:root[data-theme="glitter"] .scene[data-radiant="on"] .stars { opacity: 0; }
 
 /* rainbow reward, only while the meter reads at or above Config.thresholds.reward */
 .rainbow {
@@ -786,8 +814,15 @@ body {
 .pet-shadow { fill: rgba(0, 0, 0, 0.13); }
 #petInk feFlood { flood-color: var(--ink); }
 
-.scene[data-species="unicorn"] .pet-dino,
-.scene[data-species="dinosaur"] .pet-unicorn { display: none; }
+/* One rule, not one per ordered pair. Pairing needed two selectors for two
+   species, six for three and twelve for four, and CSS cannot compare two
+   attribute values, so the answer is to stop asking it to: applySpecies sets
+   the attribute and this hides whatever carries it. Note that it has to be
+   setAttribute rather than el.hidden, because these are SVG elements and
+   hidden is a property of HTMLElement: the assignment would set a harmless
+   expando, no attribute would land, and the unselected creature would render
+   behind the chosen one. */
+.pet[hidden] { display: none; }
 
 .pet-all {
   transform-origin: 50% 100%;
@@ -1022,7 +1057,11 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
 }
-.lang-btn[aria-pressed="true"] {
+/* The language buttons report aria-pressed and the creature radios report
+   aria-checked, so the selected style has to answer to both. Keyed on only the
+   first, the chosen creature had no highlight at all. */
+.lang-btn[aria-pressed="true"],
+.lang-btn[aria-checked="true"] {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-ink);
@@ -1129,6 +1168,7 @@ input[type="range"]::-moz-range-thumb {
 
   <!-- ---------- scene ---------- -->
   <section class="scene" id="scene" data-band="okay" data-species="unicorn" data-radiant="off"
+           data-daystars="off"
            aria-labelledby="sceneCaption">
     <p class="sr-only" id="sceneCaption"></p>
     <div class="stars" aria-hidden="true"></div>
@@ -1174,7 +1214,7 @@ input[type="range"]::-moz-range-thumb {
     </svg>
 
     <!-- ===== unicorn ===== -->
-    <svg class="pet pet-unicorn" viewBox="0 -1 32 31" shape-rendering="crispEdges" aria-hidden="true">
+    <svg class="pet pet-unicorn" data-species="unicorn" viewBox="0 -1 32 31" shape-rendering="crispEdges" aria-hidden="true">
       <ellipse class="pet-shadow" cx="16" cy="28.4" rx="7" ry="1.1"/>
       <g class="pet-all">
         <g class="pet-bob">
@@ -1253,71 +1293,193 @@ input[type="range"]::-moz-range-thumb {
     </svg>
 
     <!-- ===== dinosaur ===== -->
-    <svg class="pet pet-dino" viewBox="0 -1 32 31" shape-rendering="crispEdges" aria-hidden="true">
+    <svg class="pet pet-dino" data-species="dinosaur" viewBox="0 -1 32 31" shape-rendering="crispEdges" aria-hidden="true">
       <ellipse class="pet-shadow" cx="16" cy="28.4" rx="7.5" ry="1.1"/>
       <g class="pet-all">
         <g class="pet-bob">
           <g filter="url(#petInk)">
 
-            <!-- Overlaps the torso and tapers, so it stays visually attached
-                 while the swish rotates it about its own bottom left. -->
+            <!-- Thick and curling upward, as in the reference, rather than the
+                 thin taper this species had before. Spiked along its top edge,
+                 which is the ridge the reference runs down the back. -->
             <g class="pet-tail">
-              <rect x="19" y="20" width="3" height="4" fill="var(--skin)"/>
-              <rect x="21" y="21" width="3" height="3" fill="var(--skin)"/>
-              <rect x="23" y="22" width="3" height="2" fill="var(--skin-shade)"/>
-              <rect x="22" y="20" width="2" height="1" fill="var(--spike)"/>
-              <rect x="24" y="21" width="2" height="1" fill="var(--spike)"/>
+              <rect x="21" y="21" width="3" height="4" fill="var(--skin)"/>
+              <rect x="23" y="19" width="3" height="4" fill="var(--skin)"/>
+              <rect x="25" y="16" width="2" height="4" fill="var(--skin-shade)"/>
+              <rect x="24" y="18" width="2" height="1" fill="var(--spike)"/>
+              <rect x="26" y="15" width="2" height="1" fill="var(--spike)"/>
             </g>
 
-            <rect x="12" y="24" width="3" height="4" fill="var(--skin)"/>
-            <rect x="17" y="24" width="3" height="4" fill="var(--skin)"/>
-            <rect x="12" y="27" width="3" height="1" fill="var(--claw)"/>
-            <rect x="17" y="27" width="3" height="1" fill="var(--claw)"/>
+            <!-- Chunky legs, standing. -->
+            <rect x="11" y="25" width="4" height="3" fill="var(--skin)"/>
+            <rect x="17" y="25" width="4" height="3" fill="var(--skin)"/>
+            <rect x="11" y="27" width="4" height="1" fill="var(--claw)"/>
+            <rect x="17" y="27" width="4" height="1" fill="var(--claw)"/>
 
-            <rect x="12" y="19" width="8" height="6" fill="var(--skin)"/>
-            <rect x="13" y="21" width="6" height="4" fill="var(--belly)"/>
-            <rect x="19" y="19" width="2" height="2" fill="var(--spike-shade)"/>
+            <rect x="11" y="18" width="10" height="1" fill="var(--skin)"/>
+            <rect x="10" y="19" width="12" height="6" fill="var(--skin)"/>
+            <rect x="11" y="25" width="10" height="1" fill="var(--skin)"/>
+            <rect x="12" y="20" width="8"  height="5" fill="var(--belly)"/>
+            <!-- Belly ridges, which the reference draws as banding. -->
+            <rect x="12" y="22" width="8"  height="1" fill="var(--skin-shade)"/>
+
+            <!-- Shoulder spikes: the back ridge, as much of it as a front view
+                 can show, running down towards the tail. -->
+            <rect x="21" y="19" width="2" height="2" fill="var(--spike)"/>
+            <rect x="22" y="21" width="2" height="1" fill="var(--spike-shade)"/>
+
+            <!-- Small arms, because it is a small-armed animal. -->
+            <rect x="8"  y="20" width="2" height="3" fill="var(--skin)"/>
+            <rect x="22" y="20" width="2" height="3" fill="var(--skin)"/>
+            <rect x="8"  y="22" width="2" height="1" fill="var(--claw)"/>
+            <rect x="22" y="22" width="2" height="1" fill="var(--claw)"/>
 
             <g class="pet-head">
-              <rect x="11" y="6"  width="10" height="1"  fill="var(--skin)"/>
-              <rect x="10" y="7"  width="12" height="1"  fill="var(--skin)"/>
-              <rect x="9"  y="8"  width="14" height="10" fill="var(--skin)"/>
+              <!-- 18 wide, matching the panda, so all three read at the same
+                   scale next to each other. -->
+              <rect x="10" y="4"  width="12" height="1"  fill="var(--skin)"/>
+              <rect x="9"  y="5"  width="14" height="1"  fill="var(--skin)"/>
+              <rect x="7"  y="6"  width="18" height="10" fill="var(--skin)"/>
+              <rect x="8"  y="16" width="16" height="2"  fill="var(--skin)"/>
               <rect x="10" y="18" width="12" height="1"  fill="var(--skin-shade)"/>
-              <rect x="11" y="19" width="10" height="1"  fill="var(--skin-shade)"/>
 
-              <!-- head plates, in place of horn and ears -->
-              <rect x="11" y="4" width="2" height="2" fill="var(--spike)"/>
-              <rect x="15" y="3" width="2" height="3" fill="var(--spike)"/>
-              <rect x="19" y="4" width="2" height="2" fill="var(--spike)"/>
-              <rect x="11" y="5" width="2" height="1" fill="var(--spike-shade)"/>
-              <rect x="15" y="5" width="2" height="1" fill="var(--spike-shade)"/>
-              <rect x="19" y="5" width="2" height="1" fill="var(--spike-shade)"/>
+              <!-- Head plates, rounder than the old three-point crest. -->
+              <rect x="10" y="2" width="3" height="2" fill="var(--spike)"/>
+              <rect x="15" y="1" width="3" height="3" fill="var(--spike)"/>
+              <rect x="20" y="2" width="3" height="2" fill="var(--spike)"/>
+              <rect x="10" y="3" width="3" height="1" fill="var(--spike-shade)"/>
+              <rect x="15" y="3" width="3" height="1" fill="var(--spike-shade)"/>
+              <rect x="20" y="3" width="3" height="1" fill="var(--spike-shade)"/>
 
-              <!-- snout -->
-              <rect x="13" y="14" width="6" height="4" fill="var(--belly)"/>
-              <rect x="14" y="15" width="1" height="1" fill="var(--skin-shade)"/>
-              <rect x="17" y="15" width="1" height="1" fill="var(--skin-shade)"/>
-              <rect x="10" y="16" width="2" height="2" fill="var(--blush)"/>
-              <rect x="20" y="16" width="2" height="2" fill="var(--blush)"/>
+              <!-- A wide pale muzzle with nostrils and a row of teeth, which is
+                   what carries the reference's face into a front view. -->
+              <rect x="11" y="13" width="10" height="5" fill="var(--belly)"/>
+              <rect x="13" y="14" width="1"  height="1" fill="var(--skin-shade)"/>
+              <rect x="18" y="14" width="1"  height="1" fill="var(--skin-shade)"/>
+              <rect x="12" y="16" width="1"  height="1" fill="var(--claw)"/>
+              <rect x="14" y="16" width="1"  height="1" fill="var(--claw)"/>
+              <rect x="16" y="16" width="1"  height="1" fill="var(--claw)"/>
+              <rect x="18" y="16" width="1"  height="1" fill="var(--claw)"/>
+              <rect x="20" y="16" width="1"  height="1" fill="var(--claw)"/>
+
+              <!-- Orange, as in the reference, which the spike token already
+                   provides rather than needing a new colour. -->
+              <rect x="7"  y="13" width="2" height="2" fill="var(--spike)"/>
+              <rect x="23" y="13" width="2" height="2" fill="var(--spike)"/>
 
               <g class="pet-eyes">
-                <rect x="11" y="10" width="3" height="3" fill="var(--ink)"/>
-                <rect x="18" y="10" width="3" height="3" fill="var(--ink)"/>
+                <!-- Bigger than the other two species, with two highlights,
+                     which is the reference's most distinctive feature. -->
+                <rect x="9"  y="8"  width="4" height="4" fill="var(--ink)"/>
+                <rect x="19" y="8"  width="4" height="4" fill="var(--ink)"/>
+                <rect x="9"  y="8"  width="2" height="1" fill="var(--eye-glint)"/>
+                <rect x="19" y="8"  width="2" height="1" fill="var(--eye-glint)"/>
                 <rect x="11" y="10" width="1" height="1" fill="var(--eye-glint)"/>
-                <rect x="18" y="10" width="1" height="1" fill="var(--eye-glint)"/>
-                <rect class="pet-lid" x="11" y="10" width="3" height="2" fill="var(--skin)"/>
-                <rect class="pet-lid" x="18" y="10" width="3" height="2" fill="var(--skin)"/>
+                <rect x="21" y="10" width="1" height="1" fill="var(--eye-glint)"/>
+                <rect class="pet-lid" x="9"  y="8" width="4" height="3" fill="var(--skin)"/>
+                <rect class="pet-lid" x="19" y="8" width="4" height="3" fill="var(--skin)"/>
               </g>
 
               <g class="pet-smile">
-                <rect x="13" y="17" width="1" height="1" fill="var(--ink)"/>
-                <rect x="14" y="18" width="4" height="1" fill="var(--ink)"/>
-                <rect x="18" y="17" width="1" height="1" fill="var(--ink)"/>
+                <rect x="12" y="17" width="1" height="1" fill="var(--ink)"/>
+                <rect x="13" y="18" width="6" height="1" fill="var(--ink)"/>
+                <rect x="19" y="17" width="1" height="1" fill="var(--ink)"/>
               </g>
               <g class="pet-frown">
-                <rect x="13" y="18" width="1" height="1" fill="var(--ink)"/>
-                <rect x="14" y="17" width="4" height="1" fill="var(--ink)"/>
-                <rect x="18" y="18" width="1" height="1" fill="var(--ink)"/>
+                <rect x="12" y="18" width="1" height="1" fill="var(--ink)"/>
+                <rect x="13" y="17" width="6" height="1" fill="var(--ink)"/>
+                <rect x="19" y="18" width="1" height="1" fill="var(--ink)"/>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+    <svg class="pet pet-panda" data-species="panda" viewBox="0 -1 32 31" shape-rendering="crispEdges" aria-hidden="true">
+      <ellipse class="pet-shadow" cx="16" cy="28.4" rx="7.5" ry="1.1"/>
+      <g class="pet-all">
+        <g class="pet-bob">
+          <g filter="url(#petInk)">
+
+            <!-- Empty on purpose. A panda's tail is tiny and hidden from the
+                 front; drawn as a nub at the hip it reads as a blemish, not a
+                 tail. The group stays so the shared swish has a target and
+                 this species needs no special case. -->
+            <g class="pet-tail"></g>
+
+            <!-- Standing, like the other two, on two stubby dark legs. -->
+            <rect x="11" y="25" width="4" height="3" fill="var(--patch)"/>
+            <rect x="17" y="25" width="4" height="3" fill="var(--patch)"/>
+            <rect x="11" y="27" width="4" height="1" fill="var(--paw)"/>
+            <rect x="17" y="27" width="4" height="1" fill="var(--paw)"/>
+
+            <!-- Body 12 wide under an 18 wide head. The head owning the
+                 silhouette is what makes it read cute rather than realistic,
+                 and the wide belly is most of the chubbiness. -->
+            <rect x="11" y="18" width="10" height="1" fill="var(--fur)"/>
+            <rect x="10" y="19" width="12" height="6" fill="var(--fur)"/>
+            <rect x="11" y="25" width="10" height="1" fill="var(--fur)"/>
+            <rect x="10" y="24" width="12" height="1" fill="var(--fur-shade)"/>
+
+            <!-- Short dark arms at the sides, clear of the legs below. -->
+            <rect x="8"  y="19" width="2" height="4" fill="var(--patch)"/>
+            <rect x="22" y="19" width="2" height="4" fill="var(--patch)"/>
+            <rect x="8"  y="22" width="2" height="1" fill="var(--paw)"/>
+            <rect x="22" y="22" width="2" height="1" fill="var(--paw)"/>
+
+            <!-- Big round ears, set wide and high. -->
+            <rect x="6"  y="2" width="5" height="4" fill="var(--patch)"/>
+            <rect x="7"  y="1" width="3" height="1" fill="var(--patch)"/>
+            <g class="pet-ear-r">
+              <rect x="21" y="2" width="5" height="4" fill="var(--patch)"/>
+              <rect x="22" y="1" width="3" height="1" fill="var(--patch)"/>
+            </g>
+
+            <g class="pet-head">
+              <rect x="10" y="4"  width="12" height="1"  fill="var(--fur)"/>
+              <rect x="9"  y="5"  width="14" height="1"  fill="var(--fur)"/>
+              <rect x="7"  y="6"  width="18" height="10" fill="var(--fur)"/>
+              <rect x="8"  y="16" width="16" height="1"  fill="var(--fur)"/>
+              <rect x="10" y="17" width="12" height="1"  fill="var(--fur-shade)"/>
+
+              <!-- The eye patches are the whole species cue: big, stepped
+                   round, angled inward at the top. -->
+              <rect x="9"  y="8"  width="5" height="6" fill="var(--patch)"/>
+              <rect x="10" y="7"  width="3" height="1" fill="var(--patch)"/>
+              <rect x="10" y="14" width="3" height="1" fill="var(--patch)"/>
+              <rect x="18" y="8"  width="5" height="6" fill="var(--patch)"/>
+              <rect x="19" y="7"  width="3" height="1" fill="var(--patch)"/>
+              <rect x="19" y="14" width="3" height="1" fill="var(--patch)"/>
+
+              <rect x="14" y="13" width="4" height="3" fill="var(--snout)"/>
+              <rect x="15" y="13" width="2" height="1" fill="var(--ink)"/>
+              <rect x="7"  y="12" width="2" height="2" fill="var(--blush)"/>
+              <rect x="23" y="12" width="2" height="2" fill="var(--blush)"/>
+
+              <!-- The whites are 4 wide so a 2 wide pupil centres exactly.
+                   At 3 wide it cannot: the pupil sits one column off centre,
+                   and mirroring that only trades cross-eyed for wall-eyed.
+                   Centred pupils point nowhere, which is what is wanted. -->
+              <g class="pet-eyes">
+                <rect x="9"  y="9"  width="4" height="3" fill="var(--snout)"/>
+                <rect x="18" y="9"  width="4" height="3" fill="var(--snout)"/>
+                <rect x="10" y="10" width="2" height="2" fill="var(--ink)"/>
+                <rect x="19" y="10" width="2" height="2" fill="var(--ink)"/>
+                <rect x="9"  y="9"  width="1" height="1" fill="var(--eye-glint)"/>
+                <rect x="18" y="9"  width="1" height="1" fill="var(--eye-glint)"/>
+                <rect class="pet-lid" x="9"  y="9" width="4" height="2" fill="var(--patch)"/>
+                <rect class="pet-lid" x="18" y="9" width="4" height="2" fill="var(--patch)"/>
+              </g>
+
+              <g class="pet-smile">
+                <rect x="14" y="15" width="1" height="1" fill="var(--ink)"/>
+                <rect x="15" y="16" width="2" height="1" fill="var(--ink)"/>
+                <rect x="17" y="15" width="1" height="1" fill="var(--ink)"/>
+              </g>
+              <g class="pet-frown">
+                <rect x="14" y="16" width="1" height="1" fill="var(--ink)"/>
+                <rect x="15" y="15" width="2" height="1" fill="var(--ink)"/>
+                <rect x="17" y="16" width="1" height="1" fill="var(--ink)"/>
               </g>
             </g>
           </g>
@@ -1361,6 +1523,11 @@ input[type="range"]::-moz-range-thumb {
     <div class="setting">
       <label for="nameInput" id="nameLabel"></label>
       <input id="nameInput" type="text" autocomplete="off" spellcheck="false" enterkeyhint="done">
+    </div>
+
+    <div class="setting">
+      <label id="creatureLabel"></label>
+      <div class="langs" id="creature" role="radiogroup" aria-labelledby="creatureLabel"></div>
     </div>
 
     <div class="setting">
@@ -1423,7 +1590,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.25",
+    version: "v0.27",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -1435,9 +1602,19 @@ const Config = {
       emoji: "\u{1F984}",
       voice: { pitch: 1, wave: "triangle", filter: null, gurgleBase: 150 }
     },
+    panda: {
+      name: "Wan Wan",
+      emoji: "\u{1F43C}",
+      /* Heavier than the unicorn, rounder than the dinosaur's sawtooth. */
+      voice: { pitch: 0.78, wave: "sine", filter: 900, gurgleBase: 120 }
+    },
+    /* secret: true keeps a creature out of the settings picker. The dinosaur
+       is reachable only through the switch in the footer, which is the point
+       of it. Nothing else in the code needs to know which one that is. */
     dinosaur: {
       name: "Anirex",
       emoji: "\u{1F996}",
+      secret: true,
       voice: { pitch: 0.55, wave: "sawtooth", filter: 1100, gurgleBase: 95 }
     }
   },
@@ -1555,7 +1732,8 @@ const Config = {
                                  // never the state engine
     sipFeedbackMs: 520,
     gurgleFeedbackMs: 750,
-    morphFeedbackMs: 640
+    morphFeedbackMs: 640,
+    dayStarsMs: 4500             // how long a full meter keeps stars in a lit sky
   },
   storageKey: "aniluna/v1",
   /* Keys this app used to write under. Storage.migrate adopts the first one it
@@ -1567,6 +1745,12 @@ const Config = {
 };
 
 const BANDS = ["hydrated", "okay", "thirsty", "dehydrated"];
+
+/* Which creatures the settings offer, and which one only the footer switch can
+   reach. Derived from Config so adding a creature, secret or not, stays a
+   config entry. */
+const PICKABLE = Object.keys(Config.species).filter((k) => !Config.species[k].secret);
+const SECRET_SPECIES = Object.keys(Config.species).find((k) => Config.species[k].secret);
 
 /* ========= STRINGS =========
    One entry per locale. These are written as native copy, not translations of
@@ -1582,7 +1766,9 @@ const Strings = {
     tag: "de-DE",
     titleSuffix: "Aqua Buddy",
     caption: (name, species) => `${name}, ${species}. Reagiert darauf, wie viel du trinkst.`,
-    speciesWord: { unicorn: "ein Einhorn", dinosaur: "ein Dino" },
+    speciesWord: { unicorn: "ein Einhorn", panda: "ein Panda", dinosaur: "ein Dino" },
+    creature: "Tier",
+    creatureName: { unicorn: "Einhorn", panda: "Panda" },
     meter: "Hydration",
     meterAria: (name) => `Hydration von ${name}`,
     drink: "\u{1F4A7} Ich hab Wasser getrunken",
@@ -1635,6 +1821,12 @@ const Strings = {
         thirsty: ["Ich bin ein bisschen schlapp... Wasser?", "Mein Horn ist ganz staubig \u{1F4A7}"],
         dehydrated: ["oh... ich brauche ganz dringend Wasser", "so durstig... nur ein Schl\u00fcckchen?"]
       },
+      panda: {
+        hydrated: ["Rundum gl\u00fccklich, danke dir \u2728", "So satt und zufrieden \u{1F308}"],
+        okay: ["Mir geht's gem\u00fctlich \u{1F499}", "Ein Schl\u00fcckchen sp\u00e4ter w\u00e4r sch\u00f6n \u{1F4A7}"],
+        thirsty: ["Ich bin ganz weich geworden... Wasser?", "Zu m\u00fcde zum Kauen \u{1F4A7}"],
+        dehydrated: ["oh... ich brauche ganz dringend Wasser", "so durstig... nur ein Schl\u00fcckchen?"]
+      },
       dinosaur: {
         hydrated: ["Rawr! Ich bin stark wie nie \u2728", "Randvoll gew\u00e4ssert, danke dir! \u{1F308}"],
         okay: ["Alles bestens hier \u{1F499}", "Ein Schluck sp\u00e4ter w\u00e4r nett \u{1F4A7}"],
@@ -1652,7 +1844,9 @@ const Strings = {
     tag: "en-GB",
     titleSuffix: "Aqua Buddy",
     caption: (name, species) => `${name}, ${species}. Reacts to how much you drink.`,
-    speciesWord: { unicorn: "a unicorn", dinosaur: "a dino" },
+    speciesWord: { unicorn: "a unicorn", panda: "a panda", dinosaur: "a dino" },
+    creature: "Creature",
+    creatureName: { unicorn: "Unicorn", panda: "Panda" },
     meter: "Hydration",
     meterAria: (name) => `${name}'s hydration`,
     drink: "\u{1F4A7} I drank water",
@@ -1705,6 +1899,12 @@ const Strings = {
         thirsty: ["I'm a bit droopy... water soon?", "My horn has gone all dusty \u{1F4A7}"],
         dehydrated: ["oh... I really do need some water", "so thirsty... just a tiny sip?"]
       },
+      panda: {
+        hydrated: ["Completely content, thank you \u2728", "Full up and very pleased \u{1F308}"],
+        okay: ["Nice and cosy over here \u{1F499}", "A little sip later would be lovely \u{1F4A7}"],
+        thirsty: ["I've gone all floppy... water?", "Too sleepy to even chew \u{1F4A7}"],
+        dehydrated: ["oh... I really do need some water", "so thirsty... just a tiny sip?"]
+      },
       dinosaur: {
         hydrated: ["Rawr! Stronger than ever \u2728", "Topped right up, thank you! \u{1F308}"],
         okay: ["All good over here \u{1F499}", "A sip later would be nice \u{1F4A7}"],
@@ -1722,7 +1922,9 @@ const Strings = {
     tag: "zh-TW",
     titleSuffix: "Aqua Buddy",
     caption: (name, species) => `${name}\uff0c${species}\u3002\u6703\u770b\u4f60\u559d\u591a\u5c11\u6c34\u4f86\u6539\u8b8a\u5fc3\u60c5\u3002`,
-    speciesWord: { unicorn: "\u4e00\u96bb\u7368\u89d2\u7378", dinosaur: "\u4e00\u96bb\u6050\u9f8d" },
+    speciesWord: { unicorn: "\u4e00\u96bb\u7368\u89d2\u7378", panda: "\u4e00\u96bb\u718a\u8c93", dinosaur: "\u4e00\u96bb\u6050\u9f8d" },
+    creature: "\u5c0f\u52d5\u7269",
+    creatureName: { unicorn: "\u7368\u89d2\u7378", panda: "\u718a\u8c93" },
     meter: "\u6c34\u5206",
     meterAria: (name) => `${name}\u7684\u6c34\u5206`,
     drink: "\u{1F4A7} \u6211\u559d\u6c34\u4e86",
@@ -1773,6 +1975,12 @@ const Strings = {
         hydrated: ["\u6211\u9583\u9583\u767c\u5149\uff0c\u597d\u958b\u5fc3\u5594 \u2728", "\u4f60\u770b\u4f60\u770b\uff0c\u6211\u5728\u767c\u5149\u8036 \u{1F308}", "\u6eff\u6eff\u7684\uff0c\u8b1d\u8b1d\u4f60\uff01"],
         okay: ["\u73fe\u5728\u89ba\u5f97\u597d\u8212\u670d \u{1F499}", "\u7b49\u7b49\u518d\u559d\u4e00\u5c0f\u53e3\u5c31\u66f4\u597d\u4e86 \u{1F4A7}"],
         thirsty: ["\u6211\u6709\u9ede\u6c92\u529b\u6c23\u4e86\u2026\u53ef\u4ee5\u559d\u6c34\u55ce\uff1f", "\u6211\u7684\u89d2\u6709\u9ede\u4e79\u4e79\u7684 \u{1F4A7}"],
+        dehydrated: ["\u55da\u2026\u6211\u771f\u7684\u597d\u60f3\u559d\u6c34", "\u597d\u6e34\u5594\u2026\u4e00\u5c0f\u53e3\u5c31\u597d\u5566\uff1f"]
+      },
+      panda: {
+        hydrated: ["\u5713\u6efe\u6efe\u53c8\u958b\u5fc3\uff0c\u8b1d\u8b1d\u4f60 \u2728", "\u559d\u98fd\u98fd\uff0c\u8d85\u6eff\u8db3 \u{1F308}"],
+        okay: ["\u9019\u88e1\u597d\u8212\u670d \u{1F499}", "\u7b49\u7b49\u518d\u559d\u4e00\u5c0f\u53e3\u5c31\u66f4\u597d\u4e86 \u{1F4A7}"],
+        thirsty: ["\u6211\u8eab\u9ad4\u8edf\u7dbf\u7dbf\u4e86\u2026\u53ef\u4ee5\u559d\u6c34\u55ce\uff1f", "\u7d2f\u5f97\u9023\u7af9\u5b50\u90fd\u4e0d\u60f3\u54ac \u{1F4A7}"],
         dehydrated: ["\u55da\u2026\u6211\u771f\u7684\u597d\u60f3\u559d\u6c34", "\u597d\u6e34\u5594\u2026\u4e00\u5c0f\u53e3\u5c31\u597d\u5566\uff1f"]
       },
       dinosaur: {
@@ -2554,8 +2762,12 @@ const State = {
       soundOn: true,
       easterEggOn: true,
       hapticsOn: true,
-      themeMode: "auto",              // "auto" | "day" | "night"
+      themeMode: "auto",              // "auto" | "day" | "night" | "glitter"
       species: Config.defaultSpecies,
+      /* What the settings picker chose, which is where the secret switch
+         returns to. Kept apart from the active species so the switch can be a
+         detour rather than a third setting. */
+      pickedSpecies: Config.defaultSpecies,
       names: {},                      // species key -> owner's name, if any
       locale: Config.defaultLocale,
       tapHistory: []
@@ -2647,6 +2859,7 @@ const State = {
       hapticsOn: saved.hapticsOn !== false,
       themeMode: this.oneOf(saved.themeMode, Config.themes.order, legacyTheme || base.themeMode),
       species: this.oneOf(saved.species, Object.keys(Config.species), base.species),
+      pickedSpecies: this.oneOf(saved.pickedSpecies, PICKABLE, base.pickedSpecies),
       names: this.cleanNames(saved.names),
       locale: this.oneOf(saved.locale, Config.locales, base.locale),
       tapHistory: Array.isArray(saved.tapHistory) ? saved.tapHistory.filter(Number.isFinite) : []
@@ -2754,10 +2967,22 @@ const State = {
     return clean;
   },
 
-  /** Flip between the two creatures. Returns the new species key. */
-  toggleSpecies() {
-    const keys = Object.keys(Config.species);
-    const next = keys[(keys.indexOf(this.data.species) + 1) % keys.length];
+  /** Choose a creature from the settings. Remembered, so the switch can undo. */
+  pickSpecies(key) {
+    if (!PICKABLE.includes(key)) return;
+    this.set({ species: key, pickedSpecies: key });
+  },
+
+  /**
+   * The footer switch, and the only way to the secret creature. It is a
+   * detour rather than a cycle: pressing it again returns to whatever the
+   * settings picked, so the switch cannot strand anyone on a creature the
+   * settings do not offer.
+   */
+  toggleSecret() {
+    const next = this.data.species === SECRET_SPECIES
+      ? this.data.pickedSpecies
+      : SECRET_SPECIES;
     this.set({ species: next });
     return next;
   },
@@ -2788,7 +3013,7 @@ const UI = {
       "soundInput", "soundLabel", "eggInput", "eggLabel",
       "hapticsInput", "hapticsLabel", "hapticsRow",
       "settingsFoot", "note", "secretBtn", "favicon", "sun", "moon", "ambient",
-      "nameLabel", "nameInput"
+      "nameLabel", "nameInput", "creature", "creatureLabel"
     ];
     ids.forEach((id) => { this.el[id] = document.getElementById(id); });
   },
@@ -2800,6 +3025,20 @@ const UI = {
 
   species() {
     return Config.species[State.data.species];
+  },
+
+  /**
+   * A full meter in a lit sky earns a few seconds of stars. Kept as a timer
+   * rather than as a threshold because the requester asked for the moment the
+   * meter reaches 100, not for every minute it happens to read high, and the
+   * meter starts falling again immediately.
+   */
+  celebrateDayStars() {
+    this.el.scene.dataset.daystars = "on";
+    clearTimeout(this.dayStarsTimer);
+    this.dayStarsTimer = setTimeout(() => {
+      this.el.scene.dataset.daystars = "off";
+    }, Config.ui.dayStarsMs);
   },
 
   /** True while the meter earns its reward: a rainbow by day, a star by night. */
@@ -2851,6 +3090,8 @@ const UI = {
     this.el.settingsSummary.textContent = t.settings;
     this.el.nameLabel.textContent = t.nameSetting;
     this.el.nameInput.placeholder = sp.name;      // the built-in name, as the way back
+    this.el.creatureLabel.textContent = t.creature;
+    this.renderCreatures();
     this.el.langLabel.textContent = t.language;
     this.el.decayLabel.textContent = t.fullToEmpty;
     this.el.refillLabel.textContent = t.refill;
@@ -2865,7 +3106,12 @@ const UI = {
     this.label(this.el.infoBtn, t.infoAria);
     this.el.infoBody.textContent = t.infoBody(name);
     this.el.infoTip.textContent = t.infoTip;
-    this.label(this.el.secretBtn, t.secretAria);
+    /* Accessible name only, deliberately no tooltip: a hover label that reads
+       "secret switch" is not a secret. A focusable button still needs a name,
+       so assistive tech is told what it is; the trade is that the secret is
+       kept from a mouse rather than from everyone. */
+    this.el.secretBtn.setAttribute("aria-label", t.secretAria);
+    this.el.secretBtn.removeAttribute("data-tip");
 
     Config.locales.forEach((loc) => {
       const btn = this.el["lang" + loc[0].toUpperCase() + loc.slice(1)];
@@ -2881,6 +3127,12 @@ const UI = {
   applySpecies() {
     const sp = this.species();
     this.el.scene.dataset.species = State.data.species;
+    document.querySelectorAll("#scene .pet").forEach((pet) => {
+      const mine = pet.dataset.species === State.data.species;
+      if (mine) pet.removeAttribute("hidden");
+      else pet.setAttribute("hidden", "");
+    });
+    this.markCreatures();
     Audio_.setVoice(sp.voice);
     this.el.favicon.href =
       "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'"
@@ -3003,6 +3255,34 @@ const UI = {
       this.el.themes.appendChild(btn);
     });
     this.markThemes();
+  },
+
+  /**
+   * The creature picker. Only the species without a secret flag appear, so the
+   * dinosaur stays behind the footer switch, which is the whole point of it.
+   */
+  renderCreatures() {
+    const t = this.t();
+    this.el.creature.querySelectorAll("button").forEach((b) => b.remove());
+    PICKABLE.forEach((key) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "lang-btn";
+      btn.setAttribute("role", "radio");
+      btn.dataset.species = key;
+      btn.textContent = `${Config.species[key].emoji} ${t.creatureName[key]}`;
+      this.el.creature.appendChild(btn);
+    });
+    this.markCreatures();
+  },
+
+  /** Nothing is checked while the secret creature is out, which is honest. */
+  markCreatures() {
+    this.el.creature.querySelectorAll("button").forEach((btn) => {
+      const on = btn.dataset.species === State.data.species;
+      btn.setAttribute("aria-checked", String(on));
+      btn.tabIndex = on || State.data.species === SECRET_SPECIES ? 0 : -1;
+    });
   },
 
   /** Marks the selected mode, not the resolved theme: "auto" is a choice too. */
@@ -3194,6 +3474,11 @@ const Events = {
       UI.say(UI.t().renamed(UI.name()), 2200);
     });
 
+    UI.el.creature.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-species]");
+      if (btn) this.setSpecies(btn.dataset.species);
+    });
+
     UI.el.decayInput.addEventListener("input", () => UI.renderSettingsValues());
     UI.el.decayInput.addEventListener("change", (e) => {
       State.sync();          // bill the time already elapsed at the old rate
@@ -3280,10 +3565,23 @@ const Events = {
     UI.render();
   },
 
-  /** The almost hidden switch: become the other creature. */
+  /** Chosen from the settings, so it sticks: the switch returns here. */
+  setSpecies(key) {
+    if (key === State.data.species) return;
+    State.pickSpecies(key);
+    UI.applySpecies();
+    UI.applyText();
+    UI.syncSettingsInputs();       // the name field belongs to this creature
+    UI.render();
+    UI.flash("is-morphing", Config.ui.morphFeedbackMs);
+    UI.say(UI.t().morph(UI.name()), 2600);
+    Audio_.morph();
+  },
+
+  /** The almost hidden switch, and the only way to the secret creature. */
   onSecret() {
     Audio_.unlock();
-    State.toggleSpecies();
+    State.toggleSecret();
     UI.applySpecies();
     UI.applyText();
     UI.syncSettingsInputs();       // the name field belongs to the new creature
@@ -3308,6 +3606,11 @@ const Events = {
 
     UI.flash("is-sipping", Config.ui.sipFeedbackMs);
     Audio_.sip();
+
+    /* Only a drink that tops the meter right out, not one that merely leaves
+       it high. Reset is deliberately not a celebration: it fills the meter as
+       housekeeping rather than as an achievement. */
+    if (State.data.hydration >= Config.hydration.max) UI.celebrateDayStars();
 
     if (result.improved) {
       UI.say(UI.pick(UI.t().cheer));
