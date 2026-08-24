@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.23
+# Aniluna Aqua Buddy - v0.24
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -58,7 +58,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.23", status: "DEVELOPMENT" },
+  app: { version: "v0.24", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -170,6 +170,40 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.24  2026-08-24  Fixed: v0.23 did not start at all. Ambient.KINDS lost its
+                   star entry, so Ambient.rateFor("star") read `.when` off
+                   undefined and threw. nudgeStar() is called from both
+                   UI.render() and UI.applyTheme(), init() calls each of them,
+                   and the throw took init with it: no title, no meter, no
+                   mood line, no theme pill, no ambient timers. The app was
+                   dead on arrival for the whole of v0.23, on every platform.
+
+                   Root cause, and it is not the code: the v0.23 gull work
+                   replaced a region of index.html by slicing from a comment
+                   down to the next "\n    },\n    wind: {". A kind closes
+                   with a four-space brace and so does the one before it, so
+                   that marker matched the closing brace of the star entry
+                   rather than the bird entry, and the replacement swallowed
+                   everything between. The animation lab's own header warns
+                   about exactly this, from the same mistake made twice while
+                   syncing that file, and I made it a third time on the app.
+
+                   Why it shipped: the only check run after that edit was
+                   `new Function(script)`, which proves the file parses.
+                   A missing object property is a runtime error, not a syntax
+                   error, so it passed cleanly. The lab was loaded and looked
+                   right, which is what made it feel verified, but the lab has
+                   its own copy of KINDS and never touches this one. Loading
+                   index.html itself would have shown a blank shell instantly.
+
+                   Verified now by loading the app and checking that init
+                   finishes rather than that the file parses: title, meter,
+                   mood line, the four-button theme pill, the settings labels,
+                   the ambient timers and the glitter canvas context are all
+                   present, and no console errors. Deleting KINDS.star again
+                   reproduces the three throws, and restoring it clears them,
+                   so the mechanism is confirmed rather than assumed.
+
 v0.23  2026-08-24  Redrew the wind and the gulls from frames pulled out of the
                    two videos the requester supplied, and added two labs to
                    .work/. Three attempts went into this, and only the frames
@@ -456,7 +490,7 @@ v0.10  2026-08-19  Initial version. Single-file static app: timestamp driven
 
 ## Known issues
 
-Defects present in `v0.23`, as opposed to work never started, which is under
+Defects present in `v0.24`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
@@ -479,7 +513,7 @@ Accepted limitations, written down so they are not rediscovered as bugs:
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
 - No device test matrix has been run (B2) and the Traditional Chinese copy has
-  not been read by a native speaker (F2), so `v0.23` is a prototype in the
+  not been read by a native speaker (F2), so `v0.24` is a prototype in the
   literal sense: everything here was verified in one desktop browser.
 - B1 is closed as won't-fix, decided in v0.18. A system clock moved backwards
   forgives the decay for the span it skipped, but reaching that takes a
@@ -521,7 +555,7 @@ Defects already in the app are not here, they are under
 | ID | Pri | Item | Notes |
 |---|---|---|---|
 | B2 | P1 | Device test matrix before `v1.0` | Promotion to `v1.0` needs a confirmed successful test run (NXW-VER-4). At minimum: iOS Safari audio unlock after backgrounding and with the silent switch on, Android Chrome, a real suspension across a day boundary to prove the `todayCount` rollover, and both `prefers-reduced-motion` settings. |
-| B5 | P2 | No test harness | Band boundaries, `clampStep` snapping, the legacy-key migration and the day rollover have each been verified by hand, once, at the version that touched them. They are pure functions and would fit a small harness. The single-file rule constrains the shipped app, not a test file sitting next to it. |
+| B5 | P1 | No test harness, and no smoke test | Band boundaries, `clampStep` snapping, the legacy-key migration and the day rollover have each been verified by hand, once, at the version that touched them. They are pure functions and would fit a small harness. The single-file rule constrains the shipped app, not a test file sitting next to it. Raised to P1 by v0.23, which shipped an app that did not start: the cheapest missing check is not a unit test but a smoke test that loads `index.html` and asserts `init()` finished, since parsing the file proves nothing about a runtime error. |
 
 ## Docs
 
@@ -530,7 +564,7 @@ It is kept as authored, so it still uses the working title and em dashes.
 
 ## Status
 
-Prototype, `v0.23`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.24`, DEVELOPMENT. The loop works end to end and the app is
 usable. What it gets wrong today is listed under
 [Known issues](#known-issues); what has never been started is under
 [Roadmap](#roadmap), where the stretch goals from `BRIEF.md` live too, so

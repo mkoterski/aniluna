@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.23
+  index.html - Aniluna Aqua Buddy - v0.24
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -1417,7 +1417,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.23",
+    version: "v0.24",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -2319,6 +2319,20 @@ const Ambient = {
         return '<svg viewBox="0 0 50 18" shape-rendering="crispEdges" aria-hidden="true">'
           + flock + "</svg>";
       }
+    },
+    /* The reward for a full meter after dark, in place of the rainbow. */
+    star: {
+      band: [7, 32],             // high in the sky, clear of the character
+      size: [13, 22],
+      dur: [1100, 1800],         // a streak, not a drift
+      opacity: [0.8, 1],
+      fall: [26, 46],            // drop across the crossing, percent of the scene
+      when: () => UI.isRadiant() && UI.effectiveTheme() === "night",
+      markup: () =>
+        '<svg viewBox="0 0 40 14" aria-hidden="true">'
+        + '<path d="M2 2 L29 9.4"/>'
+        + '<circle cx="33" cy="10.6" r="2.4"/>'
+        + "</svg>"
     },
     wind: {
       band: [10, 64],            // the whole sky, not just behind the character
