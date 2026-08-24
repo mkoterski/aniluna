@@ -125,6 +125,29 @@ python -m http.server 8000
 
 The running version is printed to the browser console on startup.
 
+### Testing
+
+```bash
+node smoke-test.mjs
+```
+
+Eighteen checks, no dependencies, exits non-zero on any failure. It exists
+because v0.23 shipped an app that did not start: the file parsed, which was the
+only thing being checked, and a missing object property is a runtime error
+rather than a syntax one. It checks the invariants that hold a single file
+together, then evaluates the pure logic against a stub page. It does not
+render, which is B2's job.
+
+The same checks run in a browser at [`smoke-test.html`](smoke-test.html), which
+is what makes them work on GitHub Pages where nothing can run node. Both
+runners import [`smoke-checks.mjs`](smoke-checks.mjs), so there is one copy of
+the checks and no drift. The page needs a served origin: from `file://` the
+fetch is refused, so serve the folder or open the published copy.
+
+```bash
+python -m http.server 8791
+```
+
 ### Local working directory
 
 `.work/` is a gitignored scratch folder: throwaway copies of `index.html`,
@@ -177,478 +200,113 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
-v0.27  2026-08-24  Landed F8. A third creature, the panda Wan Wan, chosen from
-                   the settings, with the dinosaur moved behind the secret
-                   switch and its tooltip removed.
+v0.27  2026-08-24  A third creature, the panda Wan Wan, chosen in the settings.
+                   The dinosaur moved behind the secret switch, marked
+                   `secret: true` in config, and that switch lost its tooltip:
+                   a hover label saying "secret switch" is not a secret. It
+                   keeps its ARIA name, because a focusable button needs one.
+                   The switch is a detour, not a cycle: it returns to whatever
+                   the settings picked. The dinosaur was redrawn in the same
+                   pass, bigger head and eyes, teeth, curling tail.
+                   Fixed: `el.hidden = true` does nothing on an SVG element, so
+                   the unselected creature rendered behind the chosen one.
 
-                   The panda is drawn to the same contract as the other two, so
-                   the shared group class names and the four mood-band token
-                   blocks drive it with no new animation code: an 18 wide head
-                   on a 12 wide body, big round ears, large stepped eye patches,
-                   blush at the edge of the cheeks. Its markings are charcoal
-                   rather than black, because the feMorphology outline floods
-                   with --ink and a black creature would lose its edges. Token
-                   sets for all three themes, including a plum-warmed glitter
-                   set so it belongs to that palette rather than sitting on it.
+v0.26  2026-08-24  Daylight stars are a moment, not a state: 4.5 seconds after
+                   a drink fills the meter, rather than the whole time it reads
+                   95 or above. Night is unchanged. Rewrote BRIEF.md from a
+                   pre-build spec into a brief describing the app as built.
 
-                   The dinosaur was redrawn in the same pass, from a second
-                   reference: 4x4 eyes with two highlights each, the largest of
-                   the three, a wide pale muzzle with nostrils and teeth, orange
-                   blush from the existing spike token rather than a new colour,
-                   rounder head plates, and a thick tail curling upward instead
-                   of the thin taper it had. Its head is now 18 wide like the
-                   others, which is most of why it used to look less cute than
-                   the unicorn beside it.
+v0.25  2026-08-24  Haptics on mood changes (F4), off in one tap. Two signals
+                   only, a 30 ms tick up and a 180 ms buzz down, because the
+                   phone tested cannot resolve anything finer. Never the only
+                   feedback for anything: Do Not Disturb silences vibration
+                   while the API still reports success.
 
-                   Two decisions from the requester shape the switching. The
-                   settings offer the unicorn and the panda; the dinosaur is
-                   reachable only through the almost hidden switch in the
-                   footer, marked by `secret: true` in Config.species so nothing
-                   else in the code needs to know which creature that is. The
-                   switch is a detour rather than a cycle: State.pickedSpecies
-                   remembers what the settings chose and pressing the switch
-                   again returns there, so it cannot strand anyone on a creature
-                   the settings do not offer. While the dinosaur is out, neither
-                   picker option is marked, which is the honest answer.
+v0.24  2026-08-24  Fixed: v0.23 did not start at all. `Ambient.KINDS` lost its
+                   star entry, so `rateFor("star")` threw, and `init()` calls
+                   the two functions that reach it. Root cause: an edit sliced
+                   to the wrong closing brace. It shipped because the only
+                   check run was a parse, and a missing property is a runtime
+                   error. B5 raised to P1.
 
-                   The switch also loses its tooltip: a hover label reading
-                   "Geheimer Schalter" is not a secret. It keeps its ARIA name,
-                   because a focusable button needs one, so the trade is that
-                   the secret is kept from a mouse rather than from everyone.
+v0.23  2026-08-24  Wind and gulls redrawn from reference footage. Wind is one
+                   thin trail that travels along a looping path; gulls are a
+                   loose flock of stepped pixel sprites that flap by frame swap
+                   and cross at a slant. Fixed: the dash offset ran 100 to -46,
+                   so the loop at the head of the path was never drawn.
+                   Added the animation and haptics labs under `.work/`.
 
-                   Fixed while porting the sprite work, both found by looking at
-                   the result rather than at the code. Hiding a sprite with
-                   el.hidden = true does nothing: hidden is a property of
-                   HTMLElement and these are SVG elements, so the assignment
-                   sets a harmless expando, no attribute lands, and the
-                   unselected creature renders behind the chosen one, showing as
-                   a stray horn and mane behind the panda. And the creature
-                   radios report aria-checked while the language buttons report
-                   aria-pressed, so the selected-style rule had to answer to
-                   both; keyed on the first alone, the chosen creature had no
-                   highlight at all.
+v0.22  2026-08-24  Glitter mode (F12). A theme, not a switch, so `themeMode`
+                   takes a fourth value and one segmented pill replaces the
+                   theme button and both settings checkboxes. Palette, rounded
+                   typeface, sheen and an emoji particle canvas; the trail
+                   needs a pointer and says so when there is none. Glitter
+                   counts as a lit sky, so it keeps the sun and the rainbow.
 
-                   Also replaced the visibility CSS. Pairing selectors needed
-                   one rule per ordered pair, two for two species and six for
-                   three, and CSS cannot compare two attribute values, so each
-                   sprite now carries data-species and applySpecies sets the
-                   attribute the single rule keys off.
+v0.21  2026-08-24  The reward after dark is a shooting star, not a rainbow: a
+                   rainbow needs a lit sky to read as one. Renamed
+                   `thresholds.rainbow` to `.reward`, since it now gates both.
+                   Fixed: the drop was a translateY percentage, which resolves
+                   against the element's own height, so the streak flew flat.
 
-v0.26  2026-08-24  Daylight stars are a moment now, not a state. They rode
-                   data-radiant, which is the meter at 95 or above, so a lit
-                   sky kept a starfield in it for the whole of that band, about
-                   six minutes at the default decay rate. The requester asked
-                   for the moment the meter reaches 100 instead, so a drink
-                   that tops it right out earns Config.ui.dayStarsMs of stars,
-                   4.5 seconds, and the rest of the daytime sky is left to the
-                   wind and the birds, which are what the random ambient
-                   animations are for.
+v0.20  2026-08-24  Editable names (F11) and tooltips on the mode buttons (F13).
+                   Names live per species and resolve through one `UI.name()`,
+                   trimmed and capped at 24 by code point so an emoji cannot be
+                   cut in half. Tooltips come from the same string as the
+                   accessible name, so the two cannot drift.
 
-                   A timer rather than a tighter threshold, because the meter
-                   starts falling the instant it is full: gating on exactly 100
-                   would have tied the length of the celebration to the decay
-                   rate, giving about 7 seconds at the 2 hour default and 2 at
-                   the fastest setting. Only a drink triggers it. Reset also
-                   fills the meter but is housekeeping rather than an
-                   achievement, so it stays quiet.
+v0.19  2026-08-24  Fixed B9: the sun and moon are gated on the resolved theme,
+                   not the clock alone, so an override no longer paints a dark
+                   sky with the sun still up.
 
-                   Night is untouched: stars always, and brighter still when
-                   the meter earns it. Glitter keeps no starfield at all, and
-                   the rule that used to force that to zero is gone with the
-                   one it was cancelling, since nothing raises the starfield in
-                   glitter any more.
-
-                   Verified in the browser: at 97 percent in daylight the sky
-                   is empty where it used to be starry, a drink to 100 brings
-                   the field to 0.85 and the timer takes it away, night still
-                   reads 0.9 and 1, and glitter stays at 0.
-
-                   Also rewrote BRIEF.md, on the requester's call, from a
-                   pre-build spec into a brief describing the app as it stands.
-                   Its implementation order, acceptance criteria and closing
-                   instruction to the implementer are gone as spent, along with
-                   citation markers pointing at sources this repository never
-                   carried; the working title, the thirst-meter wording and the
-                   em dashes are gone too. It now documents the second
-                   creature, editable names, three languages, four themes, the
-                   sun and moon arc, the ambient wind and gulls, both meter
-                   rewards and haptics, and it points here for the changelog,
-                   the roadmap and the known issues rather than restating them.
-                   Its own version log continues at v0.7, which tracks the
-                   document and not the app.
-
-                   Fixed a comment that had stopped being true: the themeMode
-                   field in State.defaults() still listed three values after
-                   glitter became the fourth in v0.22.
-
-v0.25  2026-08-24  Landed F4, haptics, on mood changes and nowhere else, with a
-                   settings switch that is on by default.
-
-                   Two signals and no more, which is a measurement rather than
-                   a taste: on the Android device tested in
-                   .work/haptics-lab.html a motor cannot tell 12 ms from 22 ms
-                   and cannot resolve a three-beat rhythm, so a subtle pattern
-                   language would have been decoration in the code and nothing
-                   on the thumb. The mood improving is a 30 ms tick, the mood
-                   dropping is a 180 ms buzz, far enough apart that any motor
-                   renders the difference. Both live in Config.haptics.
-
-                   Nothing here is the only feedback for anything, because it
-                   can be silently off: Do Not Disturb silences vibration
-                   outright while navigator.vibrate still returns true, iOS
-                   Safari has no Vibration API at all, and desktop Chrome
-                   accepts every call with no motor to honour it. Every buzz
-                   doubles something the mood line and the sprite already say.
-
-                   Four things it deliberately does not do. It does not buzz on
-                   the drink tap, so the improvement tick is not doubled by a
-                   tap tick a moment earlier; that is one config entry if it is
-                   wanted. It does not buzz on the first render after a load,
-                   because a fresh page has no previous band and arriving to a
-                   buzz is startling rather than informative. It does not buzz
-                   on return from a hidden tab, the same caution the audio
-                   already takes on arrival, using a one-shot suppression that
-                   is consumed even when haptics are off so it cannot leak into
-                   the next change. And it does nothing under
-                   prefers-reduced-motion, or while the page is not visible.
-
-                   The settings row hides itself where navigator.vibrate does
-                   not exist, so iOS is not shown a switch that can never do
-                   anything. Switching it on buzzes once as confirmation, which
-                   is the only way to tell a working feature from a Do Not
-                   Disturb that is swallowing it.
-
-                   The speech and the buzz are now separate: the mood line
-                   keeps its speech lock, which stops sentences fighting over
-                   the bubble, and the buzz has none, because a nudge is not
-                   competing for anything.
-
-                   Verified by loading the app and driving it rather than by
-                   parsing it, which is the lesson of v0.24: init completes,
-                   a drop across a band boundary sends [180], a rise sends
-                   [30], a change inside one band sends nothing, the toggle
-                   silences it and its own switch-on confirms, the arrival
-                   suppression fires once and the next change still buzzes, and
-                   reduced motion overrides all of it. The only thing that
-                   blocked a buzz in testing was the page being hidden, which
-                   is the guard working.
-
-v0.24  2026-08-24  Fixed: v0.23 did not start at all. Ambient.KINDS lost its
-                   star entry, so Ambient.rateFor("star") read `.when` off
-                   undefined and threw. nudgeStar() is called from both
-                   UI.render() and UI.applyTheme(), init() calls each of them,
-                   and the throw took init with it: no title, no meter, no
-                   mood line, no theme pill, no ambient timers. The app was
-                   dead on arrival for the whole of v0.23, on every platform.
-
-                   Root cause, and it is not the code: the v0.23 gull work
-                   replaced a region of index.html by slicing from a comment
-                   down to the next "\n    },\n    wind: {". A kind closes
-                   with a four-space brace and so does the one before it, so
-                   that marker matched the closing brace of the star entry
-                   rather than the bird entry, and the replacement swallowed
-                   everything between. The animation lab's own header warns
-                   about exactly this, from the same mistake made twice while
-                   syncing that file, and I made it a third time on the app.
-
-                   Why it shipped: the only check run after that edit was
-                   `new Function(script)`, which proves the file parses.
-                   A missing object property is a runtime error, not a syntax
-                   error, so it passed cleanly. The lab was loaded and looked
-                   right, which is what made it feel verified, but the lab has
-                   its own copy of KINDS and never touches this one. Loading
-                   index.html itself would have shown a blank shell instantly.
-
-                   Verified now by loading the app and checking that init
-                   finishes rather than that the file parses: title, meter,
-                   mood line, the four-button theme pill, the settings labels,
-                   the ambient timers and the glitter canvas context are all
-                   present, and no console errors. Deleting KINDS.star again
-                   reproduces the three throws, and restoring it clears them,
-                   so the mechanism is confirmed rather than assumed.
-
-v0.23  2026-08-24  Redrew the wind and the gulls from frames pulled out of the
-                   two videos the requester supplied, and added two labs to
-                   .work/. Three attempts went into this, and only the frames
-                   settled it: reading a style from memory produced a stroked
-                   curl and then a bundle of tapered ribbons, and neither was
-                   what the footage shows.
-
-                   Wind, from 0:37 to 0:47 of the reference clip: one thin
-                   trail, not a bundle. A hairline travels along its own path,
-                   sweeping in and curling into an open loop at the head, with
-                   a few specks alongside. What moves is a dash window walking
-                   the path, so the curve draws itself rather than being slid
-                   across the screen. Two paths share the geometry, a short
-                   bright core and a longer faint tail, which is how a stroke
-                   that cannot taper still carries a comet's weight.
-
-                   Fixed in that work, found by pinning the dash at measured
-                   offsets rather than by watching it: the visible dash covers
-                   path positions -offset to -offset+length, so walking the
-                   whole path needs the offset to run from +length down to
-                   -100. The first version ran 100 to -46, which parked the
-                   dash off the front at the start and stopped it at position
-                   61, so the loop at the head of the path was never drawn at
-                   all and every gust came out as the straight sweep only.
-
-                   Gulls, from the first three seconds of the Link's Awakening
-                   clip: a distant gull is a stepped pixel mark of a few
-                   blocks, they fly as a loose flock rather than singly, and
-                   the flap is a frame swap rather than a rotation. Three
-                   poses, wings raised a wide four-row bowl, mid a shallow vee,
-                   wings lowered a narrow peak. The span changes with the beat
-                   as well as the height, which is what the earlier attempts
-                   missed: at a fixed span a bird only ever reads as a dash
-                   bending. A flock is three to five gulls, each at its own
-                   scale for depth and its own phase so they do not beat in
-                   unison, and it crosses at a slant on new glide keyframes
-                   instead of sliding along one line.
-
-                   Both are judged in .work/anim-lab.html, new here: it spawns
-                   any of the three ambient animations on demand, in day, night
-                   or glitter, at 0.1x to 2x speed, frozen mid-flight, with
-                   band guides and a running count. Waiting between 42 and 84
-                   seconds for a night gust is no way to judge one, and a 1.2
-                   second streak cannot be judged at full speed at all. Every
-                   animation in it is a copy of the real one here, which its
-                   header warns about, and the copies were verified identical
-                   to this file line for line. The header also records that
-                   slicing those blocks out by brace matching does not work: a
-                   kind closes with a four-space brace and KINDS with a
-                   two-space one, so a script grabbed the wrong one, merged two
-                   kinds and broke the file. Twice.
-
-                   Also new, .work/haptics-lab.html for F4: it reports what the
-                   device and browser actually support, offers one candidate
-                   pattern per app event, takes a hand-typed pattern, respects
-                   reduced motion behind a toggle, and says in its header that
-                   navigator.vibrate returning true means the call was accepted
-                   and not that anything buzzed. Neither lab is judgeable on a
-                   desktop, which is the point of both being on the phone.
-
-v0.22  2026-08-24  Landed F12, glitter mode, from the prototype in
-                   `.work/glitter-mode/`.
-
-                   Glitter is a theme and not a switch, which is the finding
-                   that shaped the work: themeMode takes a fourth value and the
-                   top bar button plus the two settings checkboxes are replaced
-                   by one segmented pill, auto / day / night / glitter, built as
-                   a radiogroup with a roving tabindex because a switch would
-                   have to lie about two of the four. Icons are decorative, the
-                   accessible name carries the meaning, and both come from the
-                   same UI.label() call as the tooltips, so a locale change
-                   moves all three together. A status line announces the choice
-                   for screen readers.
-
-                   The theme itself is one `:root[data-theme="glitter"]` token
-                   block. The prototype's palette moved across but its token
-                   names could not, because the demo host used its own
-                   vocabulary, so the block is written in this app's names and
-                   covers the creature palette as well as the page.
-
-                   Two integration points the prototype could not have known
-                   about. The typeface is now a `--font-app` token so a theme
-                   can change it, and glitter's rounded stack keeps the CJK
-                   faces after the Latin ones, because the app ships
-                   Traditional Chinese copy and Comic Sans has no glyphs for
-                   it. And glitter is a lit sky, so the new UI.skyTheme() maps
-                   it to day: it keeps the sun and the rainbow, and leaves the
-                   moon, the starfield and the shooting star to the dark.
-                   Without that every sky gate would have missed, since each
-                   asks for "day" or "night" by name, and glitter would have
-                   had an empty sky and no reward.
-
-                   The engine is ported as it was measured: GlitCaps for live
-                   pointer and motion queries, GlitSprites for the sprite cache
-                   that took a 90-particle burst from 0.958 ms to 0.155 ms a
-                   frame, GlitEngine for one canvas, one rAF loop that stops
-                   itself when the last particle dies. Tuning sits in
-                   Config.glitter rather than in the engine body (NXW-NAM-4).
-                   Left behind deliberately: the prototype's own storage and
-                   theme-mode machinery, which would have been a second theme
-                   system arguing with this one.
-
-                   The trail needs a pointer, so it is gated on (pointer: fine)
-                   and (hover: hover) in JS as well as in CSS, since CSS alone
-                   would hide the result of the work rather than skip it. On a
-                   touch screen the theme applies and the trail says why it is
-                   absent. Under reduced motion nothing spawns and the sheen
-                   holds still, but the palette, the typeface and the ribbons
-                   stay: the mode is still observable, it just does not move.
-                   Leaving glitter clears the canvas, and a hidden tab clears
-                   it too so nothing is mid-flight on return, where the canvas
-                   is also re-sized in case a suspended page missed a resize.
-
-                   Verified by driving the page: the pill is a radiogroup of
-                   four localised radios with one tab stop, arrow keys walk it,
-                   entering glitter swaps palette, typeface, sheen and ribbons
-                   and enables the engine, a burst makes particles and the cap
-                   holds at 90, simulated pointer travel spawns a trail,
-                   leaving glitter clears every particle and re-enables the
-                   night reward, and spawning under an inert theme is a no-op.
-                   Seven sprites are prewarmed from eight glyph slots, which
-                   matches the prototype. Confirmed by eye afterwards in all
-                   three themes, which is also where v0.21's shooting star was
-                   first seen in flight rather than measured.
-
-                   Fixed after looking at it: the selected button borrowed the
-                   prototype's near-white thumb, which on the night palette
-                   resolved to --panel sitting on --meter-bg with almost no
-                   contrast, so the selection was there and invisible. It now
-                   uses --accent on --accent-ink, the same idiom the language
-                   buttons already use for "this one is chosen".
-
-v0.21  2026-08-24  The reward after dark is a shooting star rather than a
-                   rainbow, and the threshold gating both is renamed.
-
-                   A rainbow needs a lit sky to read as one, so the arc is now
-                   gated on the resolved day theme and the night sky gets a
-                   streak instead: a new `star` kind in AMBIENT, crossing high
-                   above the character on its own diagonal keyframes, tail
-                   behind a bright head, in the same `--star` tokens as the
-                   starfield. Direction varies per appearance as it does for
-                   birds and gusts, and the bob is now scoped to those two,
-                   because a streak that wobbles reads as a bug.
-
-                   Unlike the other kinds the star is gated on app state, not
-                   the clock, so rateFor() grew an optional when() per kind and
-                   an `any` rate for kinds whose frequency does not follow the
-                   time of day. The star's when() asks for the resolved theme,
-                   so it obeys the same rule as the sun and moon since v0.19: a
-                   night override at noon gets the night reward and no rainbow.
-                   Entering the rewarded state nudges the timer with a short
-                   first delay, because the idle re-check is a minute out while
-                   the reward window is about six minutes.
-
-                   Config.thresholds.rainbow is now .reward: the value gates
-                   two rewards, so a name promising one had become half-true.
-                   It stays at 95 against the displayed percent, confirmed over
-                   a literal 100. Thresholds are not persisted, so no save is
-                   affected and no migration is needed.
-
-                   Fixed before it shipped: the drop was a translateY
-                   percentage, which resolves against the element's own height
-                   of about 30 px rather than the scene's. Measured at a paused
-                   animation offset, the streak fell 13 px across a 424 px
-                   crossing, near enough to flat. It now converts to pixels
-                   against the ambient layer at spawn, 26 to 46 percent of the
-                   scene, and a host with no layout leaves the keyframe default
-                   standing rather than computing a flat zero.
-
-                   Under prefers-reduced-motion no star may cross, so the
-                   static half carries the reward alone: at night a full meter
-                   lifts the whole starfield to full opacity.
-
-v0.20  2026-08-24  Landed F11 and F13. F11: a Name field renames the creature
-                   on screen, one override per species key in State.data.names,
-                   resolved against the built-in name by the new UI.name(), so
-                   the title, speech, stats, banner and every ARIA label follow
-                   from one call. Entries are trimmed and capped at
-                   Config.naming.maxLength of 24 by code point, so a name
-                   ending in an emoji cannot be cut in half, and clearing the
-                   field deletes the override, which is what restores the
-                   built-in name. Commit is on blur or Enter, not per
-                   keystroke. F13: the four emoji-only buttons name themselves
-                   on hover and on keyboard focus, with UI.label() writing the
-                   accessible name and the tooltip from one string so the two
-                   cannot drift, as a pseudo-element so a screen reader still
-                   hears one name. Touch is not covered: these buttons act on
-                   the first tap.
-
-v0.19  2026-08-24  Fixed B9: the sun and the moon are gated on the resolved
-                   theme, not on the clock alone. Root cause: applySky() read
-                   Time.hourOfDay() and nothing else, while the stars followed
-                   [data-theme="night"] in CSS, so an override moved the stars
-                   and left the sun behind. Forcing night before the moon rises
-                   leaves an empty sky, by decision. Automatic mode unchanged.
-
-v0.18  2026-08-24  Trimmed the German settings footer to "Aniluna wohnt nur in
-                   diesem Browser." An unprompted promise invites the doubt it
-                   means to settle, and the first sentence already carries the
-                   point. English and Chinese keep theirs, where the phrasing
-                   lands as warmth rather than protest. Docs: condensed the
-                   changelog, split defects into Known issues and left work
-                   never started in Roadmap under one shared ID series, added
-                   B6 to B10, and closed B1 as won't-fix after correcting a
-                   description that overstated it.
+v0.18  2026-08-24  Trimmed the German settings footer: an unprompted promise
+                   invites the doubt it means to settle. Split the deferred
+                   work into Known issues and Roadmap, added B6 to B10, closed
+                   B1 as won't-fix.
 
 ────────────────────────────────────────────────────────────────────────────
 Archive: superseded development iterations (NXW-VER-7).
 
 v0.17  2026-08-20  Rewrote the copy in every language as native writing rather
                    than translation. Chinese moved to Taiwanese Traditional,
-                   zh-TW in both the Intl tag and the document language,
-                   because bare "zh" does not tell a browser which glyphs to
-                   pick. German leans on diminutives, and its meter label went
-                   from Flüssigkeit to Hydration. Gusts now roam the whole
-                   sky, smaller and fainter.
+                   `zh-TW`, because bare "zh" does not tell a browser which
+                   glyphs to pick. Gusts roam the whole sky.
 
-v0.16  2026-08-20  Renamed the product to Aqua Buddy, a brand name that stays
-                   in English. Added a sun and a moon on one east-to-west arc,
-                   interpolated in two halves so an off-centre peak still lands
-                   on its stated hour, riding the same ticker as the automatic
-                   theme. Added rare ambient life in a new AMBIENT module:
-                   birds by day, gusts more often at night, each crossing once
-                   and removing itself, with the rate re-checked when a timer
-                   fires so dusk changes the rhythm without a restart and
-                   nothing is scheduled while hidden or under reduced motion.
-                   Softened the rainbow to 0.45 opacity above the sky layer.
+v0.16  2026-08-20  Renamed the product to Aqua Buddy. Added a sun and a moon on
+                   one arc, interpolated in two halves so an off-centre peak
+                   lands on its stated hour, and rare ambient life in a new
+                   AMBIENT module.
 
-v0.15  2026-08-20  Added a secret species switch, three languages, a clock
-                   driven theme, an info button and a gentler first run. Name,
-                   copy, favicon and voice all follow from Config.species, and
-                   both sprites share group class names so one animation system
-                   drives either. German, English and Chinese live in a new
-                   STRINGS section, with Intl.RelativeTimeFormat and
-                   toLocaleString rather than hand-written strings, and the
-                   sprite classes went from .ina-* to .pet-*. themeMode (auto,
-                   day, night) replaced the theme boolean and re-resolves on
-                   the ticker and on return to the tab, adopting older saves as
-                   an explicit choice. Stars show at night, and in daylight
-                   only at the reward level, tinted warm gold. First run starts
-                   at 75 so a new user has something to fix.
+v0.15  2026-08-20  A secret species switch, three languages, a clock-driven
+                   theme, an info button, and a first run that starts at 75 so
+                   a new user has something to fix. `themeMode` replaced the
+                   theme boolean.
 
-v0.14  2026-08-20  Renamed the storage key to aniluna/v1, with
-                   Config.legacyKeys and Storage.migrate() adopting a save
-                   under an old key exactly once and never overwriting data
-                   already at the current one.
-                   Fixed: mood bands were compared against the raw hydration
-                   float while the meter showed the rounded percent, so a meter
-                   reading 75% could sit in the okay band at 74.997.
-                   State.band() now rounds first.
+v0.14  2026-08-20  Renamed the storage key to `aniluna/v1`, with a migration
+                   that adopts an old save once and never overwrites.
+                   Fixed: bands compared the raw float while the meter showed
+                   the rounded percent, so 75% could sit in the okay band.
 
-v0.13  2026-08-20  Renamed the meter label from "Thirst meter" to "Hydration":
-                   the bar fills when you drink, so thirst inverted the
-                   meaning. Root cause: the label was taken from the brief
-                   while the state, the mood copy and the ARIA name all said
-                   hydration. Narrowed the reward to 95 and above, gated on the
-                   displayed percent, replacing four per-band opacity tokens
-                   with a single data-radiant attribute.
+v0.13  2026-08-20  Renamed the meter to Hydration: the bar fills when you
+                   drink, so thirst inverted the meaning. Narrowed the reward
+                   to 95 and above, gated on the displayed percent.
 
-v0.12  2026-08-20  Added a favicon: the unicorn emoji in an inline SVG data
-                   URI, after a hand-drawn 16x16 pixel head did not read as a
-                   unicorn at that size. 189 characters instead of 1163, and
-                   still a single file. Renamed the repository to aniluna.
+v0.12  2026-08-20  Added a favicon, the unicorn emoji in an inline SVG data
+                   URI, after a hand-drawn one did not read at that size.
+                   Renamed the repository to aniluna.
 
-v0.11  2026-08-20  Renamed the character to Aniluna, every mention coming from
-                   config. Cut the default full-to-empty time from 4 hours to 2
-                   so the mood states are reachable in one sitting. Replaced
-                   both settings number inputs with sliders, with clamping that
-                   snaps onto the step rather than rounding to whole numbers,
-                   and bounds and tick labels generated from Config.limits.
-                   Fixed: a null or empty field in a save became 0 rather than
-                   the default, because Number(null) is 0 and passed the
-                   Number.isFinite guard. Coercion now goes through State.num.
+v0.11  2026-08-20  Renamed the character to Aniluna. Cut full-to-empty from 4
+                   hours to 2, and replaced both number inputs with sliders
+                   that snap onto their step.
+                   Fixed: a null field in a save became 0 rather than the
+                   default, because `Number(null)` is 0 and passed the guard.
 
-v0.10  2026-08-19  Initial version. Single-file static app: timestamp driven
-                   hydration decay, four mood bands with per-state idle
-                   animation, a pixel unicorn drawn as SVG rects and outlined
-                   by one feMorphology filter, a happy-state rainbow,
-                   procedural Web Audio unlocked on first gesture, the
-                   five-taps gurgle easter egg, day and night themes, and
-                   localStorage persistence that survives tab suspension and
-                   browser kills.
+v0.10  2026-08-19  Initial version. Single-file static app: timestamp-driven
+                   decay, four mood bands with per-state idle animation, a
+                   pixel unicorn outlined by one feMorphology filter, a
+                   happy-state rainbow, procedural Web Audio, the five-taps
+                   gurgle easter egg, day and night themes, and localStorage
+                   persistence that survives suspension.
 ```
 
 ## Known issues
@@ -716,7 +374,7 @@ Defects already in the app are not here, they are under
 | ID | Pri | Item | Notes |
 |---|---|---|---|
 | B2 | P1 | Device test matrix before `v1.0` | Promotion to `v1.0` needs a confirmed successful test run (NXW-VER-4). At minimum: iOS Safari audio unlock after backgrounding and with the silent switch on, Android Chrome, a real suspension across a day boundary to prove the `todayCount` rollover, and both `prefers-reduced-motion` settings. |
-| B5 | P1 | No test harness, and no smoke test | Band boundaries, `clampStep` snapping, the legacy-key migration and the day rollover have each been verified by hand, once, at the version that touched them. They are pure functions and would fit a small harness. The single-file rule constrains the shipped app, not a test file sitting next to it. Raised to P1 by v0.23, which shipped an app that did not start: the cheapest missing check is not a unit test but a smoke test that loads `index.html` and asserts `init()` finished, since parsing the file proves nothing about a runtime error. |
+| B5 | P2 | The smoke test does not cover everything | `smoke-test.mjs` now covers the band boundaries, `clampStep` snapping, name cleaning, save coercion, the day rollover, the sun and moon arcs, the reward gating, the secret species and the haptics guards, and it catches the v0.23 failure by name. Two gaps remain. `Storage.migrate()`, the legacy-key adoption, is still only hand-verified, because it wants a save written under the old key and the stub does not exercise that path. And nothing asserts on a rendered page: layout, contrast and touch targets are B2's job, not a script's. Dropped from P1 to P2 now that the class of bug that shipped in v0.23 is guarded. |
 
 ## Docs
 
@@ -741,4 +399,4 @@ there is no third list to keep in sync. One ID series covers both, so an item
 keeps its ID when it moves from one to the other.
 
 Promotion to `v1.0` is gated on B2, the device test matrix. No P1 defect is
-open.
+open, and `node smoke-test.mjs` should pass before any commit.

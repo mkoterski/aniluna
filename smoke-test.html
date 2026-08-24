@@ -1,0 +1,164 @@
+<!--
+  ============================================================================
+  smoke-test.html - Aniluna smoke test, in the browser - v0.10
+  ============================================================================
+  Purpose    : Run the same smoke checks from a browser, so they work on
+               GitHub Pages where nothing can run node.
+  Status     : DEVELOPMENT
+  Author     : Matthias Koterski / Data & IT
+  Date       : 2026-08-24
+  Context    : Served alongside index.html. Fetches it and README.md from the
+               same origin, so it needs a served page, not a file:// open.
+  Versioning : v0.x = development. Tracks itself, not the app.
+  ----------------------------------------------------------------------------
+  The checks live in smoke-checks.mjs and know nothing about files or pages.
+  This is a second runner over the same copy, not a second set of checks: two
+  sets would drift, and drift is what this whole file exists to catch.
+
+  It evaluates the app against a stub page rather than the real one, so
+  nothing here attaches itself to this document.
+
+  file:// will not work: fetch refuses it. Serve the folder, or open the
+  published copy.
+  ============================================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aniluna smoke test</title>
+<style>
+:root {
+  --bg: #d6ecff; --bg-2: #ffe6f3; --panel: #fffdfe; --panel-edge: #f0d5e6;
+  --text: #3b2f4a; --text-soft: #7b6b8c; --accent: #4aa3f0;
+  --ok: #2f8f5b; --bad: #c0392b; --warn: #b8860b;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #191333; --bg-2: #2a1c44; --panel: #251c3f; --panel-edge: #3d3060;
+    --text: #efe6ff; --text-soft: #b4a4d4; --accent: #7f6bff;
+    --ok: #7fd8a4; --bad: #ff9a8f; --warn: #ffd479;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 16px 14px 40px;
+  max-width: 760px;
+  margin-inline: auto;
+  background: linear-gradient(170deg, var(--bg), var(--bg-2));
+  color: var(--text);
+  font: 15px/1.5 ui-rounded, "Segoe UI", system-ui, sans-serif;
+}
+h1 { margin: 0 0 4px; font-size: 1.1rem; }
+p.hint { margin: 0 0 14px; font-size: 0.84rem; color: var(--text-soft); }
+.panel {
+  background: var(--panel);
+  border: 2px solid var(--panel-edge);
+  border-radius: 16px;
+  padding: 4px 14px;
+}
+.verdict {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 2px solid var(--panel-edge);
+  background: var(--panel);
+  font-weight: 700;
+}
+.verdict.pass { border-color: var(--ok); color: var(--ok); }
+.verdict.fail { border-color: var(--bad); color: var(--bad); }
+.row {
+  display: grid;
+  grid-template-columns: 4.2em 1fr;
+  gap: 4px 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--panel-edge);
+  align-items: start;
+}
+.row:first-child { border-top: 0; }
+.mark { font-weight: 700; font-size: 0.78rem; letter-spacing: 0.4px; }
+.mark.ok { color: var(--ok); }
+.mark.fail { color: var(--bad); }
+.mark.skip { color: var(--warn); }
+.name { font-weight: 600; }
+.detail {
+  grid-column: 2;
+  font: 12px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color: var(--text-soft);
+  overflow-wrap: anywhere;
+}
+a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<h1>Aniluna smoke test</h1>
+<p class="hint">
+  The same checks the command line runs, over the same copy, because two copies
+  would drift. Reads <code>index.html</code> and <code>README.md</code> from
+  this folder. Needs a served origin: opened from <code>file://</code> the fetch
+  is refused.
+</p>
+
+<div class="verdict" id="verdict">Running...</div>
+<div class="panel" id="rows"></div>
+
+<script type="module">
+import { runSmokeChecks, VERSION } from "./smoke-checks.mjs";
+
+const verdict = document.getElementById("verdict");
+const rows = document.getElementById("rows");
+
+function render(results, passed, failed) {
+  rows.textContent = "";
+  for (const r of results) {
+    const kind = r.ok ? "ok" : (r.detail.startsWith("skipped") ? "skip" : "fail");
+    const row = document.createElement("div");
+    row.className = "row";
+    const mark = document.createElement("span");
+    mark.className = "mark " + kind;
+    mark.textContent = kind === "ok" ? "ok" : kind === "skip" ? "skip" : "FAIL";
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = r.name;
+    row.append(mark, name);
+    if (r.detail) {
+      const detail = document.createElement("span");
+      detail.className = "detail";
+      detail.textContent = r.detail;
+      row.append(detail);
+    }
+    rows.append(row);
+  }
+  verdict.className = "verdict " + (failed ? "fail" : "pass");
+  verdict.textContent = failed
+    ? `${failed} failed, ${passed} passed. This build should not ship.`
+    : `All ${passed} checks passed. ${VERSION}`;
+}
+
+/* A missing README is not a failure: the version check reports itself as
+   skipped, which is honest, rather than failing on something absent. */
+async function text(path) {
+  try {
+    const res = await fetch(path, { cache: "no-store" });
+    return res.ok ? await res.text() : null;
+  } catch {
+    return null;
+  }
+}
+
+const source = await text("index.html");
+if (!source) {
+  verdict.className = "verdict fail";
+  verdict.textContent = "Could not fetch index.html. Serve this folder over "
+    + "http, or open the published copy: file:// blocks the request.";
+} else {
+  const readme = await text("README.md");
+  const { results, passed, failed } = runSmokeChecks({ source, readme });
+  render(results, passed, failed);
+}
+</script>
+</body>
+</html>
