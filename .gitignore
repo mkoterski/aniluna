@@ -10,3 +10,7 @@ desktop.ini
 # OneDrive sync leftovers
 *.tmp
 ~$*
+
+# Local scratch space - notes, experiments, throwaway copies of index.html.
+# Never tracked, never published. See README "Local working directory".
+.work/
