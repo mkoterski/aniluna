@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.18
+# Aniluna Aqua Buddy - v0.19
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -52,7 +52,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.18", status: "DEVELOPMENT" },
+  app: { version: "v0.19", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -138,6 +138,24 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.19  2026-08-24  Fixed B9: the sun and the moon are now gated on the resolved
+                   theme rather than on the clock alone. UI.applySky() takes
+                   the theme applyTheme() has already resolved and hides the
+                   body that would contradict the sky around it, so forcing
+                   night in the afternoon no longer paints a dark sky, stars
+                   and a lit sun at once. Root cause: applySky() read
+                   Time.hourOfDay() and nothing else, while the stars were
+                   gated on [data-theme="night"] in CSS, so an override moved
+                   the stars and left the sun where it was. The arcs and
+                   Sky.position() are untouched.
+
+                   Forcing night before the moon's rise hour leaves an empty
+                   sky, by decision: feeding the arc a substitute hour would
+                   put the moon somewhere the clock never says it is. Automatic
+                   mode is unchanged, because the sun's arc already matched the
+                   theme's day hours exactly, and the gaps at 19:00 to 20:00
+                   and 05:00 to 07:00 were already empty.
+
 v0.18  2026-08-24  Trimmed the German settings footer to "Aniluna wohnt nur in
                    diesem Browser." The dropped second sentence, "Nichts wird
                    irgendwohin geschickt, versprochen.", protests too much in
@@ -294,14 +312,13 @@ v0.10  2026-08-19  Initial version. Single-file static app with timestamp
 
 ## Known issues
 
-Defects present in `v0.18`, as opposed to work never started, which is under
+Defects present in `v0.19`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
 
 | ID | Pri | Issue | Detail |
 |---|---|---|---|
-| B9 | P1 | An explicit theme override leaves the sun and moon where they were | `UI.applySky()` places both bodies from `Time.hourOfDay()` alone and never consults `UI.effectiveTheme()`, so forcing night in the afternoon paints a dark sky with stars on it and the sun still climbing its arc, and forcing day late in the evening puts a moon in a bright sky. The `.stars` rule is gated on `[data-theme="night"]` and so follows the override correctly, which is what makes the mismatch obvious. Only `themeMode: "auto"` keeps the two in agreement, so v0.16's claim that the bodies "never disagree with the sky they sit in" holds for the ticker but not for the button. The bodies need to be gated on the resolved theme, not only on the clock. |
 | B4 | P2 | Two open tabs overwrite each other | Each tab keeps its own `State.data` and writes the whole blob, so the last write wins and can resurrect a hydration value the other tab had already spent. A `storage` event listener that re-reads and re-renders would fix it. Minor on a phone, real on a desktop. |
 | B3 | P2 | Reset claims a drink that never happened | `State.reset()` sets `lastDrinkAt = now`, so the "last drink" line reads as a fresh sip immediately after a reset. `null` is the honest value, and the label already renders that case for a first run. |
 | B10 | P2 | Day and night are fixed hours, not real daylight | `Config.theme` flips at 07:00 and 19:00 and `Config.sky` matches, so in a northern winter the scene is bright with the sun up at 17:30 when it is already dark outside, and around midsummer it goes dark while the sun is still visibly up. Real sunrise and sunset need the date and a latitude, which means either a location permission or an approximation from the timezone offset. Fixed hours were the deliberate v0.16 choice; this records what that choice costs rather than reopening it. |
@@ -318,7 +335,7 @@ Accepted limitations, written down so they are not rediscovered as bugs:
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
 - No device test matrix has been run (B2) and the Traditional Chinese copy has
-  not been read by a native speaker (F2), so `v0.18` is a prototype in the
+  not been read by a native speaker (F2), so `v0.19` is a prototype in the
   literal sense: everything here was verified in one desktop browser.
 - B1 is closed as won't-fix, decided in v0.18. A system clock moved backwards
   forgives the decay for the span it skipped, but reaching that takes a
@@ -369,12 +386,12 @@ It is kept as authored, so it still uses the working title and em dashes.
 
 ## Status
 
-Prototype, `v0.18`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.19`, DEVELOPMENT. The loop works end to end and the app is
 usable. What it gets wrong today is listed under
 [Known issues](#known-issues); what has never been started is under
 [Roadmap](#roadmap), where the stretch goals from `BRIEF.md` live too, so
 there is no third list to keep in sync. One ID series covers both, so an item
 keeps its ID when it moves from one to the other.
 
-Promotion to `v1.0` is gated on B2, the device test matrix, and on B9, the
-only P1 defect open.
+Promotion to `v1.0` is gated on B2, the device test matrix. No P1 defect is
+open.
