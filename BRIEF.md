@@ -2,7 +2,7 @@
 
 This is the product brief: what the app is, who it is for, how it is meant to
 feel, and which rules it holds itself to. It describes `index.html` as built at
-**v0.28**.
+**v0.30**.
 
 It deliberately does not duplicate [`README.md`](README.md), which owns the
 operational detail: the changelog, the roadmap of deferred work, the known
@@ -14,6 +14,19 @@ describing what was wanted, and the difference is worth a look.
 ## Version log
 
 Newest first. This log tracks the brief, not the app.
+
+### v0.11 - 2026-08-25
+
+- Updated for app v0.30: recorded that the artboard is not the clip boundary,
+  the scene is, because the sprites animate past the edge of their own
+  viewBox and the horn was being cut off for it.
+
+### v0.10 - 2026-08-25
+
+- Updated for app v0.29: the unicorn's mane no longer overtakes the head above
+  the head's own widest row, so the silhouette reads as hair beside a rounded
+  skull rather than as a lump on it. Written down under the creatures, because
+  it is a rule the other species have to keep too.
 
 ### v0.9 - 2026-08-25
 
@@ -153,6 +166,14 @@ The markings on a black and white animal are charcoal rather than black, because
 the outline filter floods with `--ink` and a truly black creature would lose its
 edges against it.
 
+A head is symmetric and rounds in as it rises, and nothing that is not part of
+the head may overtake it above its own widest row. A mane, a fin or an ear tuft
+that reaches out past a narrowing skull stops reading as something attached to
+the creature and starts reading as a swelling of the skull itself, which is how
+the unicorn's mane read until v0.29. Anything that hangs beside the head begins
+where the head is already at full width, and anything drawn inside the head
+follows the outline rather than squaring off a corner the other side keeps.
+
 Since v0.20 the owner can rename the creature on screen from the settings
 panel, up to `Config.naming.maxLength` of 24 characters. Overrides live per
 species in `State.data.names`, so each creature keeps its own name, and
@@ -233,6 +254,15 @@ tail swish, ear twitch and sparkle twinkle. The band tunes amplitude, speed and
 opacity rather than swapping animations. Movement uses `transform` and
 `opacity` only, never layout, because this is a persistent companion UI on a
 phone.
+
+The artboard is not the clip boundary, the scene is. A sprite that bobs, hops,
+wobbles or stretches leaves its own viewBox, and the tallest of them, the
+unicorn's horn, has no room in it at all: it ends on the artboard's top row and
+the outline filter spends the one row above it, so at rest the ink sits exactly
+on the edge. `.pet` is therefore `overflow: visible`, and the scene, which is
+`overflow: hidden`, decides what is off the picture. A new sprite may be drawn
+to the edge of the artboard; it may not be drawn expecting the artboard to
+catch its motion.
 
 ## Sky
 

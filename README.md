@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.28
+# Aniluna Aqua Buddy - v0.30
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -59,7 +59,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.28", status: "DEVELOPMENT" },
+  app: { version: "v0.30", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -184,6 +184,17 @@ is a **copy** of the real one in `index.html`, which is the drift risk its own
 header warns about: judge in the lab, port back, then reload the lab from the
 app rather than letting the two wander apart.
 
+`.work/unicorn-mane-lab.html` is the mane lab, written for v0.29: six versions
+of the unicorn's mane side by side, everything else about the sprite identical,
+so the only thing that can differ is the mane. It carries the tools that make a
+silhouette judgeable rather than guessable. Silhouette inks every fill so only
+the shape is left, mirror flips the sprite because a shape looked at for a week
+stops being visible, and each card prints the left and right edge per row so an
+impression can be checked against a number. It also reports any hole inside the
+silhouette, which caught two of the six proposals opening a one-pixel gap the
+outline filter would have inked into a speck. Each card emits its markup ready
+to paste, which is how `tucked` reached `index.html`.
+
 `.work/glitter-mode/` held the F12 prototype until v0.22 landed it, so that
 folder is throwaway again. Its four general findings are worth promoting into
 `web-prototype-findings.md` before it goes.
@@ -204,6 +215,44 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.30  2026-08-25  The horn stopped being cut off mid-bob. An outer `svg`
+                   is `overflow: hidden` by default, so the artboard was the
+                   clip boundary, and the unicorn had no room in it: the horn
+                   ends at y 0, the viewBox opens at -1, and the feMorphology
+                   outline is exactly 1 unit thick, so at rest the ink lands
+                   on the edge with nothing to spare. Every animation that
+                   lifts the sprite then cut the tip off, worst at the
+                   hydrated band where the bob is largest, which is why it
+                   showed at 100%. Measured lift past the edge, in artboard
+                   units: 1.15 idle bob, 1.92 sip hop, 2.35 gurgle wobble,
+                   9.54 species morph. `.pet` is now `overflow: visible` and
+                   the scene, which is `overflow: hidden` and gives 20 to 27
+                   units of sky depending on whether the sprite is at its
+                   max-width, is the clip boundary instead. Growing the
+                   viewBox was the alternative and was dropped: it is part of
+                   the contract all three species share, so it would have
+                   meant empty rows on all of them to fit the rarest case.
+                   The panda and the dinosaur start a row lower and so were
+                   only clipped during the bob, and this covers them too.
+
+v0.29  2026-08-25  The unicorn's head lost the bump on its left, reported from
+                   a screenshot and confirmed against the sprite: it was the
+                   mane, in two places. The head is symmetric about column
+                   15.5 and rounds in as it rises, 9-22 up to row 8, then
+                   10-21, then 11-20. The side mane started on row 7, where
+                   the head had already pulled in and the ears had ended, so
+                   the silhouette stepped from column 9 out to column 6 in one
+                   row with a square corner. And the strip inside the head
+                   started on row 6 and spanned both its columns, filling the
+                   rounded top-left corner that the right side keeps. A head
+                   square on one side and round on the other is what the eye
+                   reports as a swelling. The mane now starts on row 8, the
+                   first row where the head is at full width, and the inner
+                   strip follows the outline a column per row. Nothing else
+                   about the sprite moved, the mane is no shorter than it
+                   looks, and six versions were judged side by side in
+                   `.work/unicorn-mane-lab.html` before this one was picked.
+
 v0.28  2026-08-25  Two controls made easier to find. The settings summary
                    carries a gear, and reset a circular-arrow symbol, both
                    ahead of the label the way the drink button already wore
@@ -329,7 +378,7 @@ v0.10  2026-08-19  Initial version. Single-file static app: timestamp-driven
 
 ## Known issues
 
-Defects present in `v0.28`, as opposed to work never started, which is under
+Defects present in `v0.30`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
@@ -348,7 +397,7 @@ Accepted limitations, written down so they are not rediscovered as bugs:
   no notice that nothing is being kept.
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
-- The device test matrix is written but unrun (B2), so `v0.28` is a prototype in
+- The device test matrix is written but unrun (B2), so `v0.30` is a prototype in
   the literal sense: everything here was verified in one desktop browser. The
   matrix itself lives in [`DEVICE-TESTS.md`](DEVICE-TESTS.md).
 - B3 is accepted, decided 2026-08-25. `State.reset()` sets `lastDrinkAt = now`,
@@ -441,7 +490,7 @@ worth a look.
 
 ## Status
 
-Prototype, `v0.28`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.30`, DEVELOPMENT. The loop works end to end and the app is
 usable. What it gets wrong today is listed under
 [Known issues](#known-issues); what has never been started is under
 [Roadmap](#roadmap), where the stretch goals from `BRIEF.md` live too, so

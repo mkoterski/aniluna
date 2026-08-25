@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.28
+  index.html - Aniluna Aqua Buddy - v0.30
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -804,6 +804,18 @@ body {
   width: 56%;
   max-width: 208px;
   margin-bottom: 2%;
+  /* The artboard is not the clip boundary, the scene is. An outer svg is
+     overflow: hidden by default, and the unicorn's horn ends at y 0 with the
+     viewBox opening at -1, which the feMorphology outline spends entirely:
+     at rest the ink sits exactly on the edge, so every animation that lifts
+     the sprite cuts the horn off. Measured lift above the edge, in artboard
+     units: 1.15 for the idle bob at hydrated, 1.92 for the sip hop, 2.35 for
+     the gurgle wobble, 9.54 for the species morph. Growing the viewBox
+     instead would mean changing it for all three species, since it is part of
+     the contract they share, and adding empty rows to fit the rarest case.
+     The scene is overflow: hidden and much taller than the sprite, so nothing
+     can escape the picture either way. */
+  overflow: visible;
   filter: saturate(var(--sat, 1)) brightness(var(--bri, 1));
   transition: filter 0.7s ease;
   grid-area: 1 / 1;
@@ -1235,8 +1247,14 @@ input[type="range"]::-moz-range-thumb {
               <rect x="23" y="18" width="2" height="4" fill="var(--mane-3)"/>
             </g>
 
+            <!-- The side mane, drawn before the head so it sits beside it. It
+                 starts on row 8, the first row where the head is at its full
+                 width of columns 9 to 22, and not on row 7 where the head has
+                 pulled in to 10-21: a block reaching past a narrowing head,
+                 one row under the ear, reads as a lump on the skull rather
+                 than as hair. Its partner is the strip inside pet-head. -->
             <rect x="4" y="10" width="2" height="8"  fill="var(--mane-3)"/>
-            <rect x="6" y="7"  width="3" height="13" fill="var(--mane-1)"/>
+            <rect x="6" y="8"  width="3" height="12" fill="var(--mane-1)"/>
 
             <rect x="12" y="24" width="3" height="4" fill="var(--coat)"/>
             <rect x="17" y="24" width="3" height="4" fill="var(--coat)"/>
@@ -1266,7 +1284,14 @@ input[type="range"]::-moz-range-thumb {
               <rect x="14" y="4" width="2" height="1" fill="var(--horn-shade)"/>
               <rect x="14" y="5" width="4" height="1" fill="var(--horn-shade)"/>
 
-              <rect x="9"  y="6" width="2" height="12" fill="var(--mane-2)"/>
+              <!-- The mane inside the head follows the head's own outline
+                   rather than squaring it off: column 10 from row 7, column 9
+                   from row 8, which is where each of them joins the coat
+                   above. One rect spanning both from row 6 fills in the
+                   rounded top-left corner the right side keeps, and an
+                   asymmetric head is what the eye reports as a bump. -->
+              <rect x="10" y="7" width="1" height="11" fill="var(--mane-2)"/>
+              <rect x="9"  y="8" width="1" height="10" fill="var(--mane-2)"/>
               <rect x="11" y="6" width="4" height="3"  fill="var(--mane-1)"/>
               <rect x="15" y="7" width="4" height="2"  fill="var(--mane-3)"/>
 
@@ -1602,7 +1627,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.28",
+    version: "v0.30",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
