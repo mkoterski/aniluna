@@ -2,7 +2,7 @@
 
 This is the product brief: what the app is, who it is for, how it is meant to
 feel, and which rules it holds itself to. It describes `index.html` as built at
-**v0.27**.
+**v0.28**.
 
 It deliberately does not duplicate [`README.md`](README.md), which owns the
 operational detail: the changelog, the roadmap of deferred work, the known
@@ -14,6 +14,18 @@ describing what was wanted, and the difference is worth a look.
 ## Version log
 
 Newest first. This log tracks the brief, not the app.
+
+### v0.9 - 2026-08-25
+
+- The name is settled: `Aniluna` is the product and repository name rather than
+  a working title, so the sentence calling it one is gone. A decision being
+  recorded rather than anything built (F1 in the README).
+- Every locale has now been read by a speaker of it: the Traditional Chinese by
+  Taiwanese native speakers (F2), the German by a native German speaker (F14).
+  The language section no longer says it is waiting on anyone.
+- Updated for app v0.28: the settings summary and the reset button carry an
+  icon ahead of their label, and reset is no longer the faintest thing on the
+  panel.
 
 ### v0.8 - 2026-08-24
 
@@ -125,8 +137,9 @@ Three of them, from one config entry each. The unicorn **Aniluna** and the panda
 **Wan Wan** are chosen in the settings. The dinosaur **Anirex** is reachable only
 through the almost hidden `*` in the footer, and that switch is a detour rather
 than a cycle: pressing it again returns to whatever the settings picked, so it
-cannot strand anyone on a creature the settings do not offer. Aniluna and Anirex
-are still working titles.
+cannot strand anyone on a creature the settings do not offer. **Aniluna** is
+settled as the name of the product and of the repository, not a working title,
+and the creature names beside it are defaults any owner can overwrite.
 
 `Config.species` holds the name, the favicon emoji, the synth voice and a
 `secret` flag per creature, so a fourth one is a config entry plus a sprite and
@@ -166,7 +179,10 @@ reset prompt, console banner and every ARIA label follow from that one call.
 - A **Hydration** meter with a visible percentage. It fills when you drink, so
   100% is full and 0% is empty. It is deliberately not called a thirst meter.
 - A large drink button, a reset button, a drinks-today stat and a relative
-  last-drink stat.
+  last-drink stat. The drink, reset and settings controls each carry an icon
+  ahead of the label, so the three are told apart at a glance rather than by
+  reading. The icon is decoration on a control that already has a word, so it
+  never carries meaning of its own and never reaches the accessible name.
 - An info button that opens two localised sentences explaining the loop.
 - Tooltips on the icon-only buttons, on hover and on keyboard focus, written
   from the same string as the accessible name so the two cannot drift. The
@@ -310,8 +326,9 @@ translation of the German, with its own register. Relative times come from
 `Intl.RelativeTimeFormat` and numbers from `toLocaleString`, so the grammar and
 the decimal separators are right in all three.
 
-The Traditional Chinese has not been read by a native speaker. That is tracked
-as F2.
+Every locale has been read by someone who speaks it: the Traditional Chinese by
+Taiwanese native speakers, which closed F2, and the German by a native German
+speaker, which closed F14.
 
 ## Persistence model
 

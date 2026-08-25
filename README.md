@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.27
+# Aniluna Aqua Buddy - v0.28
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -59,7 +59,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.27", status: "DEVELOPMENT" },
+  app: { version: "v0.28", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -77,7 +77,9 @@ const Config = {
 ```
 
 Change a `name` and the title, heading, speech, status text and ARIA labels all
-follow. Both creature names are working titles and each is a single string.
+follow. Each is a single string. `Aniluna` is the settled name of the product
+and the repository rather than a working title (F1), and the creature names
+beside it are defaults an owner can overwrite.
 
 Since v0.20 there are two layers. `Config.species[x].name` is the built-in
 default, and `State.data.names` holds the owner's override, one entry per
@@ -136,7 +138,9 @@ because v0.23 shipped an app that did not start: the file parsed, which was the
 only thing being checked, and a missing object property is a runtime error
 rather than a syntax one. It checks the invariants that hold a single file
 together, then evaluates the pure logic against a stub page. It does not
-render, which is B2's job.
+render, which is B2's job: the checks that need a real device are written out
+in [`DEVICE-TESTS.md`](DEVICE-TESTS.md), and `v1.0` waits on a recorded run of
+them.
 
 The same checks run in a browser at [`smoke-test.html`](smoke-test.html), which
 is what makes them work on GitHub Pages where nothing can run node. Both
@@ -200,6 +204,20 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
+v0.28  2026-08-25  Two controls made easier to find. The settings summary
+                   carries a gear, and reset a circular-arrow symbol, both
+                   ahead of the label the way the drink button already wore
+                   its drop. The gear is a separate `aria-hidden` span rather
+                   than part of the localised string, because the summary has
+                   no `aria-label` to hide it behind and the accessible name
+                   should stay the word alone; the reset symbol sits in the
+                   string, where the existing `resetAria` already covers it.
+                   Reset also stopped reading as disabled: on `--text-soft`
+                   over `--panel-edge` it was the faintest thing on the panel,
+                   so it takes `--text` and a `--text-soft` border. Both are
+                   tokens, so it darkens in day and glitter and brightens
+                   against the night panel, which is the same intent.
+
 v0.27  2026-08-24  A third creature, the panda Wan Wan, chosen in the settings.
                    The dinosaur moved behind the secret switch, marked
                    `secret: true` in config, and that switch lost its tooltip:
@@ -311,7 +329,7 @@ v0.10  2026-08-19  Initial version. Single-file static app: timestamp-driven
 
 ## Known issues
 
-Defects present in `v0.27`, as opposed to work never started, which is under
+Defects present in `v0.28`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
@@ -319,10 +337,7 @@ it when it is fixed.
 | ID | Pri | Issue | Detail |
 |---|---|---|---|
 | B4 | P2 | Two open tabs overwrite each other | Each tab keeps its own `State.data` and writes the whole blob, so the last write wins and can resurrect a hydration value the other tab had already spent. A `storage` event listener that re-reads and re-renders would fix it. Minor on a phone, real on a desktop. |
-| B3 | P2 | Reset claims a drink that never happened | `State.reset()` sets `lastDrinkAt = now`, so the "last drink" line reads as a fresh sip immediately after a reset. `null` is the honest value, and the label already renders that case for a first run. |
-| B10 | P2 | Day and night are fixed hours, not real daylight | `Config.theme` flips at 07:00 and 19:00 and `Config.sky` matches, so in a northern winter the scene is bright with the sun up at 17:30 when it is already dark outside, and around midsummer it goes dark while the sun is still visibly up. Real sunrise and sunset need the date and a latitude, which means either a location permission or an approximation from the timezone offset. Fixed hours were the deliberate v0.16 choice; this records what that choice costs rather than reopening it. |
 | B6 | P3 | The scene follows an untrusted device clock | `Time.hourOfDay()` and `Time.isDaytime()` read the local clock, so a wrong clock, or a phone still set to the timezone the user has flown out of, puts the sun and moon in the wrong place and can flip the automatic theme. Nothing breaks, and no other source of time is available offline in a single file, so this is accepted rather than planned. |
-| B7 | P3 | Two saved toggles accept junk as on | `State.load()` reads `soundOn` and `easterEggOn` as `saved.x !== false`, so a save carrying `"false"`, `0` or `null` loads as on, while every other field goes through `num`, `oneOf` or `clampStep`. Only reachable by hand-editing the save or by a future version writing a different shape, hence P3. |
 | B8 | P3 | Unknown keys in a save live forever | `load()` spreads `...saved` over the defaults, so a key written by a future or hand-edited version is kept and re-written on every save. Harmless bloat rather than a fault, but it means the stored blob is not guaranteed to match the current schema. `theme` is the one key explicitly deleted, because v0.15 replaced it. |
 
 Accepted limitations, written down so they are not rediscovered as bugs:
@@ -333,9 +348,28 @@ Accepted limitations, written down so they are not rediscovered as bugs:
   no notice that nothing is being kept.
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
-- No device test matrix has been run (B2) and the Traditional Chinese copy has
-  not been read by a native speaker (F2), so `v0.27` is a prototype in the
-  literal sense: everything here was verified in one desktop browser.
+- The device test matrix is written but unrun (B2), so `v0.28` is a prototype in
+  the literal sense: everything here was verified in one desktop browser. The
+  matrix itself lives in [`DEVICE-TESTS.md`](DEVICE-TESTS.md).
+- B3 is accepted, decided 2026-08-25. `State.reset()` sets `lastDrinkAt = now`,
+  so the "last drink" line reads as a fresh sip immediately after a reset.
+  `null` would be the honest value and the label already renders that case for a
+  first run, but a reset is a deliberate act by the only person who could be
+  misled by it. The ID is retired rather than reused.
+- B10 is accepted, decided 2026-08-25. Day and night stay fixed hours:
+  `Config.theme` flips at 07:00 and 19:00 and `Config.sky` matches, so in a
+  northern winter the sun is up at 17:30 when it is already dark outside, and
+  around midsummer the scene goes dark while the sun is still visibly up. Real
+  sunrise and sunset need the date and a latitude, which means either a location
+  permission or an approximation from the timezone offset, and neither is worth
+  it here. This is what the deliberate v0.16 choice costs, recorded rather than
+  reopened.
+- B7 is accepted, decided 2026-08-25. `State.load()` reads `soundOn` and
+  `easterEggOn` as `saved.x !== false`, so a save carrying `"false"`, `0` or
+  `null` loads as on while every other field goes through `num`, `oneOf` or
+  `clampStep`. Only reachable by hand-editing the save or by a future version
+  writing a different shape, and the worst outcome is a toggle that starts on.
+  Worth remembering if a later version ever changes the shape of the save.
 - B1 is closed as won't-fix, decided in v0.18. A system clock moved backwards
   forgives the decay for the span it skipped, but reaching that takes a
   deliberate clock change, which nobody performs on a hydration toy, and
@@ -357,14 +391,23 @@ parked idea.
 
 | ID | Pri | Item | Notes |
 |---|---|---|---|
-| F1 | P1 | Confirm or replace the working titles | `Aniluna` and `Anirex` are both still working titles. One string each in `Config.species`, so the rename is cheap in code, but it is also the product name, the repo name and the storage key. Decide before `v1.0`. F11 softened this: an owner who dislikes the name can now overwrite it, so what is left to settle is the product and repository name rather than what the pet is called. |
-| F2 | P1 | Native-speaker pass on the Traditional Chinese copy | It is written as native copy rather than translation and the register is deliberately soft, but no Taiwanese speaker has read it yet. The German diminutives deserve a second pair of eyes too, less urgently, and v0.22 added Glitzermodus, its two trail notices and the Traditional Chinese 閃閃模式, none of which a native speaker has read. |
 | F3 | P2 | "While you were away" note | Brief stretch goal. After a long gap, one line about what happened instead of silently presenting a drooping pet. The data already exists: `lastDrinkAt`, and the points `State.sync()` returns. |
 | F5 | P2 | Real sprite art | Brief stretch goal. The creatures are SVG rects outlined by a single `feMorphology` filter. Per-state sprites would replace the shapes, not the animation system, because both species already share the `.pet-*` group classes. |
 | F6 | P2 | Undo the last drink | A mis-tap can currently only be corrected with a full reset, which also clears the daily count. Keeping the previous `hydration` and `lastDrinkAt` for one step would cover it. |
 | F7 | P3 | Richer scene changes between moods | Brief stretch goal. The sky already carries sun, moon, stars and ambient life, but the mood bands change the character rather than the world around it. |
 | F9 | P3 | Reminder experiments | Brief stretch goal, and the one that fights the constraints: without a service worker there is no notification once the tab is closed, and a service worker means a second file, which breaks the single-file promise. Parked until someone decides which of the two matters more. |
 | F10 | P3 | Prune `Config.legacyKeys` | Drop `ina-water-friend/v1` once no browser can plausibly still hold a save under it. Harmless until then, so this is bookkeeping rather than work. |
+
+### Settled
+
+Decided rather than built, kept here so the IDs are not reused and the decision
+is not rediscovered as an open question.
+
+| ID | Settled | Decision |
+|---|---|---|
+| F1 | 2026-08-25 | `Aniluna` is the final name of the product and of the repository, not a working title. `Config.storageKey` is already `aniluna/v1`, so nothing in the code moves. The creature names beside it stay as they are, and F11 lets an owner overwrite any of them anyway. |
+| F2 | 2026-08-25 | Taiwanese native speakers have read the Traditional Chinese copy, including the v0.22 Glitzermodus strings and the two trail notices. The register was confirmed rather than corrected. |
+| F14 | 2026-08-25 | The German copy, the diminutives and the Glitzermodus strings included, is written and checked by a native German speaker. Raised and closed on the same day, because F2 covered only the Traditional Chinese side and the German one deserved saying out loud rather than leaving implied. All three locales have now been read by someone who speaks them. |
 
 ### Hardening and testing
 
@@ -373,7 +416,7 @@ Defects already in the app are not here, they are under
 
 | ID | Pri | Item | Notes |
 |---|---|---|---|
-| B2 | P1 | Device test matrix before `v1.0` | Promotion to `v1.0` needs a confirmed successful test run (NXW-VER-4). At minimum: iOS Safari audio unlock after backgrounding and with the silent switch on, Android Chrome, a real suspension across a day boundary to prove the `todayCount` rollover, and both `prefers-reduced-motion` settings. |
+| B2 | P1 | Run the device test matrix before `v1.0` | The matrix was written on 2026-08-25 and lives in [`DEVICE-TESTS.md`](DEVICE-TESTS.md): 38 checks across six platforms, three of which are required. It covers what B2 always asked for, the iOS Safari audio unlock after backgrounding and with the silent switch on, Android Chrome, a real suspension across a day boundary to prove the `todayCount` rollover, and both `prefers-reduced-motion` settings, plus the layout, contrast, touch-target and screen-reader checks a script cannot make. Writing it was the easy half. B2 stays open until a run is recorded, because NXW-VER-4 gates `v1.0` on a confirmed successful test run, not on a plan for one. |
 | B5 | P2 | The smoke test does not cover everything | `smoke-test.mjs` now covers the band boundaries, `clampStep` snapping, name cleaning, save coercion, the day rollover, the sun and moon arcs, the reward gating, the secret species and the haptics guards, and it catches the v0.23 failure by name. Two gaps remain. `Storage.migrate()`, the legacy-key adoption, is still only hand-verified, because it wants a save written under the old key and the stub does not exercise that path. And nothing asserts on a rendered page: layout, contrast and touch targets are B2's job, not a script's. Dropped from P1 to P2 now that the class of bug that shipped in v0.23 is guarded. |
 
 ## Docs
@@ -384,19 +427,29 @@ to describe the app as built, so it no longer reads as a spec addressed to an
 implementer who has not started yet. It keeps its own version log, which tracks
 the document rather than the app.
 
-The split between the two is deliberate. The brief states the intent, this file
-states the state: the changelog, the roadmap, the known issues, the code map
-and how to run it all live here. Where they disagree, this file describes what
-exists and the brief describes what was wanted, and the gap is worth a look.
+[`DEVICE-TESTS.md`](DEVICE-TESTS.md) is B2 itself: the matrix of platforms and
+checks that `v1.0` is gated on, and the place a completed run is recorded. It
+holds the checks that need a device rather than a script, so it is the other
+half of `smoke-test.mjs` rather than a duplicate of it.
+
+The split between the three is deliberate. The brief states the intent, this
+file states the state, the matrix states what has been checked on real
+hardware: the changelog, the roadmap, the known issues, the code map and how to
+run it all live here. Where the brief and this file disagree, this file
+describes what exists and the brief describes what was wanted, and the gap is
+worth a look.
 
 ## Status
 
-Prototype, `v0.27`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.28`, DEVELOPMENT. The loop works end to end and the app is
 usable. What it gets wrong today is listed under
 [Known issues](#known-issues); what has never been started is under
 [Roadmap](#roadmap), where the stretch goals from `BRIEF.md` live too, so
 there is no third list to keep in sync. One ID series covers both, so an item
 keeps its ID when it moves from one to the other.
 
-Promotion to `v1.0` is gated on B2, the device test matrix. No P1 defect is
-open, and `node smoke-test.mjs` should pass before any commit.
+Promotion to `v1.0` is gated on B2, and B2 is now the only P1 left: the name is
+settled (F1) and the Traditional Chinese copy has been read by native speakers
+(F2). No P1 defect is open. What remains is to run
+[`DEVICE-TESTS.md`](DEVICE-TESTS.md) on the three required platforms and record
+the result there. `node smoke-test.mjs` should pass before any commit.

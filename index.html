@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.27
+  index.html - Aniluna Aqua Buddy - v0.28
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
   Status     : DEVELOPMENT
   Versioning : v0.x = development/testing, v1.x = production-ready
   Author     : Matthias Koterski
-  Date       : 2026-08-24
+  Date       : 2026-08-25
   Context    : Runs entirely in the browser. State lives in localStorage.
   Changelog  : see README.md, newest first
 -->
@@ -943,10 +943,16 @@ body {
   box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
 }
 .btn-drink:active { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18); }
+/* Reset sits under the drink button and still has to be findable. On
+   --text-soft over --panel-edge it read as disabled rather than secondary, so
+   it takes the full --text and a border one step in from the panel edge. Both
+   are tokens, so "darker" resolves as darker in day and glitter and as lighter
+   against the night panel, which is the same intent either way: more present,
+   without competing with the drink button. */
 .btn-ghost {
   background: transparent;
-  border: 2px solid var(--panel-edge);
-  color: var(--text-soft);
+  border: 2px solid var(--text-soft);
+  color: var(--text);
   font-size: 0.9rem;
   padding: 10px 14px;
 }
@@ -962,6 +968,9 @@ details.settings summary {
   align-items: center;
   gap: 8px;
 }
+/* Sits between the disclosure triangle and the label, on the summary's own
+   8px gap. Emoji carry their own colour, so this only sets the size. */
+.summary-icon { font-size: 1rem; line-height: 1; }
 details.settings summary::-webkit-details-marker { display: none; }
 details.settings summary::before { content: "\25B8"; transition: transform 0.2s ease; }
 details.settings[open] summary::before { transform: rotate(90deg); }
@@ -1518,7 +1527,10 @@ input[type="range"]::-moz-range-thumb {
 
   <!-- ---------- settings ---------- -->
   <details class="panel settings" id="settings">
-    <summary id="settingsSummary"></summary>
+    <!-- The gear is decoration on top of a control that already has a word,
+         so it is aria-hidden and the accessible name stays the localised
+         label alone. The disclosure triangle is summary::before. -->
+    <summary id="settingsSummary"><span class="summary-icon" aria-hidden="true">&#9881;&#65039;</span><span id="settingsSummaryText"></span></summary>
 
     <div class="setting">
       <label for="nameInput" id="nameLabel"></label>
@@ -1590,7 +1602,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.27",
+    version: "v0.28",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -1773,7 +1785,7 @@ const Strings = {
     meterAria: (name) => `Hydration von ${name}`,
     drink: "\u{1F4A7} Ich hab Wasser getrunken",
     drinkAria: (name) => `Ich hab Wasser getrunken, f\u00fcllt die Anzeige von ${name}`,
-    reset: "Neuer Tag, neues Gl\u00fcck",
+    reset: "\u{1F504} Neuer Tag, neues Gl\u00fcck",
     resetAria: (name) => `${name} auff\u00fcllen und den heutigen Z\u00e4hler zur\u00fccksetzen`,
     resetConfirm: (name) => `${name} randvoll machen und heute neu z\u00e4hlen?`,
     drinksToday: "Schlucke heute",
@@ -1851,7 +1863,7 @@ const Strings = {
     meterAria: (name) => `${name}'s hydration`,
     drink: "\u{1F4A7} I drank water",
     drinkAria: (name) => `I drank water, top up ${name}'s hydration`,
-    reset: "A brand new day",
+    reset: "\u{1F504} A brand new day",
     resetAria: (name) => `Reset ${name} and today's count`,
     resetConfirm: (name) => `Fill ${name} right up and start today over?`,
     drinksToday: "Sips today",
@@ -1929,7 +1941,7 @@ const Strings = {
     meterAria: (name) => `${name}\u7684\u6c34\u5206`,
     drink: "\u{1F4A7} \u6211\u559d\u6c34\u4e86",
     drinkAria: (name) => `\u6211\u559d\u6c34\u4e86\uff0c\u5e6b${name}\u88dc\u5145\u6c34\u5206`,
-    reset: "\u91cd\u65b0\u958b\u59cb\u65b0\u7684\u4e00\u5929",
+    reset: "\u{1F504} \u91cd\u65b0\u958b\u59cb\u65b0\u7684\u4e00\u5929",
     resetAria: (name) => `\u91cd\u8a2d${name}\u548c\u4eca\u5929\u7684\u6b21\u6578`,
     resetConfirm: (name) => `\u8981\u628a${name}\u52a0\u6eff\uff0c\u4e26\u628a\u4eca\u5929\u7684\u6b21\u6578\u6b78\u96f6\u55ce\uff1f`,
     drinksToday: "\u4eca\u5929\u559d\u4e86",
@@ -3006,7 +3018,7 @@ const UI = {
       "scene", "sceneCaption", "speech", "drops",
       "meterHeading", "meterValue", "meterBar", "meterFill", "meterLabel", "moodLine",
       "statCountLabel", "statCount", "statLastLabel", "statLast",
-      "drinkBtn", "resetBtn", "settings", "settingsSummary", "langLabel",
+      "drinkBtn", "resetBtn", "settings", "settingsSummary", "settingsSummaryText", "langLabel",
       "langDe", "langEn", "langZh",
       "decayInput", "decayOut", "decayScale", "decayLabel",
       "refillInput", "refillOut", "refillScale", "refillLabel",
@@ -3087,7 +3099,9 @@ const UI = {
     this.el.statCountLabel.textContent = t.drinksToday;
     this.el.statLastLabel.textContent = t.lastDrink;
 
-    this.el.settingsSummary.textContent = t.settings;
+    // Only the text span, so the aria-hidden gear beside it survives a locale
+    // change. Writing to the summary itself would wipe both.
+    this.el.settingsSummaryText.textContent = t.settings;
     this.el.nameLabel.textContent = t.nameSetting;
     this.el.nameInput.placeholder = sp.name;      // the built-in name, as the way back
     this.el.creatureLabel.textContent = t.creature;
