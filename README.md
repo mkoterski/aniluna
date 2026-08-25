@@ -476,15 +476,28 @@ to describe the app as built, so it no longer reads as a spec addressed to an
 implementer who has not started yet. It keeps its own version log, which tracks
 the document rather than the app.
 
-[`v2/`](v2/) holds a UI proposal, published at
-https://mkoterski.github.io/aniluna/v2/ so it can be looked at on a phone
-rather than only on the machine it was drawn on. It is a design document, not
-a build: annotated day, night and glitter frames, a desktop frame, and the
-reasoning for each change. Nothing in it is committed work and nothing in the
-app depends on it. The decisions it proposes, the open questions it does not
-answer and the order they could land in are written up in
-`.work/v2/V2-DESIGN.md`, which is scratch and should move into the repository
-if the redesign goes ahead.
+[`v2/`](v2/) is the redesign, on its own URL and its own file so the app is
+never at risk from it:
+
+| | |
+|---|---|
+| https://mkoterski.github.io/aniluna/v2/ | **the prototype**, the app with the new interface built |
+| https://mkoterski.github.io/aniluna/v2/design.html | the proposal it was built from, as annotated frames |
+
+The prototype is the same app: same sprites, sky, rewards, audio, haptics,
+decay and storage key. What changed is the order of the screen. The meter is a
+water column beside the scene instead of a bar under it, a row of drop pips
+counts the day against a goal set in taps, the drink button lives in a fixed
+dock, and theme, language and the rest of the settings moved into a sheet.
+
+It is a prototype, not a version of the app: it carries `v2-proto` rather than
+a number in the app's series, because there is no path from `v0.30` to a `v2.0`
+under NXW-VER-2 and NXW-VER-4. When it merges it lands as ordinary iterations
+and `v1.0` is declared when B2 passes with it in place.
+
+The decisions behind it, the ten questions the proposal did not answer and the
+corrected patch it was built from are in `.work/v2/`, which is scratch and
+should move into the repository if this goes ahead.
 
 [`DEVICE-TESTS.md`](DEVICE-TESTS.md) is B2 itself: the matrix of platforms and
 checks that `v1.0` is gated on, and the place a completed run is recorded. It
