@@ -476,6 +476,16 @@ to describe the app as built, so it no longer reads as a spec addressed to an
 implementer who has not started yet. It keeps its own version log, which tracks
 the document rather than the app.
 
+[`v2/`](v2/) holds a UI proposal, published at
+https://mkoterski.github.io/aniluna/v2/ so it can be looked at on a phone
+rather than only on the machine it was drawn on. It is a design document, not
+a build: annotated day, night and glitter frames, a desktop frame, and the
+reasoning for each change. Nothing in it is committed work and nothing in the
+app depends on it. The decisions it proposes, the open questions it does not
+answer and the order they could land in are written up in
+`.work/v2/V2-DESIGN.md`, which is scratch and should move into the repository
+if the redesign goes ahead.
+
 [`DEVICE-TESTS.md`](DEVICE-TESTS.md) is B2 itself: the matrix of platforms and
 checks that `v1.0` is gated on, and the place a completed run is recorded. It
 holds the checks that need a device rather than a script, so it is the other
