@@ -1530,8 +1530,14 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 
 /* ---------- side, below the scene ---------- */
 .side-bottom { display: flex; flex-direction: column; gap: 4px; }
-.mood-line { margin: 4px 0 0; }
-.last-line { margin: 0; font-size: 0.8rem; color: var(--text-soft); }
+/* The one fact under the scene, so it reads like text rather than like a
+   caption apologising for itself. */
+.last-line { margin: 2px 0 0; font-size: 0.9rem; color: var(--text); }
+
+/* Info, first block in the sheet. */
+.sheet-info { font-size: 0.9rem; line-height: 1.5; padding: 4px 0 2px; }
+.sheet-info p { margin: 0; }
+.sheet-info .tip { margin-top: 6px; font-size: 0.8rem; color: var(--text-soft); }
 
 /* ---------- the dock ---------- */
 .dock {
@@ -1613,6 +1619,16 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
   width: 100%; margin-top: 18px;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
+
+/* Four options in one row cannot hold "Der Tageszeit folgen" beside
+   "Tagmodus": flex:1 with the default min-width:auto refuses to shrink below
+   the content, so the long one wrapped to three lines and forced the row to
+   60px while the other three sat on one. Two rows of two, and the labels stay
+   descriptive rather than being cut to Auto / Tag / Nacht / Glitzer. */
+/* .seg.seg-grid rather than .seg-grid: .seg sets display:flex and comes
+   later in the sheet, so at equal specificity it would win. Order decided
+   the z-index ladder wrongly once already; this is the same trap. */
+.seg.seg-grid { display: grid; grid-template-columns: 1fr 1fr; }
 
 /* The segmented pill, full width inside the sheet. */
 .seg {
@@ -1717,26 +1733,20 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
        a phone and a wrapper cannot be split around it. On desktop the grid
        stacks them into the right-hand column. -->
   <div class="side-top">
+    <!-- One gear. Info was a card nobody opens twice and sound already had a
+         switch in the sheet beside haptics, so both were a second way to reach
+         something rather than a reason to spend a top-level slot. The h1 keeps
+         the creature's name only: the product name is in the document title,
+         where a returning user does not have to read it above their pet. -->
     <header class="topbar">
       <span class="glit-deco" aria-hidden="true">&#127872;</span>
-      <h1 id="appTitle">Aniluna Aqua Buddy</h1>
-      <button class="icon-btn" id="infoBtn" type="button" aria-expanded="false" aria-controls="infoCard">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-info"/></svg>
-      </button>
-      <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sound" id="soundIcon"/></svg>
-      </button>
+      <h1 id="appTitle">Aniluna</h1>
       <button class="icon-btn" id="settingsBtn" type="button"
               aria-haspopup="dialog" aria-expanded="false">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-gear"/></svg>
       </button>
       <span class="sr-only" id="themeStatus" role="status"></span>
     </header>
-
-    <section class="panel info" id="infoCard" hidden>
-      <p id="infoBody"></p>
-      <p class="tip" id="infoTip"></p>
-    </section>
   </div>
 
   <!-- ---------- stage: the scene, the pips, and the tube beside them ----------
@@ -2117,10 +2127,14 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 
   <!-- ---------- side, below the scene ---------- -->
   <div class="side-bottom">
-    <!-- The mood is a live region. The last-drink time is not, on purpose: the
-         refresh ticker rewrites it every 15 seconds, and a live region would
-         have a screen reader announce the time on every tick. -->
-    <p class="mood-line" id="moodLine" role="status"></p>
+    <!-- The mood is announced but not printed: the speech bubble already says
+         it two inches above, so a visible copy was the same sentence twice.
+         It keeps role="status" so a band change still reaches a screen reader.
+         The last-drink time is the opposite case, the one fact nothing else
+         shows, so it gets the visible line and full text colour. It is
+         deliberately NOT a live region: the refresh ticker rewrites it every
+         15 seconds and would announce the time on every tick. -->
+    <span class="sr-only" id="moodLine" role="status"></span>
     <p class="last-line" id="lastLine"></p>
 
     <div class="dock">
@@ -2159,8 +2173,13 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
   </div>
   <div class="sheet-body">
 
+    <section class="sheet-info">
+      <p id="infoBody"></p>
+      <p class="tip" id="infoTip"></p>
+    </section>
+
     <h3 class="sheet-group" id="grpLook"></h3>
-    <div class="seg" id="themes" role="radiogroup" aria-labelledby="themesLabel">
+    <div class="seg seg-grid" id="themes" role="radiogroup" aria-labelledby="themesLabel">
       <span class="sr-only" id="themesLabel"></span>
     </div>
     <div class="seg" role="group" aria-labelledby="langLabel">
@@ -2490,11 +2509,8 @@ const Strings = {
     trailNoPointer: "Die Glitzerspur folgt einer Maus und bleibt auf dem Touchscreen aus.",
     settingsFoot: (name) => `${name} wohnt nur in diesem Browser.`,
     note: (version) => `Prototyp ${version} \u00b7 eine Datei \u00b7 kein Konto, kein Server`,
-    infoAria: "Was ist das hier?",
     infoBody: (name) => `${name} wird mit der Zeit ein bisschen durstig. Immer wenn du selbst Wasser trinkst, tippst du auf den gro\u00dfen Knopf: dann f\u00fcllt sich die Anzeige und ${name} strahlt wieder.`,
     infoTip: "Alles bleibt auf diesem Ger\u00e4t. Tempo und Schluckgr\u00f6\u00dfe kannst du unten anpassen.",
-    soundOn: "T\u00f6ne sind an",
-    soundOff: "T\u00f6ne sind aus",
     secretAria: "Geheimer Schalter",
     hours: (n, locale) => `${n.toLocaleString(locale)} ${n === 1 ? "Stunde" : "Stunden"}`,
     justNow: "gerade eben",
@@ -2583,11 +2599,8 @@ const Strings = {
     trailNoPointer: "The glitter trail follows a mouse, so it stays off on a touchscreen.",
     settingsFoot: (name) => `${name} lives only in this browser. Nothing is sent anywhere, promise.`,
     note: (version) => `Prototype ${version} \u00b7 single file \u00b7 no accounts, no server`,
-    infoAria: "What is this?",
     infoBody: (name) => `${name} gets a little thirsty as time goes by. Whenever you drink water yourself, tap the big button: the meter fills back up and ${name} perks right up with it.`,
     infoTip: "Everything stays on this device. Pace and sip size are adjustable below.",
-    soundOn: "Sounds are on",
-    soundOff: "Sounds are off",
     secretAria: "Secret switch",
     hours: (n, locale) => `${n.toLocaleString(locale)} ${n === 1 ? "hour" : "hours"}`,
     justNow: "just now",
@@ -2676,11 +2689,8 @@ const Strings = {
     trailNoPointer: "\u9583\u9583\u7684\u5c3e\u5df4\u6703\u8ddf\u8457\u6ed1\u9f20\uff0c\u89f8\u63a7\u87a2\u5e55\u4e0a\u4e0d\u6703\u51fa\u73fe\u3002",
     settingsFoot: (name) => `${name}\u53ea\u4f4f\u5728\u9019\u500b\u7009\u89bd\u5668\u88e1\uff0c\u4e0d\u6703\u4e0a\u50b3\u4efb\u4f55\u6771\u897f\u5594\u3002`,
     note: (version) => `\u539f\u578b ${version} \u00b7 \u55ae\u4e00\u6a94\u6848 \u00b7 \u6c92\u6709\u5e33\u865f\uff0c\u6c92\u6709\u4f3c\u670d\u5668`,
-    infoAria: "\u9019\u662f\u4ec0\u9ebc\u5440\uff1f",
     infoBody: (name) => `\u6642\u9593\u4e00\u904e\uff0c${name}\u5c31\u6703\u6f38\u6f38\u8b8a\u6e34\u3002\u4f60\u81ea\u5df1\u559d\u6c34\u7684\u6642\u5019\u5c31\u9ede\u4e00\u4e0b\u5927\u6309\u9215\uff0c\u6c34\u5206\u5c31\u6703\u56de\u4f86\uff0c${name}\u4e5f\u6703\u9a6c\u4e0a\u6709\u7cbe\u795e\u5594\uff01`,
     infoTip: "\u6240\u6709\u8cc7\u6599\u53ea\u7559\u5728\u9019\u53f0\u88dd\u7f6e\u4e0a\u3002\u901f\u5ea6\u548c\u6bcf\u6b21\u7684\u4efd\u91cf\u53ef\u4ee5\u5728\u4e0b\u9762\u8abf\u6574\u3002",
-    soundOn: "\u97f3\u6548\u958b\u8457",
-    soundOff: "\u97f3\u6548\u95dc\u4e86",
     secretAria: "\u795e\u79d8\u7684\u5c0f\u958b\u95dc",
     hours: (n, locale) => `${n.toLocaleString(locale)} \u5c0f\u6642`,
     justNow: "\u525b\u525b",
@@ -3761,13 +3771,13 @@ const UI = {
 
   cache() {
     const ids = [
-      "appTitle", "infoBtn", "infoCard", "infoBody", "infoTip", "soundBtn",
+      "appTitle", "infoBody", "infoTip",
       "themes", "themesLabel", "themeStatus", "trailNotice", "glitCanvas",
       "scene", "sceneCaption", "speech", "drops",
       "moodLine", "lastLine",
       "tube", "tubeFill", "tubeNum", "pips", "pipsCount",
       "drinkBtn", "drinkLabel", "resetBtn", "resetLabel",
-      "sheet", "sheetTitle", "sheetClose", "settingsBtn", "soundIcon",
+      "sheet", "sheetTitle", "sheetClose", "settingsBtn",
       "undoBtn", "undoLabel", "awayCard", "awayText", "awayClose",
       "grpLook", "grpGoal", "grpBehaviour",
       "goalLabel", "goalHint", "goalVal", "goalUp", "goalDown", "langLabel",
@@ -3837,8 +3847,10 @@ const UI = {
     const name = this.name();
 
     document.documentElement.lang = t.tag;      // zh-TW, not zh
+    /* The document title keeps the product name; the heading on screen is the
+       creature. */
     document.title = `${name} ${t.titleSuffix}`;
-    this.el.appTitle.textContent = `${name} ${t.titleSuffix}`;
+    this.el.appTitle.textContent = name;
     this.el.sceneCaption.textContent = t.caption(name, t.speciesWord[State.data.species]);
 
     // The label is a span beside the icon, so writing to the button itself
@@ -3876,7 +3888,6 @@ const UI = {
     this.el.settingsFoot.textContent = t.settingsFoot(name);
 
     this.el.note.textContent = t.note(Config.app.version);
-    this.label(this.el.infoBtn, t.infoAria);
     this.el.infoBody.textContent = t.infoBody(name);
     this.el.infoTip.textContent = t.infoTip;
     /* Accessible name only, deliberately no tooltip: a hover label that reads
@@ -4278,13 +4289,10 @@ const UI = {
     Ambient.nudgeStar();              // the sky decides which reward is allowed
   },
 
+  /* The sheet's switch is the only sound control now, so this only has to keep
+     it in step with the state. */
   applySound() {
-    const t = this.t();
-    const on = State.data.soundOn;
-    this.el.soundIcon.setAttribute("href", on ? "#i-sound" : "#i-mute");
-    this.el.soundBtn.setAttribute("aria-pressed", String(on));
-    this.label(this.el.soundBtn, on ? t.soundOn : t.soundOff);
-    this.el.soundInput.checked = on;
+    this.el.soundInput.checked = State.data.soundOn;
   },
 
   syncSettingsInputs() {
@@ -4298,12 +4306,6 @@ const UI = {
     this.renderSettingsValues();
     this.applySound();
     this.applyTheme();
-  },
-
-  toggleInfo(force) {
-    const open = force !== undefined ? force : this.el.infoCard.hidden;
-    this.el.infoCard.hidden = !open;
-    this.el.infoBtn.setAttribute("aria-expanded", String(open));
   },
 
   flash(className, ms) {
@@ -4335,7 +4337,6 @@ const Events = {
     UI.el.drinkBtn.addEventListener("click", () => this.onDrink());
     UI.el.resetBtn.addEventListener("click", () => this.onReset());
     UI.el.secretBtn.addEventListener("click", () => this.onSecret());
-    UI.el.infoBtn.addEventListener("click", () => UI.toggleInfo());
 
     UI.el.settingsBtn.addEventListener("click", () => UI.openSheet());
     UI.el.sheetClose.addEventListener("click", () => UI.closeSheet());
@@ -4387,7 +4388,6 @@ const Events = {
       UI.updateTrailNotice();
     });
 
-    UI.el.soundBtn.addEventListener("click", () => this.setSound(!State.data.soundOn));
     UI.el.soundInput.addEventListener("change", (e) => this.setSound(e.target.checked));
 
     UI.el.eggInput.addEventListener("change", (e) => {
