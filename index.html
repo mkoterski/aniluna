@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.30
+  index.html - Aniluna Aqua Buddy - v0.31
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -144,6 +144,7 @@
    ============================================================ */
 .scene[data-band="hydrated"] {
   --sat: 1.14; --bri: 1.03;
+  --wash: 0; --amb-mood: 1;
   --droop: 0deg; --sink: 0px;
   --bob-amp: 1.2px; --bob-dur: 2.2s;
   --tail-amp: 9deg; --tail-dur: 1.2s;
@@ -153,6 +154,7 @@
 }
 .scene[data-band="okay"] {
   --sat: 1; --bri: 1;
+  --wash: 0.05; --amb-mood: 0.85;
   --droop: 0.6deg; --sink: 0.4px;
   --bob-amp: 0.75px; --bob-dur: 3.4s;
   --tail-amp: 5deg; --tail-dur: 2.1s;
@@ -162,6 +164,7 @@
 }
 .scene[data-band="thirsty"] {
   --sat: 0.7; --bri: 0.98;
+  --wash: 0.13; --amb-mood: 0.55;
   --droop: 3.2deg; --sink: 1.1px;
   --bob-amp: 0.45px; --bob-dur: 4.8s;
   --tail-amp: 2.5deg; --tail-dur: 3.6s;
@@ -171,6 +174,7 @@
 }
 .scene[data-band="dehydrated"] {
   --sat: 0.42; --bri: 0.95;
+  --wash: 0.22; --amb-mood: 0.3;
   --droop: 6.5deg; --sink: 2.2px;
   --bob-amp: 0.25px; --bob-dur: 6.8s;
   --tail-amp: 1.2deg; --tail-dur: 5.6s;
@@ -478,6 +482,23 @@ body {
   place-items: end center;
   transition: background 0.6s ease;
 }
+/* F7. The mood reaches the world, not just the creature. A wash of neutral
+   grey over the whole scene dulls sky, ground, sun, moon and ambient life
+   together, which is what "overcast" looks like, and it works in every theme
+   because grey washes both a pale sky and a dark one towards the middle.
+   z-index 1 puts it above the ground strip and the sky but below the creature
+   at 2, so the character keeps its own saturation and stays the one thing in
+   the picture that has not gone grey. */
+.scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-color: rgb(128 128 128 / var(--wash, 0));
+  transition: background-color 0.7s ease;
+}
+
 .scene::after {                       /* ground strip */
   content: "";
   position: absolute;
@@ -581,14 +602,14 @@ body {
 .amb.rtl .amb-flip { transform: scaleX(-1); }
 @keyframes drift {
   0%   { left: -25%; opacity: 0; }
-  14%  { opacity: var(--amb-op, 0.7); }
-  86%  { opacity: var(--amb-op, 0.7); }
+  14%  { opacity: calc(var(--amb-op, 0.7) * var(--amb-mood, 1)); }
+  86%  { opacity: calc(var(--amb-op, 0.7) * var(--amb-mood, 1)); }
   100% { left: 118%; opacity: 0; }
 }
 @keyframes drift-rtl {
   0%   { left: 118%; opacity: 0; }
-  14%  { opacity: var(--amb-op, 0.7); }
-  86%  { opacity: var(--amb-op, 0.7); }
+  14%  { opacity: calc(var(--amb-op, 0.7) * var(--amb-mood, 1)); }
+  86%  { opacity: calc(var(--amb-op, 0.7) * var(--amb-mood, 1)); }
   100% { left: -25%; opacity: 0; }
 }
 .amb-bob { display: block; }
@@ -626,14 +647,14 @@ body {
 .amb.bird.rtl { animation-name: glide-rtl; }
 @keyframes glide {
   0%   { left: -25%; opacity: 0; transform: translateY(0); }
-  14%  { opacity: var(--amb-op, 0.7); }
-  86%  { opacity: var(--amb-op, 0.7); }
+  14%  { opacity: calc(var(--amb-op, 0.7) * var(--amb-mood, 1)); }
+  86%  { opacity: calc(var(--amb-op, 0.7) * var(--amb-mood, 1)); }
   100% { left: 118%; opacity: 0; transform: translateY(var(--glide, -40px)); }
 }
 @keyframes glide-rtl {
   0%   { left: 118%; opacity: 0; transform: translateY(0); }
-  14%  { opacity: var(--amb-op, 0.7); }
-  86%  { opacity: var(--amb-op, 0.7); }
+  14%  { opacity: calc(var(--amb-op, 0.7) * var(--amb-mood, 1)); }
+  86%  { opacity: calc(var(--amb-op, 0.7) * var(--amb-mood, 1)); }
   100% { left: -25%; opacity: 0; transform: translateY(var(--glide, -40px)); }
 }
 
@@ -1627,7 +1648,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.30",
+    version: "v0.31",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -2598,9 +2619,15 @@ const Ambient = {
          so no two flocks match. */
       markup: () => {
         const count = 3 + Math.floor(Math.random() * 3);        // 3 to 5 gulls
+        /* All three poses are registered on the body row, y 3, so the wings
+           beat around a body that holds still. Registered on the top edge, as
+           they were before v0.31, the body itself travelled from y 3 to y 0
+           across the cycle while the tips barely moved, which reads as the
+           whole bird lurching rather than flapping. Tips now sit 3 above the
+           body, then 1 above, then 2 below. */
         const up   = [[0,0],[1,1],[2,2],[3,3],[4,3],[5,2],[6,1],[7,0]];
-        const mid  = [[1,0],[2,1],[3,2],[4,2],[5,1],[6,0]];
-        const down = [[1,2],[2,1],[3,0],[4,0],[5,1],[6,2]];
+        const mid  = [[1,2],[2,3],[3,3],[4,3],[5,3],[6,2]];
+        const down = [[1,5],[2,4],[3,3],[4,3],[5,4],[6,5]];
         const pose = (cls, cells) => `<g class="pose ${cls}">`
           + cells.map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1"/>`).join("")
           + "</g>";
@@ -2608,7 +2635,7 @@ const Ambient = {
         let flock = "";
         for (let i = 0; i < count; i++) {
           const x = Math.round(Math.random() * 42);
-          const y = Math.round(Math.random() * 13);
+          const y = Math.round(Math.random() * 10);
           /* A negative delay starts each gull part-way into the cycle, so a
              flock does not beat in unison. */
           const phase = -(Math.random() * 0.7).toFixed(2);

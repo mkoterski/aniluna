@@ -2,7 +2,7 @@
 
 This is the product brief: what the app is, who it is for, how it is meant to
 feel, and which rules it holds itself to. It describes `index.html` as built at
-**v0.30**.
+**v0.31**.
 
 It deliberately does not duplicate [`README.md`](README.md), which owns the
 operational detail: the changelog, the roadmap of deferred work, the known
@@ -14,6 +14,13 @@ describing what was wanted, and the difference is worth a look.
 ## Version log
 
 Newest first. This log tracks the brief, not the app.
+
+### v0.12 - 2026-08-25
+
+- Updated for app v0.31: the mood reaches the world, not only the creature.
+  Written into the mood section as a rule about what a band is allowed to
+  change, because it is the first time a band touches anything outside the
+  sprite.
 
 ### v0.11 - 2026-08-25
 
@@ -246,6 +253,21 @@ the mood line, the sprite and the rewards always agree:
 Each band is a block of CSS tokens covering the palette, the sparkle opacity
 and the idle animation timing, so a band change retunes the whole scene without
 per-band component code.
+
+Since v0.31 a band reaches the world as well as the creature. The weather is
+the mood: as hydration drops, a neutral grey wash settles over the scene and
+dulls sky, ground, sun and moon together, and the ambient life thins out with
+it. It is one wash rather than a palette per band, because a second set of
+scene colours would have to be drawn and maintained for every theme, and grey
+works against a pale sky and a dark one alike.
+
+The character is the exception, and deliberately: it sits above the wash and
+keeps its own saturation, so the creature stays the one thing in the picture
+that has not gone grey. A band may dull the world, but it may never take the
+character's colour with it, because the creature is what the eye is meant to
+land on and a fully grey screen reads as broken rather than as sad. The
+rewards are the other exception: they are earned at 95 percent, where the wash
+is nothing anyway, so nothing that celebrates is ever dimmed.
 
 ## Idle animation
 

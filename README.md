@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.30
+# Aniluna Aqua Buddy - v0.31
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -43,6 +43,7 @@ Aniluna, or a dinosaur called Anirex if you find the switch.
 | Info | A small circled-i in the top bar opens two localised sentences explaining the loop |
 | Default decay | Full to completely empty in 2 hours, so the dehydrated band is entered just after 1 h 36 min |
 | Idle animation | Bob, head nod, tail swish, ear twitch, blink, sparkle. Amplitude and speed tuned per state |
+| The world answers | The mood reaches the scene, not only the creature: a grey wash dulls sky, ground, sun and moon together as hydration drops, and ambient life thins with it. The character sits above the wash and keeps its own colour, so it stays the one thing that has not gone grey |
 | Gulls | A loose flock of three to five stepped pixel sprites in the Link's Awakening idiom, each at its own scale for depth, flapping by frame swap through wide bowl, shallow vee and narrow peak, crossing the sky at a slant |
 | Rainbow | The daytime reward, only while the meter reads 95% or above and the sky is lit. At the 2 h default that is roughly the 6 minutes after topping up |
 | Shooting star | The same reward after dark, since a rainbow needs a lit sky to read as one. A streak crosses high above the character every 8 to 17 seconds while the meter earns it, and the whole starfield lifts to full brightness, which is what carries the reward under reduced motion |
@@ -59,7 +60,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.30", status: "DEVELOPMENT" },
+  app: { version: "v0.31", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -133,7 +134,7 @@ The running version is printed to the browser console on startup.
 node smoke-test.mjs
 ```
 
-Eighteen checks, no dependencies, exits non-zero on any failure. It exists
+Twenty checks, no dependencies, exits non-zero on any failure. It exists
 because v0.23 shipped an app that did not start: the file parsed, which was the
 only thing being checked, and a missing object property is a runtime error
 rather than a syntax one. It checks the invariants that hold a single file
@@ -215,57 +216,37 @@ only after a confirmed successful test run.
 ### Changelog
 
 ```
-v0.30  2026-08-25  The horn stopped being cut off mid-bob. An outer `svg`
-                   is `overflow: hidden` by default, so the artboard was the
-                   clip boundary, and the unicorn had no room in it: the horn
-                   ends at y 0, the viewBox opens at -1, and the feMorphology
-                   outline is exactly 1 unit thick, so at rest the ink lands
-                   on the edge with nothing to spare. Every animation that
-                   lifts the sprite then cut the tip off, worst at the
-                   hydrated band where the bob is largest, which is why it
-                   showed at 100%. Measured lift past the edge, in artboard
-                   units: 1.15 idle bob, 1.92 sip hop, 2.35 gurgle wobble,
-                   9.54 species morph. `.pet` is now `overflow: visible` and
-                   the scene, which is `overflow: hidden` and gives 20 to 27
-                   units of sky depending on whether the sprite is at its
-                   max-width, is the clip boundary instead. Growing the
-                   viewBox was the alternative and was dropped: it is part of
-                   the contract all three species share, so it would have
-                   meant empty rows on all of them to fit the rarest case.
-                   The panda and the dinosaur start a row lower and so were
-                   only clipped during the bob, and this covers them too.
+v0.31  2026-08-25  Fixed B11: the gulls were registered on their top edge, so
+                   the body travelled from row 3 to row 0 across the flap while
+                   the wingtips barely moved. The bird lurched instead of
+                   beating. All three poses now sit on the body row.
+                   F7: the mood reaches the world, not just the creature. A
+                   grey wash over the scene under the character, and ambient
+                   life that thins as the mood drops.
+                   B5: the legacy-key adoption is covered, 20 checks. What is
+                   left of B5 was always B2's, so B5 is closed.
 
-v0.29  2026-08-25  The unicorn's head lost the bump on its left, reported from
-                   a screenshot and confirmed against the sprite: it was the
-                   mane, in two places. The head is symmetric about column
-                   15.5 and rounds in as it rises, 9-22 up to row 8, then
-                   10-21, then 11-20. The side mane started on row 7, where
-                   the head had already pulled in and the ears had ended, so
-                   the silhouette stepped from column 9 out to column 6 in one
-                   row with a square corner. And the strip inside the head
-                   started on row 6 and spanned both its columns, filling the
-                   rounded top-left corner that the right side keeps. A head
-                   square on one side and round on the other is what the eye
-                   reports as a swelling. The mane now starts on row 8, the
-                   first row where the head is at full width, and the inner
-                   strip follows the outline a column per row. Nothing else
-                   about the sprite moved, the mane is no shorter than it
-                   looks, and six versions were judged side by side in
-                   `.work/unicorn-mane-lab.html` before this one was picked.
+v0.30  2026-08-25  Fixed: the horn was cut off during the idle bob. An outer
+                   svg is overflow:hidden, the horn ends on the artboard's top
+                   row and the outline filter spends the one row above it, so
+                   any animation that lifted the sprite clipped it. `.pet` is
+                   overflow:visible now and the scene clips instead. Measured
+                   past the edge: 1.15 units bob, 1.92 hop, 2.35 wobble, 9.54
+                   morph.
 
-v0.28  2026-08-25  Two controls made easier to find. The settings summary
-                   carries a gear, and reset a circular-arrow symbol, both
-                   ahead of the label the way the drink button already wore
-                   its drop. The gear is a separate `aria-hidden` span rather
-                   than part of the localised string, because the summary has
-                   no `aria-label` to hide it behind and the accessible name
-                   should stay the word alone; the reset symbol sits in the
-                   string, where the existing `resetAria` already covers it.
-                   Reset also stopped reading as disabled: on `--text-soft`
-                   over `--panel-edge` it was the faintest thing on the panel,
-                   so it takes `--text` and a `--text-soft` border. Both are
-                   tokens, so it darkens in day and glitter and brightens
-                   against the night panel, which is the same intent.
+v0.29  2026-08-25  Fixed: the bump on the unicorn's head was the mane. It
+                   started a row above the head's widest row and its inner
+                   strip squared off the rounded corner the right side keeps,
+                   so the head was square on one side and round on the other.
+                   Six manes judged side by side in .work/, tucked won.
+
+v0.28  2026-08-25  A gear on the settings summary and a circular arrow on
+                   reset, both ahead of the label the way the drink button
+                   already wore its drop. The gear is an aria-hidden span, not
+                   part of the string, because the summary has no aria-label to
+                   hide an emoji behind. Reset also stopped reading as
+                   disabled: --text on a --text-soft border, where it had been
+                   the faintest thing on the panel.
 
 v0.27  2026-08-24  A third creature, the panda Wan Wan, chosen in the settings.
                    The dinosaur moved behind the secret switch, marked
@@ -378,7 +359,7 @@ v0.10  2026-08-19  Initial version. Single-file static app: timestamp-driven
 
 ## Known issues
 
-Defects present in `v0.30`, as opposed to work never started, which is under
+Defects present in `v0.31`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
@@ -397,7 +378,7 @@ Accepted limitations, written down so they are not rediscovered as bugs:
   no notice that nothing is being kept.
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
-- The device test matrix is written but unrun (B2), so `v0.30` is a prototype in
+- The device test matrix is written but unrun (B2), so `v0.31` is a prototype in
   the literal sense: everything here was verified in one desktop browser. The
   matrix itself lives in [`DEVICE-TESTS.md`](DEVICE-TESTS.md).
 - B3 is accepted, decided 2026-08-25. `State.reset()` sets `lastDrinkAt = now`,
@@ -443,9 +424,8 @@ parked idea.
 | F3 | P2 | "While you were away" note | Brief stretch goal. After a long gap, one line about what happened instead of silently presenting a drooping pet. The data already exists: `lastDrinkAt`, and the points `State.sync()` returns. |
 | F5 | P2 | Real sprite art | Brief stretch goal. The creatures are SVG rects outlined by a single `feMorphology` filter. Per-state sprites would replace the shapes, not the animation system, because both species already share the `.pet-*` group classes. |
 | F6 | P2 | Undo the last drink | A mis-tap can currently only be corrected with a full reset, which also clears the daily count. Keeping the previous `hydration` and `lastDrinkAt` for one step would cover it. |
-| F7 | P3 | Richer scene changes between moods | Brief stretch goal. The sky already carries sun, moon, stars and ambient life, but the mood bands change the character rather than the world around it. |
 | F9 | P3 | Reminder experiments | Brief stretch goal, and the one that fights the constraints: without a service worker there is no notification once the tab is closed, and a service worker means a second file, which breaks the single-file promise. Parked until someone decides which of the two matters more. |
-| F10 | P3 | Prune `Config.legacyKeys` | Drop `ina-water-friend/v1` once no browser can plausibly still hold a save under it. Harmless until then, so this is bookkeeping rather than work. |
+| F10 | P3 | Prune `Config.legacyKeys` | **Not yet, and the date is the reason.** The key was renamed in v0.14 on 2026-08-20, so a save under `ina-water-friend/v1` is only days old and anyone who opened the app before that and has not been back still holds one. Pruning now would silently drop their creature's name and settings. The cost of keeping it is one string in an array, read once at startup, against losing someone's state: keep it until `v1.0` has been public for a year, then prune. Covered by two smoke checks since v0.31, so pruning it will be a visible change rather than a quiet one. |
 
 ### Settled
 
@@ -456,17 +436,18 @@ is not rediscovered as an open question.
 |---|---|---|
 | F1 | 2026-08-25 | `Aniluna` is the final name of the product and of the repository, not a working title. `Config.storageKey` is already `aniluna/v1`, so nothing in the code moves. The creature names beside it stay as they are, and F11 lets an owner overwrite any of them anyway. |
 | F2 | 2026-08-25 | Taiwanese native speakers have read the Traditional Chinese copy, including the v0.22 Glitzermodus strings and the two trail notices. The register was confirmed rather than corrected. |
+| F7 | 2026-08-25 | Landed in v0.31 as a wash rather than as new scenery: one neutral grey layer over the whole scene, sitting under the character, plus ambient life that thins as the mood drops. Two tokens per band and no new markup, which is why a P3 stretch goal was cheap enough to do. |
+| B5 | 2026-08-25 | Closed in v0.31. The legacy-key adoption has two checks: a save under the old key is adopted once and the entry cleared, and a legacy save never overwrites a current one. The stub could not reach that path because `init()` is wired to `DOMContentLoaded`, which never fires there, so the checks drive `migrate()` and `load()` in the order init does. The other gap B5 named, asserting on a rendered page, is B2's by definition, so there is nothing left under this ID. |
 | F14 | 2026-08-25 | The German copy, the diminutives and the Glitzermodus strings included, is written and checked by a native German speaker. Raised and closed on the same day, because F2 covered only the Traditional Chinese side and the German one deserved saying out loud rather than leaving implied. All three locales have now been read by someone who speaks them. |
 
 ### Hardening and testing
 
 Defects already in the app are not here, they are under
-[Known issues](#known-issues). These two are work that has never been done.
+[Known issues](#known-issues). This one is work that has never been done.
 
 | ID | Pri | Item | Notes |
 |---|---|---|---|
 | B2 | P1 | Run the device test matrix before `v1.0` | The matrix was written on 2026-08-25 and lives in [`DEVICE-TESTS.md`](DEVICE-TESTS.md): 38 checks across six platforms, three of which are required. It covers what B2 always asked for, the iOS Safari audio unlock after backgrounding and with the silent switch on, Android Chrome, a real suspension across a day boundary to prove the `todayCount` rollover, and both `prefers-reduced-motion` settings, plus the layout, contrast, touch-target and screen-reader checks a script cannot make. Writing it was the easy half. B2 stays open until a run is recorded, because NXW-VER-4 gates `v1.0` on a confirmed successful test run, not on a plan for one. |
-| B5 | P2 | The smoke test does not cover everything | `smoke-test.mjs` now covers the band boundaries, `clampStep` snapping, name cleaning, save coercion, the day rollover, the sun and moon arcs, the reward gating, the secret species and the haptics guards, and it catches the v0.23 failure by name. Two gaps remain. `Storage.migrate()`, the legacy-key adoption, is still only hand-verified, because it wants a save written under the old key and the stub does not exercise that path. And nothing asserts on a rendered page: layout, contrast and touch targets are B2's job, not a script's. Dropped from P1 to P2 now that the class of bug that shipped in v0.23 is guarded. |
 
 ## Docs
 
@@ -491,9 +472,14 @@ counts the day against a goal set in taps, the drink button lives in a fixed
 dock, and theme, language and the rest of the settings moved into a sheet.
 
 It is a prototype, not a version of the app: it carries `v2-proto` rather than
-a number in the app's series, because there is no path from `v0.30` to a `v2.0`
+a number in the app's series, because there is no path from `v0.31` to a `v2.0`
 under NXW-VER-2 and NXW-VER-4. When it merges it lands as ordinary iterations
 and `v1.0` is declared when B2 passes with it in place.
+
+The prototype adds copy in all three locales for the sheet, the goal stepper
+and the pip row. It has been read by native speakers, on 2026-08-25, so F2 and
+F14 stay closed when this merges rather than reopening. Everything else it says
+is reused unchanged from the app and carries the reads that closed them.
 
 The decisions behind it, the ten questions the proposal did not answer and the
 corrected patch it was built from are in `.work/v2/`, which is scratch and
@@ -513,7 +499,7 @@ worth a look.
 
 ## Status
 
-Prototype, `v0.30`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.31`, DEVELOPMENT. The loop works end to end and the app is
 usable. What it gets wrong today is listed under
 [Known issues](#known-issues); what has never been started is under
 [Roadmap](#roadmap), where the stretch goals from `BRIEF.md` live too, so

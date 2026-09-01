@@ -26,7 +26,7 @@
      driving a real page, which is B2's job.
    ========================================================================== */
 
-export const VERSION = "v0.10";
+export const VERSION = "v0.11";
 
 /* ==========================================================================
    A stub page, just enough for the modules to define themselves. Shared by
@@ -34,7 +34,7 @@ export const VERSION = "v0.10";
    over, or the app would attach itself to the test page and init would throw
    on the first element it cannot find.
    ========================================================================== */
-function makeSandbox() {
+function makeSandbox(seed) {
   const noop = () => {};
   const el = () => ({
     dataset: {},
@@ -52,7 +52,7 @@ function makeSandbox() {
     clientHeight: 390, textContent: "", innerHTML: "", hidden: false,
     checked: false, value: "", maxLength: 0, placeholder: ""
   });
-  const store = new Map();
+  const store = new Map(Object.entries(seed || {}));
   const sandbox = {
     console: { log: noop, warn: noop },
     performance: { now: () => 0 },
@@ -209,14 +209,21 @@ export function runSmokeChecks({ source, readme }) {
 
   /* ---------------- the pure logic ---------------- */
 
-  check("the modules define themselves without a page", () => {
-    const sandbox = makeSandbox();
+  /* Boot the app against a sandbox and hand back both, so a check can seed
+     localStorage before startup reads it. */
+  const boot = (seed) => {
+    const sandbox = makeSandbox(seed);
     const names = Object.keys(sandbox);
     const exposed = ["Config", "Strings", "Storage", "Time", "Sky", "State",
                      "Ambient", "Haptics", "BANDS", "PICKABLE", "SECRET_SPECIES", "UI"];
     const code = src.match(/<script>([\s\S]*)<\/script>/)[1];
     const factory = new Function(...names, `${code}\n;return {${exposed.join(", ")}};`);
-    app = factory(...names.map((n) => sandbox[n]));
+    return { app: factory(...names.map((n) => sandbox[n])), sandbox };
+  };
+
+  check("the modules define themselves without a page", () => {
+    const booted = boot();
+    app = booted.app;
     assert(app.Config && app.State && app.Ambient, "modules missing from the evaluated script");
     return `${Object.keys(app).length} modules reached`;
   });
@@ -272,6 +279,42 @@ export function runSmokeChecks({ source, readme }) {
       "pickedSpecies accepted a creature the settings cannot offer");
     app.Storage.read = real;
     return "every field guarded";
+  });
+
+  /* init() is wired to DOMContentLoaded, which the stub page never fires, so
+     these two drive the adoption in the order init does: migrate, then load.
+     That is the path itself rather than a re-implementation of it. */
+  behaviour("a save under the legacy key is adopted, once", () => {
+    const key = app.Config.legacyKeys[0];
+    assert(typeof key === "string" && key.length, "no legacy key to test");
+    const saved = JSON.stringify({ hydration: 42, todayCount: 3, decayHours: 1.5 });
+    const { app: fresh, sandbox } = boot({ [key]: saved });
+
+    eq(fresh.Storage.migrate(), key, "migrate names the key it adopted from");
+    fresh.State.load();
+    eq(sandbox.localStorage.getItem(key), null, "the legacy entry is cleared");
+    const now = sandbox.localStorage.getItem(fresh.Config.storageKey);
+    assert(now !== null, "nothing was written to the current key");
+    eq(JSON.parse(now).hydration, 42, "the hydration came across");
+    eq(fresh.State.data.todayCount, 3, "the loaded state carries the old count");
+    eq(fresh.State.data.decayHours, 1.5, "and the old setting");
+    /* Adoption is one-shot: a second call has nothing left to find. */
+    eq(fresh.Storage.migrate(), null, "migrate is a no-op the second time");
+    return `${key} adopted into ${fresh.Config.storageKey}`;
+  });
+
+  behaviour("a legacy save never overwrites the current one", () => {
+    const key = app.Config.legacyKeys[0];
+    const current = JSON.stringify({ hydration: 90, todayCount: 9 });
+    const stale = JSON.stringify({ hydration: 10, todayCount: 1 });
+    const { app: fresh, sandbox } = boot({
+      [app.Config.storageKey]: current, [key]: stale
+    });
+    eq(fresh.Storage.migrate(), null, "migrate declines when the current key is populated");
+    eq(JSON.parse(sandbox.localStorage.getItem(fresh.Config.storageKey)).todayCount, 9,
+       "the current save survived");
+    eq(sandbox.localStorage.getItem(key), stale, "and the legacy entry was left alone");
+    return "migrate returns before the loop when the current key is populated";
   });
 
   behaviour("the day rollover resets today's count", () => {
