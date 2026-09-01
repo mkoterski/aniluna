@@ -138,7 +138,7 @@ function render(results, passed, failed) {
     : `All ${passed} checks passed. ${VERSION}`;
 }
 
-/* A missing README is not a failure: the version check reports itself as
+/* A missing changelog is not a failure: the version check reports itself as
    skipped, which is honest, rather than failing on something absent. */
 async function text(path) {
   try {
@@ -149,14 +149,14 @@ async function text(path) {
   }
 }
 
-const source = await text("index.html");
+const source = await text("../index.html");
 if (!source) {
   verdict.className = "verdict fail";
   verdict.textContent = "Could not fetch index.html. Serve this folder over "
     + "http, or open the published copy: file:// blocks the request.";
 } else {
-  const readme = await text("README.md");
-  const { results, passed, failed } = runSmokeChecks({ source, readme });
+  const changelog = await text("../CHANGELOG.md");
+  const { results, passed, failed } = runSmokeChecks({ source, changelog });
   render(results, passed, failed);
 }
 </script>

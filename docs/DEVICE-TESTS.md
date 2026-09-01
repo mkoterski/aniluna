@@ -3,7 +3,7 @@
 This is B2. Promotion to `v1.0` needs a confirmed successful run of this matrix
 (NXW-VER-4), so the matrix is the gate and this file is where a run is recorded.
 
-Written against app **v0.31**. `node smoke-test.mjs` checks the pure logic
+Written against app **v0.31**. `node test/smoke-test.mjs` checks the pure logic
 against a stub page and asserts nothing about a rendered one, which is why this
 exists: layout, contrast, touch targets, audio unlock, haptics and real
 suspension are only observable on a device.
@@ -113,7 +113,7 @@ D14 is the check for that.
 | D35 | Three creatures | Pick the unicorn and the panda in the settings, then find the `*` | The dinosaur appears through the switch only, pressing it again returns to the settings choice, and the title, speech, favicon and voice all follow the creature |
 | D36 | Renaming | Rename a creature, then clear the field | The name flows into the title, the speech, the stats and every ARIA label, and clearing restores the built-in one |
 | D37 | Easter egg | Five drink taps within five seconds | The blubber plays, and it does not fire on ordinary drinking |
-| D38 | Smoke page in a browser | Open `smoke-test.html` from the served origin on each platform | Every check passes there too, which is what covers the platforms where node cannot run |
+| D38 | Smoke page in a browser | Open `test/smoke-test.html` from the served origin on each platform | Every check passes there too, which is what covers the platforms where node cannot run |
 
 ## Recording a run
 

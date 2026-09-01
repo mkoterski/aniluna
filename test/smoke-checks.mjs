@@ -83,7 +83,7 @@ function makeSandbox(seed) {
 /* ==========================================================================
    THE CHECKS
    ========================================================================== */
-export function runSmokeChecks({ source, readme }) {
+export function runSmokeChecks({ source, changelog }) {
   const src = String(source).replace(/\r/g, "");
   const results = [];
   let app = null;
@@ -127,9 +127,9 @@ export function runSmokeChecks({ source, readme }) {
   });
 
   check("the changelog's newest entry matches the code (NXW-VER-6)", () => {
-    if (!readme) return "skipped, no README.md supplied";
+    if (!changelog) return "skipped, no CHANGELOG.md supplied";
     const code = src.match(/version: "(v0\.\d+)"/)[1];
-    const newest = String(readme).match(/^(v0\.\d+)\s+\d{4}-\d{2}-\d{2}/m);
+    const newest = String(changelog).match(/^(v0\.\d+)\s+\d{4}-\d{2}-\d{2}/m);
     assert(newest, "no changelog entry found in README.md");
     eq(newest[1], code, "newest changelog entry against Config.app.version");
     return `${code} in both`;

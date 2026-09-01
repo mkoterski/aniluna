@@ -6,32 +6,37 @@
    Status     : DEVELOPMENT
    Author     : Matthias Koterski / Data & IT
    Date       : 2026-08-24
-   Context    : node smoke-test.mjs [path-to-index.html]
+   Context    : node test/smoke-test.mjs [path-to-index.html]
    Versioning : v0.x = development. Tracks itself, not the app.
    ----------------------------------------------------------------------------
    The checks live in smoke-checks.mjs, which knows nothing about files or
    pages. This file only reads and prints; smoke-test.html does the same job in
    a browser, which is what makes it work on GitHub Pages. One copy of the
    checks, two runners, so they cannot drift.
+
+   Paths resolve against this file rather than the working directory, so the
+   command works from the repository root as well as from inside test/.
    ========================================================================== */
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runSmokeChecks, VERSION } from "./smoke-checks.mjs";
 
-const target = process.argv[2] || "index.html";
+const here = dirname(fileURLToPath(import.meta.url));
+const target = process.argv[2] || join(here, "..", "index.html");
 const source = readFileSync(target, "utf8");
 
-/* The README beside the target, not beside this script: the version check
+/* The changelog beside the target, not beside this script: the version check
    compares an app against its own changelog. */
-let readme = null;
+let changelog = null;
 try {
-  readme = readFileSync(join(dirname(target) || ".", "README.md"), "utf8");
+  changelog = readFileSync(join(dirname(target) || ".", "CHANGELOG.md"), "utf8");
 } catch {
-  readme = null;
+  changelog = null;
 }
 
-const { results, passed, failed } = runSmokeChecks({ source, readme });
+const { results, passed, failed } = runSmokeChecks({ source, changelog });
 
 const pad = Math.max(...results.map((r) => r.name.length));
 console.log("");

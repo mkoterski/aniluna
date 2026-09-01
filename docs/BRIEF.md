@@ -4,10 +4,11 @@ This is the product brief: what the app is, who it is for, how it is meant to
 feel, and which rules it holds itself to. It describes `index.html` as built at
 **v0.31**.
 
-It deliberately does not duplicate [`README.md`](README.md), which owns the
-operational detail: the changelog, the roadmap of deferred work, the known
-issues, the code map and the instructions for running it. Where the two could
-overlap, the brief states the intent and the README states the state. If they
+It deliberately does not duplicate the operational documents beside it:
+[`ARCHITECTURE.md`](ARCHITECTURE.md) for the code map and the configuration,
+[`ROADMAP.md`](ROADMAP.md) for the known issues and the deferred work, and
+[`../CHANGELOG.md`](../CHANGELOG.md) for what shipped when. Where they could
+overlap, the brief states the intent and those state the state. If they
 ever disagree, the README is describing what exists and this document is
 describing what was wanted, and the difference is worth a look.
 
@@ -15,7 +16,7 @@ describing what was wanted, and the difference is worth a look.
 
 Newest first. This log tracks the brief, not the app.
 
-### v0.12 - 2026-08-25
+### v0.12 - 2026-09-01
 
 - Updated for app v0.31: the mood reaches the world, not only the creature.
   Written into the mood section as a rule about what a band is allowed to
@@ -524,9 +525,9 @@ Reset is housekeeping rather than an achievement, so it does not celebrate.
 
 Deferred work, defects and the test matrix live in the README, not here:
 
-- [Known issues](README.md#known-issues) for the defects the current version
+- [Known issues](ROADMAP.md#known-issues) for the defects the current version
   ships with.
-- [Roadmap](README.md#roadmap) for work that has not been started, including
+- [Roadmap](ROADMAP.md#roadmap) for work that has not been started, including
   the panda, real sprite art, the "while you were away" note, reminder
   experiments, and the native-speaker pass on the Chinese copy.
 
