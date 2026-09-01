@@ -1,4 +1,4 @@
-# Aniluna Aqua Buddy - v0.31
+# Aniluna Aqua Buddy - v0.32
 
 **Status:** DEVELOPMENT
 **Versioning:** `v0.x` = development/testing, `v1.x` = production-ready
@@ -33,7 +33,8 @@ a panda called Wan Wan, or a dinosaur called Anirex if you find the switch.
 | Naming | Each creature can be renamed, up to 24 characters. The name flows into the title, the speech, the stats and every ARIA label |
 | Languages | German (default), Traditional Chinese (`zh-TW`) and English, written as native copy rather than translations |
 | Themes | Follow the clock, day, night, or glitter. Auto resolves against the local clock and re-resolves at dusk while the page is open |
-| Sky | Sun and moon on one east-to-west arc, stars at night, rare birds by day and wind gusts by night |
+| Sky | Sun and moon on one east-to-west arc, stars at night, rare birds by day and wind gusts by night, and clouds drifting across at two depths |
+| Ground | Hills behind the horizon, grass that sways, and flowers that open with the mood and close as it drops. Fireflies after dark, where the day has birds |
 | The world answers | The mood reaches the scene, not only the creature: a grey wash dulls sky, ground, sun and moon together as hydration drops, and ambient life thins with it. The character stays above the wash and keeps its colour |
 | Rewards | A rainbow in daylight and a shooting star after dark, both while the meter reads 95% or above |
 | Idle animation | Bob, head nod, tail swish, ear twitch, blink, sparkle, tuned per mood band |
@@ -121,7 +122,7 @@ against a goal set in taps, the drink button lives in a fixed dock, and the
 settings moved into a sheet.
 
 It carries `v2-proto` rather than a number in the app's series, because there is
-no path from `v0.31` to a `v2.0` under NXW-VER-2 and NXW-VER-4. When it merges
+no path from `v0.32` to a `v2.0` under NXW-VER-2 and NXW-VER-4. When it merges
 it lands as ordinary iterations, and `v1.0` is declared when B2 passes with it
 in place. The decisions behind it and the corrected patch it was built from are
 in `.work/v2/`, which is scratch and should move into `docs/` if this goes
@@ -133,7 +134,7 @@ is not a long-term arrangement.
 
 ## Status
 
-Prototype, `v0.31`, DEVELOPMENT. The loop works end to end and the app is
+Prototype, `v0.32`, DEVELOPMENT. The loop works end to end and the app is
 usable. Promotion to `v1.0` is gated on B2, the device test matrix, which is the
 only P1 left and has never been run: everything here was verified in one desktop
 browser. `node test/smoke-test.mjs` should pass before any commit.

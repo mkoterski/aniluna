@@ -11,6 +11,16 @@ agree: the `index.html` header block, `Config.app.version`, and the newest
 entry below (NXW-VER-6).
 
 ```
+v0.32  2026-09-01  Scenery: clouds, hills, grass, flowers, and fireflies after
+                   dark. Fixtures rather than ambient kinds, because they must
+                   not spawn or expire: they are the thing the drifters cross.
+                   Built once at startup from `Config.scenery`, so a meadow is
+                   stable while you look at it and different next visit.
+                   Flowers open and close with the mood, on `--bloom`.
+                   The mood wash moved from z-index 1 to 2, so it now dulls the
+                   ambient life and the rainbow as well; both sat level with it
+                   and, being later in the document, had escaped it.
+
 v0.31  2026-09-01  Fixed B11: the gulls were registered on their top edge, so
                    the body travelled from row 3 to row 0 across the flap while
                    the wingtips barely moved. The bird lurched instead of

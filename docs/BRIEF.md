@@ -2,7 +2,7 @@
 
 This is the product brief: what the app is, who it is for, how it is meant to
 feel, and which rules it holds itself to. It describes `index.html` as built at
-**v0.31**.
+**v0.32**.
 
 It deliberately does not duplicate the operational documents beside it:
 [`ARCHITECTURE.md`](ARCHITECTURE.md) for the code map and the configuration,
@@ -15,6 +15,13 @@ describing what was wanted, and the difference is worth a look.
 ## Version log
 
 Newest first. This log tracks the brief, not the app.
+
+### v0.13 - 2026-09-01
+
+- Updated for app v0.32: the scene has a world in it. Written into the sky
+  section as the distinction that decides where a new piece of scenery goes,
+  drifter or fixture, because that is the question every future addition will
+  have to answer first.
 
 ### v0.12 - 2026-09-01
 
@@ -306,6 +313,38 @@ meter.
 
 Which reward appears follows the resolved theme rather than the clock, so an
 override that darkens the sky at noon gets the night reward.
+
+### Drifters and fixtures
+
+Every piece of scenery is one or the other, and which one it is decides where
+it lives in the code. This is the first question a new piece has to answer.
+
+A **drifter** crosses and leaves: birds, wind, the shooting star, clouds. It
+belongs to `Ambient` if it is rare and spawned, and to the scenery layer if it
+should always be there. A **fixture** stays put: the hills, the grass, the
+flowers. It is built once at startup and never moves again.
+
+Until v0.32 the scene had only drifters, and that was the thing wrong with it.
+Everything crossed and nothing stayed, so there was no reference for the
+motion, and motion without a reference reads as noise rather than as life. A
+gull reads as crossing only once there is something for it to cross.
+
+The rules that follow from it:
+
+- Fixtures do not spawn, drift or expire. If a thing needs to appear and go
+  away, it is a drifter and belongs to `Ambient`.
+- Painting order is load-bearing at ground level. The ground strip's top edge
+  is the horizon: hills rise from behind it, and grass and flowers stand on it
+  and have to be given a layer above it. Everything before v0.32 lived in the
+  sky, where this never came up.
+- Weather is not life. Ambient life thins as the mood drops, on `--amb-mood`;
+  clouds do not, because a mood does not clear the sky. The wash carries the
+  mood for anything that is scenery rather than a creature.
+- Fireflies belong to the dark, gated on the resolved theme, because the day
+  already has birds and a scene needs a reason to be worth looking at twice.
+- Counts stay small and live in `Config.scenery`. A fixture animates for as
+  long as the tab is open, which an ambient kind never does, and this is a
+  companion meant to be left open on a phone.
 
 ## Ambient life
 

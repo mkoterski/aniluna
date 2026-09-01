@@ -10,7 +10,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.31", status: "DEVELOPMENT" },
+  app: { version: "v0.32", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }
@@ -56,7 +56,7 @@ The single script is split into labelled sections:
 
 | Section | Responsibility |
 |---|---|
-| `CONFIG` | Version, constants, defaults, thresholds, slider limits, storage key, theme list, glitter tuning, copy |
+| `CONFIG` | Version, constants, defaults, thresholds, slider limits, storage key, theme list, glitter tuning, scenery counts, copy |
 | `GLITTER` | `GlitCaps` for live pointer and motion queries, `GlitSprites` for the one-per-glyph sprite cache, `GlitEngine` for the particle canvas |
 | `STORAGE` | Read/write/clear the JSON blob in `localStorage`, and one-time migration from a legacy key |
 | `TIME` | Relative time labels, local day key |

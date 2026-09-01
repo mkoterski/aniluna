@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.31
+  index.html - Aniluna Aqua Buddy - v0.32
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -79,6 +79,18 @@
   --star-glow:   rgba(255, 208, 92, 0.9);
   --wind-stroke: rgba(255, 255, 255, 0.85);
 
+  /* Scenery. The world the weather happens in. */
+  --cloud:        #ffffff;
+  --cloud-shade:  #dcecff;
+  --hill:         #8fcfa4;
+  --hill-far:     #b3dfc2;
+  --grass:        #79c48f;
+  --stem:         #4f9e6a;
+  --petal:        #ff9ec9;
+  --petal-2:      #ffd166;
+  --firefly:      #ffe98a;
+  --firefly-glow: rgba(255, 233, 138, 0.55);
+
   /* The typeface is a theme token because glitter changes it. The CJK faces
      stay in every stack: the app ships Traditional Chinese copy, and a
      rounded Latin face has no glyphs for it. */
@@ -137,6 +149,17 @@
   --star:        #ffffff;
   --star-glow:   rgba(255, 255, 255, 0.85);
   --wind-stroke: rgba(226, 216, 255, 0.6);
+
+  --cloud:        #4a3f6b;
+  --cloud-shade:  #392f56;
+  --hill:         #274a46;
+  --hill-far:     #1f3c3a;
+  --grass:        #2b5750;
+  --stem:         #1f423d;
+  --petal:        #b06a9a;
+  --petal-2:      #c9a35a;
+  --firefly:      #fff3a8;
+  --firefly-glow: rgba(255, 243, 168, 0.5);
 }
 
 /* ============================================================
@@ -144,7 +167,7 @@
    ============================================================ */
 .scene[data-band="hydrated"] {
   --sat: 1.14; --bri: 1.03;
-  --wash: 0; --amb-mood: 1;
+  --wash: 0; --amb-mood: 1; --bloom: 1;
   --droop: 0deg; --sink: 0px;
   --bob-amp: 1.2px; --bob-dur: 2.2s;
   --tail-amp: 9deg; --tail-dur: 1.2s;
@@ -154,7 +177,7 @@
 }
 .scene[data-band="okay"] {
   --sat: 1; --bri: 1;
-  --wash: 0.05; --amb-mood: 0.85;
+  --wash: 0.05; --amb-mood: 0.85; --bloom: 0.85;
   --droop: 0.6deg; --sink: 0.4px;
   --bob-amp: 0.75px; --bob-dur: 3.4s;
   --tail-amp: 5deg; --tail-dur: 2.1s;
@@ -164,7 +187,7 @@
 }
 .scene[data-band="thirsty"] {
   --sat: 0.7; --bri: 0.98;
-  --wash: 0.13; --amb-mood: 0.55;
+  --wash: 0.13; --amb-mood: 0.55; --bloom: 0.45;
   --droop: 3.2deg; --sink: 1.1px;
   --bob-amp: 0.45px; --bob-dur: 4.8s;
   --tail-amp: 2.5deg; --tail-dur: 3.6s;
@@ -174,7 +197,7 @@
 }
 .scene[data-band="dehydrated"] {
   --sat: 0.42; --bri: 0.95;
-  --wash: 0.22; --amb-mood: 0.3;
+  --wash: 0.22; --amb-mood: 0.3; --bloom: 0;
   --droop: 6.5deg; --sink: 2.2px;
   --bob-amp: 0.25px; --bob-dur: 6.8s;
   --tail-amp: 1.2deg; --tail-dur: 5.6s;
@@ -291,6 +314,17 @@ body {
               "Noto Sans TC", "PingFang TC", "Microsoft JhengHei",
               "Noto Sans SC", "PingFang SC", "Microsoft YaHei",
               system-ui, sans-serif;
+
+  --cloud:        #fffafd;
+  --cloud-shade:  #ffd9f2;
+  --hill:         #f0aed8;
+  --hill-far:     #f7c8e6;
+  --grass:        #ef9ed0;
+  --stem:         #d472ae;
+  --petal:        #ff6fc1;
+  --petal-2:      #ffd166;
+  --firefly:      #fff0a8;
+  --firefly-glow: rgba(255, 240, 168, 0.55);
 
   --sheen-opacity: 0.5;
   --deco-display: inline;
@@ -486,17 +520,118 @@ body {
    grey over the whole scene dulls sky, ground, sun, moon and ambient life
    together, which is what "overcast" looks like, and it works in every theme
    because grey washes both a pale sky and a dark one towards the middle.
-   z-index 1 puts it above the ground strip and the sky but below the creature
-   at 2, so the character keeps its own saturation and stays the one thing in
-   the picture that has not gone grey. */
+   z-index 2 puts it above every scenery layer and below the creature at 3, so
+   the character keeps its own saturation and stays the one thing in the picture
+   that has not gone grey. Until v0.32 it sat at 1, level with the ambient life
+   and the rainbow, which are later in the document and so escaped it. */
 .scene::before {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
   background-color: rgb(128 128 128 / var(--wash, 0));
   transition: background-color 0.7s ease;
+}
+
+/* ============================================================
+   SCENERY
+   Fixtures, not drifters. Everything the scene carried until v0.31 crossed and
+   left, so there was nothing for the motion to be measured against: a gull
+   reads as crossing only if it crosses something. These stay put.
+   ============================================================ */
+
+/* Clouds pass in front of the sun and behind the birds, which is why they sit
+   at the sky's own level and come after it in the document. Deliberately not
+   scaled by --amb-mood: ambient life thins as the mood drops, weather does not.
+   The wash above them is what carries the mood here. */
+.clouds { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.cloud {
+  position: absolute;
+  left: 0;
+  top: var(--y, 20%);
+  width: var(--w, 30%);
+  opacity: var(--op, 0.85);
+  animation: cloud-cross var(--dur, 90s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+.cloud svg { display: block; width: 100%; height: auto; }
+.cloud .lit   { fill: var(--cloud); }
+.cloud .under { fill: var(--cloud-shade); }
+@keyframes cloud-cross {
+  from { transform: translateX(-130%); }
+  to   { transform: translateX(430%); }
+}
+
+/* The hills sit behind the ground strip on purpose: the strip's top edge is the
+   horizon, and they rise from behind it. No z-index, so the strip covers their
+   feet. */
+.hills { position: absolute; inset: auto 0 13% 0; pointer-events: none; }
+.hills svg { display: block; width: 100%; height: auto; }
+.hills .far  { fill: var(--hill-far); }
+.hills .near { fill: var(--hill); }
+
+/* Grass and flowers stand ON the ground rather than behind it, so they have to
+   clear the strip: z-index 1 against the strip's auto. This is the one piece of
+   the scene where painting order is load-bearing. */
+.meadow { position: absolute; inset: auto 0 0 0; height: 15%; z-index: 1; pointer-events: none; }
+.tuft {
+  position: absolute;
+  bottom: 58%;
+  left: var(--x, 50%);
+  width: 2px;
+  height: var(--h, 7px);
+  background: var(--grass);
+  transform-origin: 50% 100%;
+  animation: sway var(--dur, 4.2s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes sway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+
+.flower { position: absolute; bottom: 52%; left: var(--x, 50%); }
+/* Both are block: width and height do nothing on an inline box, and as spans
+   these rendered at zero by zero. */
+.flower i, .flower u { display: block; }
+.flower u {
+  width: 2px; height: 6px; margin: 0 auto;
+  background: var(--stem); text-decoration: none;
+}
+.flower i {
+  width: 6px; height: 6px; margin: 0 auto -1px;
+  background: var(--c, var(--petal));
+  clip-path: polygon(50% 0, 100% 35%, 82% 100%, 18% 100%, 0 35%);
+  transform: scale(var(--bloom, 1));
+  transform-origin: 50% 100%;
+  transition: transform 0.8s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+/* Fireflies are life, so they thin with the mood, and they belong to the dark:
+   the day already has birds. Gated on the resolved theme, so a clock that says
+   night and a theme that says day cannot disagree. */
+.fireflies { position: absolute; inset: 0; z-index: 1; pointer-events: none; display: none; }
+:root[data-theme="night"] .fireflies { display: block; }
+.fly {
+  position: absolute;
+  left: var(--x, 50%);
+  bottom: var(--b, 16%);
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: var(--firefly);
+  box-shadow: 0 0 6px 2px var(--firefly-glow);
+  opacity: 0;
+  animation: fly-wander var(--dur, 9s) ease-in-out infinite,
+             fly-blink var(--blink, 2.4s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes fly-wander {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(12px, -9px); }
+  50%      { transform: translate(-7px, -16px); }
+  75%      { transform: translate(-14px, -5px); }
+}
+@keyframes fly-blink {
+  0%, 100% { opacity: 0; }
+  45%, 55% { opacity: calc(0.9 * var(--amb-mood, 1)); }
 }
 
 .scene::after {                       /* ground strip */
@@ -794,7 +929,7 @@ body {
   font-size: 0.86rem;
   text-align: center;
   text-wrap: balance;
-  z-index: 3;
+  z-index: 4;
   animation: pop 0.35s ease;
 }
 .speech::after {
@@ -821,7 +956,7 @@ body {
    ============================================================ */
 .pet {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   width: 56%;
   max-width: 208px;
   margin-bottom: 2%;
@@ -900,7 +1035,7 @@ body {
 }
 
 /* floating droplets on drink */
-.drops { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.drops { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
 .drop {
   position: absolute;
   left: 50%;
@@ -1175,6 +1310,12 @@ input[type="range"]::-moz-range-thumb {
   .bird .pose { animation: none !important; opacity: 0 !important; }
   .bird .pose-mid { opacity: 1 !important; }
   .drop { animation: none !important; opacity: 0 !important; }
+  /* The scenery holds still rather than disappearing. A firefly that cannot
+     blink is still a firefly, and it is the only thing in the night sky at
+     ground level, so it holds lit rather than dark. */
+  .cloud, .tuft { animation: none !important; }
+  .cloud { transform: translateX(70%); }
+  .fly { animation: none !important; opacity: calc(0.8 * var(--amb-mood, 1)); }
   .secret:hover, .secret:focus-visible { transform: none; }
   [data-tip]::after { transition: none !important; transform: none !important; }
   /* Glitter still looks like itself under reduced motion, it just holds
@@ -1214,6 +1355,19 @@ input[type="range"]::-moz-range-thumb {
            aria-labelledby="sceneCaption">
     <p class="sr-only" id="sceneCaption"></p>
     <div class="stars" aria-hidden="true"></div>
+
+    <!-- Scenery, filled by UI.buildScenery at startup. Fixtures rather than
+         ambient kinds: they do not spawn, drift or expire, which is exactly
+         what makes them something for the drifters to cross. -->
+    <div class="clouds" id="clouds" aria-hidden="true"></div>
+    <div class="hills" aria-hidden="true">
+      <svg viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true">
+        <path class="far" d="M0 22 L0 12 Q12 4 24 11 Q34 17 46 9 Q58 2 70 10 Q82 17 100 8 L100 22 Z"/>
+        <path class="near" d="M0 22 L0 17 Q14 10 28 16 Q40 21 54 15 Q68 9 82 16 Q92 20 100 15 L100 22 Z"/>
+      </svg>
+    </div>
+    <div class="meadow" id="meadow" aria-hidden="true"></div>
+    <div class="fireflies" id="fireflies" aria-hidden="true"></div>
 
     <div class="sky" aria-hidden="true">
       <div class="body sun" id="sun" data-visible="no"></div>
@@ -1648,7 +1802,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.31",
+    version: "v0.32",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 
@@ -1736,6 +1890,16 @@ const Config = {
                                  // obvious next move and teaches the loop
     defaultDecayHours: 2,        // full to completely empty in two hours
     defaultRefillAmount: 25
+  },
+
+  /* The scenery, built once at startup. The counts are deliberately small:
+     unlike an ambient kind, every one of these animates for as long as the tab
+     is open, on a phone that is meant to be able to leave it open. */
+  scenery: {
+    clouds: 4,
+    tufts: 14,
+    flowers: 5,
+    fireflies: 8
   },
   thresholds: {                  // lower bound of each band, descending
     hydrated: 75,
@@ -3077,6 +3241,7 @@ const UI = {
       "soundInput", "soundLabel", "eggInput", "eggLabel",
       "hapticsInput", "hapticsLabel", "hapticsRow",
       "settingsFoot", "note", "secretBtn", "favicon", "sun", "moon", "ambient",
+      "clouds", "meadow", "fireflies",
       "nameLabel", "nameInput", "creature", "creatureLabel"
     ];
     ids.forEach((id) => { this.el[id] = document.getElementById(id); });
@@ -3308,6 +3473,53 @@ const UI = {
    * meaning. Rebuilt on a locale change, which is why it is here and not in
    * applyTheme.
    */
+  /* Built once, at startup, and never touched again: a fixture that moved
+     would be a drifter. The randomness is per load rather than per appearance,
+     so a meadow is stable while you are looking at it and different when you
+     come back. */
+  buildScenery() {
+    const n = Config.scenery;
+    const r = (a, b) => a + Math.random() * (b - a);
+    const cloud = `<svg viewBox="0 0 18 8" shape-rendering="crispEdges" aria-hidden="true">`
+      + `<rect class="lit" x="2" y="2" width="6" height="3"/>`
+      + `<rect class="lit" x="6" y="1" width="5" height="4"/>`
+      + `<rect class="lit" x="10" y="2" width="5" height="3"/>`
+      + `<rect class="lit" x="1" y="4" width="16" height="3"/>`
+      + `<rect class="under" x="1" y="6" width="16" height="1"/></svg>`;
+
+    /* Depth: the far half is smaller, slower and paler, which is the whole of
+       the parallax. Negative delays start each one part way across, so the sky
+       is never empty on the first frame. */
+    let html = "";
+    for (let i = 0; i < n.clouds; i++) {
+      const far = i >= Math.ceil(n.clouds / 2);
+      html += `<div class="cloud" style="--y:${(6 + i * 9).toFixed(0)}%;`
+        + `--w:${far ? 20 : 32}%;--op:${far ? 0.5 : 0.9};`
+        + `--dur:${far ? 150 : 95}s;--delay:-${r(0, far ? 150 : 95).toFixed(0)}s"></div>`;
+    }
+    this.el.clouds.innerHTML = html.replace(/><\/div>/g, ">" + cloud + "</div>");
+
+    html = "";
+    for (let i = 0; i < n.tufts; i++) {
+      html += `<span class="tuft" style="--x:${r(2, 96).toFixed(1)}%;`
+        + `--h:${r(5, 10).toFixed(0)}px;--dur:${r(3.2, 5.4).toFixed(1)}s;`
+        + `--delay:-${r(0, 5).toFixed(1)}s"></span>`;
+    }
+    for (let i = 0; i < n.flowers; i++) {
+      html += `<span class="flower" style="--x:${r(4, 94).toFixed(1)}%;`
+        + `--c:var(--petal${i % 3 === 0 ? "-2" : ""})"><i></i><u></u></span>`;
+    }
+    this.el.meadow.innerHTML = html;
+
+    html = "";
+    for (let i = 0; i < n.fireflies; i++) {
+      html += `<span class="fly" style="--x:${r(5, 95).toFixed(1)}%;`
+        + `--b:${r(4, 22).toFixed(0)}%;--dur:${r(7, 12).toFixed(1)}s;`
+        + `--blink:${r(1.8, 3.4).toFixed(1)}s;--delay:-${r(0, 6).toFixed(1)}s"></span>`;
+    }
+    this.el.fireflies.innerHTML = html;
+  },
+
   renderThemes() {
     const t = this.t();
     this.el.themes.querySelectorAll("button").forEach((b) => b.remove());
@@ -3751,6 +3963,7 @@ function init() {
   Haptics.enabled = State.data.hapticsOn;
   GlitEngine.init(UI.el.glitCanvas);
 
+  UI.buildScenery();
   UI.applySpecies();
   UI.applyLimits();
   UI.syncSettingsInputs();
