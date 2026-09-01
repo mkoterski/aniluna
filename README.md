@@ -81,11 +81,17 @@ test/
 v2/
   index.html            the v2 interface prototype
   design.html           the proposal it was built from
-.work/                  gitignored scratch: labs, prototypes, notes
+labs/
+  scenery.html          eight background candidates, alone and in combination
+.work/                  gitignored scratch: throwaway labs, prototypes, notes
 ```
 
-`.work/` is never tracked and deleting it is always safe. What is worth keeping
-moves out of it into `docs/` or into the app.
+`labs/` and `.work/` are both for work that is not the app, and the difference
+is who has to see it. A lab goes in `labs/` when it needs a URL, because a
+scenery question cannot be answered on a desktop and then shipped to a phone.
+Everything else stays in `.work/`, which is never tracked and always safe to
+delete. A lab that has served its purpose does not need moving out of `labs/`,
+but it does need its verdict written down somewhere that is not the lab.
 
 ## Where to look next
 
@@ -96,6 +102,7 @@ moves out of it into `docs/` or into the app.
 | What is broken, what is planned | [`docs/ROADMAP.md`](docs/ROADMAP.md) |
 | What shipped when | [`CHANGELOG.md`](CHANGELOG.md) |
 | What blocks `v1.0` | [`docs/DEVICE-TESTS.md`](docs/DEVICE-TESTS.md) |
+| What is being tried out | [`labs/scenery.html`](labs/scenery.html), published at [/aniluna/labs/scenery.html](https://mkoterski.github.io/aniluna/labs/scenery.html) |
 
 ## The v2 interface
 

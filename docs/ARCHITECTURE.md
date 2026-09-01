@@ -103,6 +103,21 @@ fetch is refused, so serve the folder or open the published copy.
 python -m http.server 8791
 ```
 
+### Labs
+
+`labs/` holds the labs that need a URL. They are tracked and published, so a
+question about how something looks can be answered on the device it will be
+looked at on. They are not the app and nothing in them ships until it is ported
+into `index.html` by hand, which is why each one carries a drift warning in its
+header: a lab is a copy of the app at a moment, and it does not follow.
+
+- [`labs/scenery.html`](../labs/scenery.html) holds eight candidate background
+  additions, built rather than described, in a free-toggle sandbox and six
+  fixed combinations. Its argument is the split between drifters, which fit
+  `Ambient.KINDS` as a config entry and a markup function, and fixtures, which
+  need somewhere to live that is not the spawner. Published at
+  <https://mkoterski.github.io/aniluna/labs/scenery.html>.
+
 ### Local working directory
 
 `.work/` is a gitignored scratch folder: throwaway copies of `index.html`,

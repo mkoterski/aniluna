@@ -1,0 +1,623 @@
+<!--
+  ============================================================================
+  labs/scenery.html - Aniluna background scenery lab - v0.11
+  ============================================================================
+  Purpose    : Eight proposed background additions, built rather than described,
+               shown alone and in combinations so they can be judged against
+               each other and against what ships today.
+  Status     : DEVELOPMENT, and permanently so. This is a lab, not a product.
+               Nothing here ships until it is ported into index.html by hand.
+  Author     : Matthias Koterski / Data & IT
+  Date       : 2026-09-01
+  Context    : Published, at /aniluna/labs/scenery.html, so it can be opened on
+               a phone rather than only on the machine it was written on. That
+               is the whole reason it is tracked and .work/ is not: a lab you
+               have to be at a particular desk to look at is a lab that gets
+               judged on a desktop and shipped to a phone.
+  Versioning : v0.x = development. This file does not follow the app's version.
+  ----------------------------------------------------------------------------
+  THE DIAGNOSIS THIS ANSWERS
+
+    The scene today is all weather and no world. Everything in it is transient
+    and horizontal: birds cross, gusts cross, the reward star streaks. Nothing
+    stands still, so there is nothing for the motion to be measured against,
+    and motion with no reference reads as noise rather than as life.
+
+    So the eight candidates split three ways, and the split matters more than
+    the individual ideas:
+
+      DRIFTERS   more things that cross. Cheap, and the category that is
+                 already crowded. Clouds earn a place because the sky between
+                 the sun and the ground is empty; a fourth crossing sprite
+                 after that is traffic.
+      FIXTURES   things that stay put. Hills, grass, flowers. These are what
+                 the drifters have been missing, and they are the ones that
+                 need a mechanism the app does not have yet.
+      REACTIVE   scenery that answers state rather than the clock. The v0.31
+                 wash opened this door: the mood already reaches the world, so
+                 the world can carry more of the mood than a grey veil.
+
+  WHAT EACH ONE COSTS
+
+    Ambient.KINDS is a config entry plus a markup function. A drifter that fits
+    that slot is an hour. A fixture needs a place to live that is not the
+    spawner, because it must not be spawned, drift, or expire. That is the real
+    decision hiding in this page: fixtures are the better answer and the more
+    expensive one.
+
+  HOW TO JUDGE IT
+
+    The sandbox at the top takes free toggles. The grid below holds six fixed
+    combinations, because a thing that looks good alone can be noise beside
+    three others, and that is the failure this page exists to catch.
+
+    Speed multiplies every duration, so a cloud tuned to seventy seconds can be
+    judged in seven. Judge the FEEL at 1x and the SHAPE at 8x, never the other
+    way round.
+
+    Reduced motion is a first-class view, not an afterthought: every candidate
+    has to survive it, and two of them are only honest because they do.
+
+  THE DRIFT WARNING THIS FILE OWES YOU
+
+    The sky, the ground, the tokens and the unicorn are COPIES of the app at
+    v0.31, rebuilt from a rect table. Nothing here is wired to index.html. If
+    the app changes, this file does not follow. Judge here, port by hand, then
+    reload this file from the app rather than letting the two wander apart.
+  ============================================================================
+-->
+<html lang="en" data-theme="day">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aniluna scenery lab</title>
+<style>
+/* ---------- tokens, copied from the app at v0.31 ---------- */
+:root {
+  --coat: #fff7fb; --coat-shade: #ffe2f0;
+  --mane-1: #ffabd6; --mane-2: #b7a6ff; --mane-3: #93dcff;
+  --horn: #ffd884; --horn-shade: #edb552;
+  --muzzle: #ffe7f2; --hoof: #d9b3e8;
+  --ink: #2a2036; --eye-glint: #fff; --blush: #ff96ba;
+  --scene-1: #bfe3ff; --scene-2: #ffd9ec; --ground: #a9dfb6;
+  --panel: #fffdfe; --panel-edge: #f0d5e6;
+  --text: #3b2f4a; --text-soft: #6d5c7e;
+  --bg: #d6ecff; --accent: #4aa3f0; --accent-ink: #fff;
+  --font-app: ui-rounded, "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  /* scenery tokens this lab adds */
+  --cloud: #ffffff; --cloud-shade: #dcecff;
+  --hill: #8fcfa4; --hill-far: #b3dfc2;
+  --grass: #79c48f; --stem: #4f9e6a;
+  --petal: #ff9ec9; --petal-2: #ffd166;
+  --firefly: #ffe98a;
+  --leaf-1: #e8a05e; --leaf-2: #d2703f; --leaf-3: #c8994a;
+  --sail: #fffdfe; --hull: #6b5a7d;
+}
+:root[data-theme="night"] {
+  --coat: #f3ecff; --coat-shade: #d9c9f0;
+  --mane-1: #ff8fc6; --mane-2: #9b86f5; --mane-3: #6fc6f0;
+  --horn: #ffd06a; --horn-shade: #d99a3f;
+  --muzzle: #e6d8f5; --hoof: #a883c4;
+  --ink: #1b1526; --blush: #ef7ba6;
+  --scene-1: #241a46; --scene-2: #3a2159; --ground: #2f5a53;
+  --panel: #251c3f; --panel-edge: #3d3060;
+  --text: #efe6ff; --text-soft: #b4a4d4;
+  --bg: #191333; --accent: #7f6bff;
+  --cloud: #4a3f6b; --cloud-shade: #392f56;
+  --hill: #274a46; --hill-far: #1f3c3a;
+  --grass: #2b5750; --stem: #1f423d;
+  --petal: #b06a9a; --petal-2: #c9a35a;
+  --firefly: #fff3a8;
+  --leaf-1: #8a6242; --leaf-2: #6f4a33; --leaf-3: #7a6440;
+  --sail: #d9cff0; --hull: #2a2340;
+}
+:root[data-theme="glitter"] {
+  --coat: #fff2fa; --coat-shade: #ffd3ec;
+  --mane-1: #ff6fc1; --mane-2: #a97bff; --mane-3: #7ad4ff;
+  --horn: #ffd166; --horn-shade: #e8a83f;
+  --muzzle: #ffe0f2; --hoof: #d98ecb;
+  --ink: #4d1c3d; --blush: #ff7ab8;
+  --scene-1: #ffd9f2; --scene-2: #e7d4ff; --ground: #f7c8e6;
+  --panel: #fdf1f8; --panel-edge: #f0c3de;
+  --text: #4d1c3d; --text-soft: #834a6e;
+  --bg: #ffe7f7; --accent: #7a58ef;
+  --cloud: #fffafd; --cloud-shade: #ffd9f2;
+  --hill: #f0aed8; --hill-far: #f7c8e6;
+  --grass: #ef9ed0; --stem: #d472ae;
+  --petal: #ff6fc1; --petal-2: #ffd166;
+  --firefly: #fff0a8;
+  --leaf-1: #ff9ed4; --leaf-2: #e072b4; --leaf-3: #ffc2e4;
+  --sail: #fffafd; --hull: #b06a9a;
+}
+
+/* Four mood bands, the two world tokens from v0.31 plus what this lab needs. */
+.scene[data-band="hydrated"]   { --wash: 0;    --amb-mood: 1;    --bloom: 1;   --overcast: 0; }
+.scene[data-band="okay"]       { --wash: 0.05; --amb-mood: 0.85; --bloom: 0.8; --overcast: 0.25; }
+.scene[data-band="thirsty"]    { --wash: 0.13; --amb-mood: 0.55; --bloom: 0.4; --overcast: 0.6; }
+.scene[data-band="dehydrated"] { --wash: 0.22; --amb-mood: 0.3;  --bloom: 0;   --overcast: 1; }
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 18px 20px 60px;
+  background: var(--bg); color: var(--text); font-family: var(--font-app);
+}
+h1 { font-size: 1.15rem; margin: 0 0 4px; }
+.sub { margin: 0 0 16px; color: var(--text-soft); font-size: 0.85rem; max-width: 84ch; line-height: 1.5; }
+.sub b { color: var(--text); }
+
+.controls {
+  display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: flex-end;
+  background: var(--panel); border: 2px solid var(--panel-edge);
+  border-radius: 14px; padding: 12px 14px; margin-bottom: 16px;
+}
+.ctl { display: flex; flex-direction: column; gap: 5px; }
+.ctl > span:first-child { font-size: 0.68rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-soft); }
+.row { display: flex; gap: 5px; flex-wrap: wrap; }
+button {
+  font: inherit; font-size: 0.8rem; cursor: pointer; color: var(--text);
+  border: 2px solid var(--panel-edge); background: transparent;
+  border-radius: 9px; padding: 6px 10px; min-height: 36px;
+}
+button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+label.tog { display: inline-flex; align-items: center; }
+label.tog input { position: absolute; opacity: 0; pointer-events: none; }
+label.tog span {
+  display: inline-block; border: 2px solid var(--panel-edge); border-radius: 9px;
+  padding: 6px 10px; min-height: 36px; font-size: 0.8rem; cursor: pointer;
+}
+label.tog input:checked + span { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+label.tog input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+input[type=range] { width: 130px; }
+
+/* ---------- the scene, copied from the app ---------- */
+.scene {
+  position: relative; overflow: hidden;
+  border-radius: 18px; border: 2px solid var(--panel-edge);
+  background: linear-gradient(180deg, var(--scene-1), var(--scene-2));
+  aspect-ratio: 1 / 0.78;
+  display: grid; place-items: end center;
+}
+/* v0.31's mood wash, so a candidate is judged with it rather than beside it. */
+.scene::before {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background-color: rgb(128 128 128 / var(--wash, 0));
+}
+.scene::after {
+  content: ""; position: absolute; inset: auto 0 0 0; height: 15%;
+  background: var(--ground);
+}
+.pet { position: relative; z-index: 2; width: 46%; margin-bottom: 2%; overflow: visible; }
+
+/* ---------- 1. CLOUDS. Drifter. Fits Ambient.KINDS as it stands. ---------- */
+.cloud {
+  position: absolute; left: 0; top: var(--y, 20%);
+  width: var(--w, 34%);
+  opacity: calc(var(--op, 0.9) * var(--amb-mood, 1));
+  animation: cross calc(var(--dur, 60s) * var(--speed, 1)) linear infinite;
+  animation-delay: calc(var(--delay, 0s) * var(--speed, 1));
+}
+.cloud svg { display: block; width: 100%; height: auto; }
+.cloud .body { fill: var(--cloud); }
+.cloud .under { fill: var(--cloud-shade); }
+@keyframes cross { from { transform: translateX(-120%); } to { transform: translateX(360%); } }
+
+/* Overcast: the far layer thickens and darkens as the mood drops, which is the
+   reactive version of the same object. Opt in, because it is a second idea. */
+.scene[data-overcast="yes"] .cloud.far {
+  opacity: calc((0.25 + 0.75 * var(--overcast, 0)) * var(--amb-mood, 1));
+}
+
+/* ---------- 2. FIREFLIES. Drifter, night only. ---------- */
+.fly {
+  position: absolute; left: var(--x, 50%); bottom: var(--b, 18%);
+  width: 3px; height: 3px; border-radius: 50%;
+  background: var(--firefly);
+  box-shadow: 0 0 6px 2px color-mix(in srgb, var(--firefly) 60%, transparent);
+  opacity: 0;
+  animation:
+    fly-wander calc(var(--dur, 9s) * var(--speed, 1)) ease-in-out infinite,
+    fly-blink  calc(var(--blink, 2.4s) * var(--speed, 1)) ease-in-out infinite;
+  animation-delay: calc(var(--delay, 0s) * var(--speed, 1));
+}
+@keyframes fly-wander {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(14px, -10px); }
+  50%      { transform: translate(-8px, -18px); }
+  75%      { transform: translate(-16px, -6px); }
+}
+@keyframes fly-blink { 0%, 100% { opacity: 0; } 45%, 55% { opacity: calc(0.95 * var(--amb-mood, 1)); } }
+
+/* ---------- 3. LEAVES. Drifter. ---------- */
+.leaf {
+  position: absolute; top: -6%; left: var(--x, 50%);
+  animation: leaf-fall calc(var(--dur, 14s) * var(--speed, 1)) linear infinite;
+  animation-delay: calc(var(--delay, 0s) * var(--speed, 1));
+  opacity: calc(0.9 * var(--amb-mood, 1));
+}
+.leaf i {
+  display: block; width: 5px; height: 4px; background: var(--c, var(--leaf-1));
+  animation: leaf-spin calc(var(--spin, 2.6s) * var(--speed, 1)) linear infinite;
+}
+@keyframes leaf-fall {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(18px, 26vh); }
+  50%  { transform: translate(-10px, 52vh); }
+  75%  { transform: translate(14px, 78vh); }
+  100% { transform: translate(0, 104vh); }
+}
+@keyframes leaf-spin { to { transform: rotate(360deg); } }
+
+/* ---------- 4. SAIL. Drifter, on the horizon. ---------- */
+.sail {
+  position: absolute; left: 0; bottom: 15%; width: 7%;
+  animation: cross calc(var(--dur, 120s) * var(--speed, 1)) linear infinite;
+  animation-delay: calc(var(--delay, 0s) * var(--speed, 1));
+  opacity: calc(0.85 * var(--amb-mood, 1));
+}
+.sail svg { display: block; width: 100%; height: auto; }
+.sail .cloth { fill: var(--sail); }
+.sail .hull { fill: var(--hull); }
+
+/* ---------- 5. HILLS. Fixture. Needs a home that is not the spawner. ------- */
+.hills { position: absolute; inset: auto 0 15% 0; width: 100%; }
+.hills svg { display: block; width: 100%; height: auto; }
+.hills .far { fill: var(--hill-far); }
+.hills .near { fill: var(--hill); }
+
+/* ---------- 6. GRASS. Fixture, and the one that couples to the wind. ------- */
+.grass { position: absolute; inset: auto 0 0 0; height: 15%; }
+.tuft {
+  position: absolute; bottom: 62%; left: var(--x, 50%);
+  width: 3px; height: var(--h, 9px); background: var(--grass);
+  transform-origin: 50% 100%;
+  animation: sway calc(var(--dur, 4.2s) * var(--speed, 1)) ease-in-out infinite;
+  animation-delay: calc(var(--delay, 0s) * var(--speed, 1));
+}
+@keyframes sway { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+/* A gust leans the whole row, which is what makes the wind feel like wind
+   rather than like a decal crossing the sky. */
+.scene.gusting .tuft { animation-duration: calc(0.9s * var(--speed, 1)); }
+
+/* ---------- 7. FLOWERS. Fixture, reactive. ---------- */
+.flowers { position: absolute; inset: auto 0 0 0; height: 15%; }
+.flower { position: absolute; bottom: 55%; left: var(--x, 50%); }
+.flower .stem { width: 2px; height: 7px; background: var(--stem); margin: 0 auto; }
+.flower .head {
+  width: 7px; height: 7px; margin: 0 auto -2px;
+  background: var(--c, var(--petal));
+  clip-path: polygon(50% 0, 100% 35%, 82% 100%, 18% 100%, 0 35%);
+  transform: scale(var(--bloom, 1));
+  transform-origin: 50% 100%;
+  transition: transform 0.8s cubic-bezier(.3, 1.4, .5, 1);
+}
+
+/* ---------- 8. GULLS, as they ship at v0.31, for reference ---------- */
+.bird { position: absolute; left: 0; top: var(--y, 22%); width: 26%;
+  opacity: calc(0.65 * var(--amb-mood, 1));
+  animation: cross calc(var(--dur, 26s) * var(--speed, 1)) linear infinite;
+  animation-delay: calc(var(--delay, 0s) * var(--speed, 1)); }
+.bird svg { display: block; width: 100%; height: auto; overflow: visible; }
+.bird rect { fill: var(--ink); }
+.bird .pose { opacity: 0; animation-duration: calc(var(--flap, 0.7s) * var(--speed, 1));
+  animation-iteration-count: infinite; animation-delay: var(--phase, 0s);
+  animation-timing-function: steps(1, end); }
+.bird .pose-up { animation-name: beat-up; }
+.bird .pose-mid { animation-name: beat-mid; }
+.bird .pose-down { animation-name: beat-down; }
+@keyframes beat-up   { 0% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes beat-mid  { 0% { opacity: 0; } 25% { opacity: 1; } 50% { opacity: 0; } 75% { opacity: 1; } }
+@keyframes beat-down { 0%, 25% { opacity: 0; } 50% { opacity: 1; } 75%, 100% { opacity: 0; } }
+
+/* ---------- reduced motion, as a view rather than an afterthought ---------- */
+body.rm .cloud, body.rm .leaf, body.rm .leaf i, body.rm .sail,
+body.rm .bird, body.rm .bird .pose, body.rm .tuft, body.rm .fly {
+  animation: none !important;
+}
+/* Two candidates only survive because they have a still state worth seeing:
+   the fireflies hold lit, and the gulls hold on the mid pose. */
+body.rm .fly { opacity: calc(0.85 * var(--amb-mood, 1)); }
+body.rm .bird .pose { opacity: 0; }
+body.rm .bird .pose-mid { opacity: 1; }
+body.rm .cloud { transform: translateX(60%); }
+body.rm .sail { transform: translateX(120%); }
+body.rm .leaf { transform: translate(6px, 40vh); }
+
+/* ---------- layout ---------- */
+.sandbox { display: grid; grid-template-columns: minmax(280px, 460px) 1fr; gap: 20px; align-items: start; margin-bottom: 26px; }
+@media (max-width: 900px) { .sandbox { grid-template-columns: 1fr; } }
+.legend { font-size: 0.8rem; line-height: 1.5; color: var(--text-soft); }
+.legend h3 { margin: 0 0 6px; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
+.legend table { border-collapse: collapse; width: 100%; }
+.legend td { padding: 3px 8px 3px 0; vertical-align: top; }
+.legend td:first-child { white-space: nowrap; font-weight: 700; color: var(--text); }
+.tag { display: inline-block; font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase;
+  border: 1px solid var(--panel-edge); border-radius: 999px; padding: 1px 7px; margin-left: 4px; color: var(--text-soft); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.card { background: var(--panel); border: 2px solid var(--panel-edge); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.card h2 { margin: 0; font-size: 0.9rem; display: flex; align-items: baseline; gap: 8px; }
+.card h2 .key { font-size: 1.05rem; }
+.card p { margin: 0; font-size: 0.76rem; line-height: 1.45; color: var(--text-soft); }
+.hint { font-size: 0.78rem; color: var(--text-soft); margin: 22px 0 0; max-width: 84ch; line-height: 1.55; }
+</style>
+</head>
+<body>
+
+<h1>Aniluna scenery lab <span style="font-weight:400;color:var(--text-soft)">v0.11</span></h1>
+<p class="sub">
+  Eight candidates, built rather than described. The scene today is <b>all
+  weather and no world</b>: everything in it crosses and nothing stays, so there
+  is no reference for the motion. The split that matters is not which idea is
+  prettiest, it is <b>drifter</b> against <b>fixture</b>: a drifter drops into
+  <code>Ambient.KINDS</code> as a config entry and a markup function, a fixture
+  needs somewhere to live that is not the spawner. Fixtures are the better
+  answer and the more expensive one.
+</p>
+
+<div class="controls">
+  <label class="ctl"><span>Theme</span><span class="row" id="themes"></span></label>
+  <label class="ctl"><span>Mood band</span><span class="row" id="bands"></span></label>
+  <label class="ctl"><span>Speed</span><input type="range" id="speed" min="1" max="12" step="1" value="1"><span id="speedOut" style="font-size:.72rem;color:var(--text-soft)">1x</span></label>
+  <span class="ctl"><span>View</span><span class="row">
+    <label class="tog"><input type="checkbox" id="rm"><span>Reduced motion</span></label>
+    <label class="tog"><input type="checkbox" id="gust"><span>Gust</span></label>
+  </span></span>
+</div>
+
+<div class="sandbox">
+  <div>
+    <div class="scene" id="sandboxScene" data-band="okay"></div>
+    <div class="controls" style="margin-top:12px">
+      <span class="ctl" style="flex:1"><span>Toggle each candidate</span>
+        <span class="row" id="toggles"></span>
+      </span>
+    </div>
+  </div>
+  <div class="legend">
+    <h3>What each one is, and what it costs</h3>
+    <table id="legendTable"></table>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<p class="hint">
+  Judge the feel at 1x and the shape at 8x, never the other way round: a cloud
+  tuned to seventy seconds tells you nothing in a ten second look, and a
+  firefly at 8x tells you nothing about whether it is calming. Every card runs
+  the same eight candidates from one definition, so a difference between two
+  cards is a difference in the combination and not in the drawing.
+</p>
+
+<script>
+"use strict";
+
+/* ========= THE CANDIDATES =========
+   type: drifter fits Ambient.KINDS today. fixture needs a new home in the
+   scene. reactive answers app state rather than the clock. */
+const CANDIDATES = {
+  clouds: {
+    name: "Clouds", type: "drifter", cost: "config + markup",
+    note: "The sky between the sun and the ground is empty. Two layers give parallax for free: the far one slower, smaller and paler."
+  },
+  overcast: {
+    name: "Overcast", type: "reactive", cost: "one token, needs clouds",
+    note: "The same clouds, thickening as the mood drops. This is what the v0.31 wash wanted to be: weather rather than a grey veil."
+  },
+  fireflies: {
+    name: "Fireflies", type: "drifter", cost: "config + markup",
+    note: "Night has only wind and stars. Low, small, blinking. The one candidate that gives the night something of its own."
+  },
+  leaves: {
+    name: "Leaves", type: "drifter", cost: "config + markup",
+    note: "Falls rather than crosses, which is the only vertical motion on offer. Seasonal, so it wants a reason to be on."
+  },
+  sail: {
+    name: "Distant sail", type: "drifter", cost: "config + markup",
+    note: "Two minutes to cross. Almost never noticed, and that is the point: it rewards the person who leaves the tab open."
+  },
+  hills: {
+    name: "Hills", type: "fixture", cost: "new: static layer",
+    note: "The cheapest depth in the list and the biggest change to the picture. Everything that crosses now crosses in front of something."
+  },
+  grass: {
+    name: "Grass", type: "fixture", cost: "new: static layer",
+    note: "The one that couples to the wind: a gust leans the whole row. Wind you can see the effect of stops being a decal."
+  },
+  flowers: {
+    name: "Flowers", type: "fixture + reactive", cost: "new: static layer",
+    note: "Open when hydrated, closed when not. Puts the mood on the ground where the creature stands rather than in a filter."
+  }
+};
+
+/* ========= DRAWING ========= */
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = (n, f) => Array.from({ length: n }, (_, i) => f(i)).join("");
+
+/* Stepped pixel cloud: a flat base with two or three lumps, drawn to the same
+   crispEdges idiom as the gulls so it belongs to the same world. */
+function cloudSVG() {
+  const lumps = [[2, 2, 6, 3], [6, 1, 5, 4], [10, 2, 5, 3]];
+  return `<svg viewBox="0 0 18 8" shape-rendering="crispEdges" aria-hidden="true">
+    ${lumps.map(([x, y, w, h]) => `<rect class="body" x="${x}" y="${y}" width="${w}" height="${h}"/>`).join("")}
+    <rect class="body" x="1" y="4" width="16" height="3"/>
+    <rect class="under" x="1" y="6" width="16" height="1"/>
+  </svg>`;
+}
+
+function sailSVG() {
+  return `<svg viewBox="0 0 10 12" shape-rendering="crispEdges" aria-hidden="true">
+    <rect class="cloth" x="4" y="1" width="1" height="7"/>
+    <rect class="cloth" x="5" y="2" width="3" height="6"/>
+    <rect class="cloth" x="2" y="4" width="2" height="4"/>
+    <rect class="hull" x="1" y="8" width="8" height="2"/>
+  </svg>`;
+}
+
+function hillsSVG() {
+  return `<svg viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true">
+    <path class="far" d="M0 22 L0 12 Q12 4 24 11 Q34 17 46 9 Q58 2 70 10 Q82 17 100 8 L100 22 Z"/>
+    <path class="near" d="M0 22 L0 17 Q14 10 28 16 Q40 21 54 15 Q68 9 82 16 Q92 20 100 15 L100 22 Z"/>
+  </svg>`;
+}
+
+/* The unicorn as it stands at v0.31: the tucked mane, registered on the body
+   row, and the head rounding in as it rises. Rebuilt from a rect table so the
+   whole sprite is one loop rather than 40 lines of markup. */
+const PET = {
+  tail: [[19,21,2,4,"mane-1"], [21,20,2,4,"mane-2"], [23,18,2,4,"mane-3"]],
+  mane: [[4,10,2,8,"mane-3"], [6,8,3,12,"mane-1"]],
+  legs: [[12,24,3,4,"coat"], [17,24,3,4,"coat"], [12,27,3,1,"hoof"], [17,27,3,1,"hoof"]],
+  body: [[12,19,8,6,"coat"], [12,24,8,1,"coat-shade"]],
+  ears: [[9,3,3,4,"coat"], [10,4,1,2,"blush"], [20,3,3,4,"coat"], [21,4,1,2,"blush"]],
+  head: [[11,6,10,1,"coat"], [10,7,12,1,"coat"], [9,8,14,10,"coat"],
+         [10,18,12,1,"coat-shade"], [11,19,10,1,"coat-shade"]],
+  horn: [[15,0,2,3,"horn"], [15,2,2,1,"horn-shade"], [14,3,4,3,"horn"],
+         [14,4,2,1,"horn-shade"], [14,5,4,1,"horn-shade"]],
+  inner: [[10,7,1,11,"mane-2"], [9,8,1,10,"mane-2"]],
+  fringe: [[11,6,4,3,"mane-1"], [15,7,4,2,"mane-3"]],
+  face: [[14,15,4,4,"muzzle"], [14,16,1,1,"coat-shade"], [17,16,1,1,"coat-shade"],
+         [11,16,2,2,"blush"], [19,16,2,2,"blush"]],
+  eyes: [[11,12,3,3,"ink"], [18,12,3,3,"ink"], [11,12,1,1,"eye-glint"], [18,12,1,1,"eye-glint"]],
+  smile: [[14,17,1,1,"ink"], [15,18,2,1,"ink"], [17,17,1,1,"ink"]]
+};
+const rects = (a) => a.map(([x, y, w, h, t]) =>
+  `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="var(--${t})"/>`).join("");
+
+function petSVG(id) {
+  const order = ["tail", "mane", "legs", "body", "ears", "head", "horn", "inner", "fringe", "face", "eyes", "smile"];
+  return `<svg class="pet" viewBox="0 -1 32 31" shape-rendering="crispEdges" aria-hidden="true">
+    <defs><filter id="ink${id}" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feMorphology operator="dilate" radius="1" in="SourceAlpha" result="g"/>
+      <feFlood flood-color="#2a2036" result="c"/>
+      <feComposite in="c" in2="g" operator="in" result="o"/>
+      <feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter></defs>
+    <g filter="url(#ink${id})">${order.map(k => rects(PET[k])).join("")}</g>
+  </svg>`;
+}
+
+/* Gulls, at v0.31: three poses on a common body row. */
+function birdSVG() {
+  const up   = [[0,0],[1,1],[2,2],[3,3],[4,3],[5,2],[6,1],[7,0]];
+  const mid  = [[1,2],[2,3],[3,3],[4,3],[5,3],[6,2]];
+  const down = [[1,5],[2,4],[3,3],[4,3],[5,4],[6,5]];
+  const pose = (cls, cells) => `<g class="pose ${cls}">`
+    + cells.map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1"/>`).join("") + "</g>";
+  return `<svg viewBox="0 0 50 18" shape-rendering="crispEdges" aria-hidden="true">${
+    pick(4, () => {
+      const x = Math.round(rnd(0, 42)), y = Math.round(rnd(0, 10));
+      return `<g transform="translate(${x} ${y}) scale(${rnd(0.7, 1.3).toFixed(2)})"
+                 style="--phase:${(-rnd(0, 0.7)).toFixed(2)}s">${
+        pose("pose-up", up) + pose("pose-mid", mid) + pose("pose-down", down)}</g>`;
+    })}</svg>`;
+}
+
+/* ========= BUILDING A SCENE ========= */
+function layers(on, seed) {
+  let html = "";
+  if (on.hills) html += `<div class="hills">${hillsSVG()}</div>`;
+  if (on.clouds) html += pick(4, (i) => {
+    const far = i > 1;
+    return `<div class="cloud ${far ? "far" : "near"}" style="
+      --y:${(8 + i * 11).toFixed(0)}%; --w:${far ? 22 : 34}%;
+      --dur:${far ? 96 : 58}s; --delay:-${(i * 19 + seed * 3) % 90}s;
+      --op:${far ? 0.55 : 0.92}">${cloudSVG()}</div>`;
+  });
+  if (on.sail) html += `<div class="sail" style="--delay:-${(seed * 17) % 110}s">${sailSVG()}</div>`;
+  html += `<div class="bird" style="--y:${18 + (seed % 3) * 6}%; --delay:-${(seed * 7) % 26}s">${birdSVG()}</div>`;
+  if (on.leaves) html += pick(7, (i) =>
+    `<div class="leaf" style="--x:${(8 + i * 13) % 92}%; --dur:${(11 + i % 4 * 3)}s;
+      --delay:-${(i * 5 + seed) % 14}s; --spin:${(2 + i % 3).toFixed(1)}s;
+      --c:var(--leaf-${1 + i % 3})"><i></i></div>`);
+  if (on.fireflies) html += pick(9, (i) =>
+    `<div class="fly" style="--x:${(6 + i * 11) % 94}%; --b:${(4 + (i % 4) * 5)}%;
+      --dur:${(7 + i % 5)}s; --blink:${(1.8 + (i % 4) * 0.4).toFixed(1)}s;
+      --delay:-${(i * 1.3).toFixed(1)}s"></div>`);
+  if (on.grass) html += `<div class="grass">${pick(16, (i) =>
+    `<span class="tuft" style="--x:${(2 + i * 6.2).toFixed(0)}%; --h:${(6 + (i % 4) * 2)}px;
+      --dur:${(3.4 + (i % 5) * 0.5).toFixed(1)}s; --delay:-${(i * 0.4).toFixed(1)}s"></span>`)}</div>`;
+  if (on.flowers) html += `<div class="flowers">${pick(6, (i) =>
+    `<span class="flower" style="--x:${(9 + i * 15).toFixed(0)}%;
+      --c:var(--petal${i % 3 === 0 ? "-2" : ""})"><span class="head"></span><span class="stem"></span></span>`)}</div>`;
+  return html;
+}
+
+function paint(scene, on, seed) {
+  scene.dataset.overcast = on.overcast ? "yes" : "no";
+  scene.innerHTML = layers(on, seed) + petSVG(seed);
+}
+
+/* ========= PRESETS =========
+   Six combinations, because a candidate that works alone can be noise beside
+   three others, and that is the failure this page exists to catch. */
+const PRESETS = [
+  { key: "A", name: "As it ships", tag: "control", on: {},
+    note: "Gulls and the wash, nothing else. Every other card is measured against this one." },
+  { key: "B", name: "Sky depth", tag: "drifters only", on: { clouds: 1 },
+    note: "Clouds at two speeds. The smallest change that fills the empty band between the sun and the ground, and the only one on this page that is an hour of work." },
+  { key: "C", name: "Grounded", tag: "fixtures only", on: { hills: 1, grass: 1, flowers: 1 },
+    note: "No new drifters at all. The gulls suddenly cross in front of something, which is the whole argument for fixtures." },
+  { key: "D", name: "Night alive", tag: "for the dark", on: { hills: 1, fireflies: 1, grass: 1 },
+    note: "Switch the theme to night. Fireflies give the dark something of its own instead of borrowing the day's birds." },
+  { key: "E", name: "Weather", tag: "reactive", on: { clouds: 1, overcast: 1, hills: 1, flowers: 1 },
+    note: "Step the mood band down and watch the sky thicken and the flowers close. The wash becomes weather rather than a grey veil." },
+  { key: "F", name: "Everything", tag: "the warning", on: { clouds: 1, overcast: 1, fireflies: 1, leaves: 1, sail: 1, hills: 1, grass: 1, flowers: 1 },
+    note: "All eight at once. Kept as a card because it is the honest end of the road: this is what happens if each idea is judged only on its own." }
+];
+
+/* ========= WIRING ========= */
+const state = { theme: "day", band: "okay", speed: 1, on: { clouds: 1, hills: 1, grass: 1 } };
+const sandbox = document.getElementById("sandboxScene");
+
+function pills(host, values, current, onPick) {
+  const el = document.getElementById(host);
+  el.innerHTML = values.map(v => `<button type="button" data-v="${v}" aria-pressed="${v === current}">${v}</button>`).join("");
+  el.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    [...el.querySelectorAll("button")].forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    onPick(b.dataset.v);
+  });
+}
+
+pills("themes", ["day", "night", "glitter"], state.theme, v => {
+  document.documentElement.dataset.theme = v;
+});
+pills("bands", ["hydrated", "okay", "thirsty", "dehydrated"], state.band, v => {
+  state.band = v;
+  document.querySelectorAll(".scene").forEach(s => { s.dataset.band = v; });
+});
+
+document.getElementById("toggles").innerHTML = Object.entries(CANDIDATES).map(([k, c]) =>
+  `<label class="tog"><input type="checkbox" data-k="${k}"${state.on[k] ? " checked" : ""}><span>${c.name}</span></label>`).join("");
+document.getElementById("toggles").addEventListener("change", (e) => {
+  state.on[e.target.dataset.k] = e.target.checked ? 1 : 0;
+  paint(sandbox, state.on, 1);
+});
+
+document.getElementById("legendTable").innerHTML = Object.values(CANDIDATES).map(c =>
+  `<tr><td>${c.name}<span class="tag">${c.type}</span></td><td>${c.note}<br><span style="opacity:.75">${c.cost}</span></td></tr>`).join("");
+
+document.getElementById("speed").addEventListener("input", (e) => {
+  state.speed = +e.target.value;
+  document.getElementById("speedOut").textContent = state.speed + "x";
+  /* Bigger number, faster scene: the token divides the duration. */
+  document.documentElement.style.setProperty("--speed", (1 / state.speed).toFixed(3));
+});
+document.getElementById("rm").addEventListener("change", (e) => document.body.classList.toggle("rm", e.target.checked));
+document.getElementById("gust").addEventListener("change", (e) =>
+  document.querySelectorAll(".scene").forEach(s => s.classList.toggle("gusting", e.target.checked)));
+
+document.getElementById("grid").innerHTML = PRESETS.map(p =>
+  `<div class="card"><h2><span class="key">${p.key}</span> ${p.name} <span class="tag">${p.tag}</span></h2>
+   <div class="scene" data-band="${state.band}" data-preset="${p.key}"></div>
+   <p>${p.note}</p></div>`).join("");
+
+PRESETS.forEach((p, i) => paint(document.querySelector(`[data-preset="${p.key}"]`), p.on, i + 2));
+paint(sandbox, state.on, 1);
+
+console.log("%cAniluna scenery lab v0.11", "color:#4aa3f0;font-weight:700",
+  "\nCopied from app v0.31. Judge here, port by hand, reload from the app afterwards.");
+</script>
+</body>
+</html>
