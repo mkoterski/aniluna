@@ -116,10 +116,15 @@ at risk from it:
 | https://mkoterski.github.io/aniluna/v2/design.html | the proposal it was built from |
 
 Same app underneath: same sprites, sky, rewards, audio, haptics, decay and
-storage key. What changed is the order of the screen. The meter is a water
-column beside the scene instead of a bar under it, drop pips count the day
-against a goal set in taps, the drink button lives in a fixed dock, and the
-settings moved into a sheet.
+storage key. What changed is the order of the screen. One bordered shell holds
+the scene and a water column side by side, drop pips count the day against a
+goal set in taps, the drink button sits directly under the shell at every
+width, and the settings moved into a sheet.
+
+It also carries two roadmap items the app does not have yet, because the
+prototype is where the layout for them exists: **F6**, an undo that takes back
+the last glass for eight seconds, and **F3**, one line in the creature's voice
+after a gap of four hours or more. Both land in the app when v2 merges.
 
 It carries `v2-proto` rather than a number in the app's series, because there is
 no path from `v0.33` to a `v2.0` under NXW-VER-2 and NXW-VER-4. When it merges

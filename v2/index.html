@@ -1415,8 +1415,24 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 .ico { width: 22px; height: 22px; display: block; }
 
 /* ---------- stage ---------- */
-.stage { display: flex; gap: 12px; align-items: stretch; }
-.stage-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.stage { display: flex; flex-direction: column; gap: 10px; }
+
+/* One shell holds the scene and the tube. Before this the tube sat outside the
+   only bordered thing on the page, wearing a second border of its own, which
+   read as a stray element rather than as the scene's meter. The shell owns the
+   border and the shadow now; the two things inside it own nothing. The tube
+   still cannot be a child of the scene, whose overflow:hidden would clip it, so
+   a shared parent is what relates them without touching the clip. */
+.shell {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  padding: 10px;
+  border: 2px solid var(--panel-edge);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
 
 /* aspect-ratio is the floor and flex-grow is the ceiling: a tall phone gets
    more sky, a short one gives some back, and the scene never drops below the
@@ -1427,7 +1443,11 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
   aspect-ratio: 1 / 0.78;
   flex: 1 1 auto;
   min-height: 0;
-  border-radius: var(--r-lg);
+  /* The shell carries the border and the shadow now, so the scene keeps only
+     its own clip and a radius that sits inside the shell's. */
+  border: 0;
+  box-shadow: none;
+  border-radius: 12px;
 }
 
 /* ---------- the tube ---------- */
@@ -1436,7 +1456,6 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
   width: var(--tube-w);
   border-radius: var(--r-pill);
   background: var(--meter-bg);
-  border: 2px solid var(--panel-edge);
   overflow: hidden;
 }
 .tube-fill {
@@ -1452,11 +1471,15 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
   background: rgb(255 255 255 / 0.55);
 }
 /* The number rides the surface: one value, one place, no second read-out. */
+/* Still visible, because BRIEF requires the meter to show its value, and still
+   riding the surface, because one value in one place was the right call. What
+   changes is the volume: it was a bold 0.95rem white read-out competing with
+   the creature, and it is now a quiet label on the water. */
 .tube-num {
   position: absolute; left: 0; right: 0; top: 6px;
   text-align: center;
-  font-size: 0.95rem; font-weight: 700; font-variant-numeric: tabular-nums;
-  color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / 0.28);
+  font-size: 0.76rem; font-weight: 600; font-variant-numeric: tabular-nums;
+  color: #fff; opacity: 0.9; text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
 }
 /* Below 14% the fill is too short to hold the label, so it steps outside. */
 .tube[data-low="yes"] .tube-num {
@@ -1465,9 +1488,9 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 }
 
 /* ---------- drop pips ---------- */
-.pips { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; min-height: 17px; }
+.pips { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; min-height: 22px; }
 .pip {
-  width: 17px; height: 17px; flex: none;
+  width: 22px; height: 22px; flex: none;
   border: 2px solid var(--panel-edge);
   border-radius: 50% 50% 50% 0 / 50% 50% 50% 0;
   transform: rotate(-45deg);
@@ -1480,10 +1503,14 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 .pip[data-on="yes"] { background: var(--accent); }
 /* Drinking past the goal keeps counting, in a second tone. */
 .pip[data-extra="yes"] { background: var(--accent); opacity: 0.45; }
+/* The day's glasses are the only figure that maps onto something the user did,
+   and they were the faintest thing on the screen while the pet's percentage was
+   the loudest. This is the swap: full text colour, a real sentence, and it is
+   the accessible name for the row as well, so the pips beside it are
+   decoration rather than a second copy of the same fact. */
 .pips-label {
-  margin: 0; font-size: 0.72rem; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--text-soft);
-  font-variant-numeric: tabular-nums;
+  margin: 0; font-size: 0.92rem; font-weight: 700;
+  color: var(--text); font-variant-numeric: tabular-nums;
 }
 
 /* Goal met gets its own moment, separate from the rainbow and the shooting
@@ -1528,6 +1555,28 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
   border-radius: var(--r-lg);
   max-width: 400px; margin: 0 auto;
 }
+/* Undo is quieter than the action it undoes, and it is not a destructive
+   button: it puts things back. Ghost weight, full width under the drink
+   button, gone again after Config.ui.undoMs. */
+.btn-undo {
+  width: 100%; max-width: 400px; margin: 8px auto 0;
+  min-height: 44px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  border: 2px solid var(--text-soft); border-radius: var(--r-lg);
+  background: transparent; color: var(--text);
+  font-size: 0.9rem; font-weight: 700; cursor: pointer;
+}
+.btn-undo[hidden] { display: none; }
+
+/* The away line sits above the scene and reads as the creature talking, so it
+   takes the panel treatment rather than a banner's. */
+.away {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 12px 12px 12px 14px;
+  font-size: 0.9rem; line-height: 1.45;
+}
+.away p { margin: 0; flex: 1; }
+.away .icon-btn { flex: none; }
 .btn-drink .ico { width: 24px; height: 24px; }
 
 /* ---------- the sheet ---------- */
@@ -1606,26 +1655,19 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 }
 
 /* ---------- desktop ---------- */
-@media (min-width: 840px) {
+/* One column at every width. The two-column desktop grid is gone: it gave a
+   third of 940px to a truncated title, two grey lines and 200px of nothing,
+   and it put the drink button diagonally opposite the water it fills. This is
+   a phone app on a big screen, so it stays a phone app and gets wider margins.
+   One order instead of two also means one thing to reason about. */
+@media (min-width: 640px) {
   body { align-items: center; padding-bottom: 12px; }
-  .app {
-    max-width: 940px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
-    grid-template-rows: auto 1fr auto;
-    grid-template-areas:
-      "stage sidetop"
-      "stage sidebottom"
-      "foot  sidebottom";
-    gap: 14px 22px;
-  }
-  .stage { grid-area: stage; flex-direction: row-reverse; }  /* tube to the left */
-  .side-top { grid-area: sidetop; }
-  .side-bottom { grid-area: sidebottom; gap: 10px; }
-  .foot { grid-area: foot; }
-  .scene { min-height: 420px; }
+  .app { max-width: 560px; }
+  .scene { min-height: 360px; }
+  /* The dock joins the flow directly under the shell, which is where the eye
+     already is: tap here, water rises there, both inside one span. */
   .dock {
-    position: static; margin-top: auto; padding: 0;
+    position: static; padding: 0;
     background: none; border: 0;
     -webkit-backdrop-filter: none; backdrop-filter: none;
   }
@@ -1700,8 +1742,18 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
   <!-- ---------- stage: the scene, the pips, and the tube beside them ----------
        The tube is a sibling of the scene, never a child: the scene is
        overflow:hidden and the tube has to stand outside it. -->
+  <!-- F3. One line after a long gap, in the creature's voice, dismissed by the
+       next tap or by the close button. Above the scene because it is about the
+       time that passed rather than about the state right now. -->
+  <section class="panel away" id="awayCard" hidden>
+    <p id="awayText"></p>
+    <button class="icon-btn" id="awayClose" type="button" aria-label="">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+  </section>
+
   <div class="stage">
-   <div class="stage-main">
+   <div class="shell">
   <section class="scene" id="scene" data-band="okay" data-species="unicorn" data-radiant="off"
            data-daystars="off"
            aria-labelledby="sceneCaption">
@@ -2049,17 +2101,18 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
     </svg>
   </section>
 
-    <!-- One pip per drink. An empty row asks for the first tap in a way a 0
-         does not, and the goal is counted in taps so a pip cannot drift from
-         what a tap does to the meter. -->
-    <div class="pips" id="pips" role="img" aria-label=""></div>
-    <p class="pips-label"><span id="pipsCount">0 / 8</span></p>
-   </div>
-
     <div class="tube" id="tube" role="progressbar"
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="75" aria-label="">
       <div class="tube-fill" id="tubeFill"><span class="tube-num" id="tubeNum">75%</span></div>
     </div>
+   </div>
+
+    <!-- One pip per drink, under the shell rather than inside it. The pips are
+         aria-hidden and the sentence below them carries the fact: a row of
+         divs with a label that repeats the visible text is the same thing
+         said twice to a screen reader. -->
+    <div class="pips" id="pips" aria-hidden="true"></div>
+    <p class="pips-label" id="pipsCount"></p>
   </div>
 
   <!-- ---------- side, below the scene ---------- -->
@@ -2074,6 +2127,13 @@ body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
       <button class="btn btn-drink glit-specks" id="drinkBtn" type="button">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-drop"/></svg>
         <span id="drinkLabel"></span>
+      </button>
+      <!-- F6. Appears for a few seconds after a tap and takes the tap back.
+           Before this the only way out of a mis-tap was Reset, which also
+           wipes the day, so the one-action loop had one irreversible action. -->
+      <button class="btn btn-undo" id="undoBtn" type="button" hidden>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-reset"/></svg>
+        <span id="undoLabel"></span>
       </button>
     </div>
   </div>
@@ -2277,6 +2337,12 @@ const Config = {
   /* The scenery, built once at startup. The counts are deliberately small:
      unlike an ambient kind, every one of these animates for as long as the tab
      is open, on a phone that is meant to be able to leave it open. */
+  /* F6 and F3. undoMs is how long the way back stays on screen; awayHours is
+     how long a gap has to be before coming back is worth a sentence. Four
+     hours is about two full-to-empty cycles at the default decay, so it is
+     long enough that the pet has actually been through something. */
+  recovery: { undoMs: 8000, awayHours: 4 },
+
   scenery: {
     clouds: 4,
     tufts: 14,
@@ -2390,6 +2456,12 @@ const Strings = {
     lastDrink: "Letzter Schluck",
     settings: "Einstellungen",
     sheetClose: "Einstellungen schlie\u00dfen",
+    undo: "R\u00fcckg\u00e4ngig",
+    undoAria: (name) => `Den letzten Schluck zur\u00fccknehmen`,
+    undone: (name) => `okay, der z\u00e4hlt nicht`,
+    awayClose: "Hinweis schlie\u00dfen",
+    away: (hours, name) => `Du warst ${hours} Stunden weg. Ich hab die Blumen `
+      + `zugemacht und auf dich gewartet.`,
     grpLook: "Aussehen",
     grpGoal: "Tagesziel",
     grpBehaviour: "Verhalten",
@@ -2477,6 +2549,12 @@ const Strings = {
     lastDrink: "Last sip",
     settings: "Settings",
     sheetClose: "Close settings",
+    undo: "Undo",
+    undoAria: (name) => `Take back the last drink`,
+    undone: (name) => `alright, that one did not count`,
+    awayClose: "Dismiss",
+    away: (hours, name) => `You were away ${hours} hours. I closed the flowers `
+      + `and waited for you.`,
     grpLook: "Look",
     grpGoal: "Daily goal",
     grpBehaviour: "Behaviour",
@@ -2564,6 +2642,12 @@ const Strings = {
     lastDrink: "\u4e0a\u4e00\u6b21",
     settings: "\u8a2d\u5b9a",
     sheetClose: "\u95dc\u9589\u8a2d\u5b9a",
+    undo: "\u9084\u539f",
+    undoAria: (name) => `\u53d6\u6d88\u525b\u624d\u90a3\u4e00\u6b21`,
+    undone: (name) => `\u597d\uff0c\u90a3\u4e00\u6b21\u4e0d\u7b97`,
+    awayClose: "\u95dc\u9589\u63d0\u793a",
+    away: (hours, name) => `\u4f60\u96e2\u958b\u4e86 ${hours} \u5c0f\u6642\u3002`
+      + `\u6211\u628a\u82b1\u6536\u8d77\u4f86\uff0c\u7b49\u4f60\u56de\u4f86\u3002`,
     grpLook: "\u5916\u89c0",
     grpGoal: "\u6bcf\u65e5\u76ee\u6a19",
     grpBehaviour: "\u884c\u70ba",
@@ -3561,9 +3645,40 @@ const State = {
     return BANDS.indexOf(band);
   },
 
+  /* One step back, and only one. Held in memory rather than in the save,
+     because an undo that survives a reload would be a second account of what
+     happened and the two could disagree. */
+  undoStep: null,
+
+  canUndo() {
+    return this.undoStep !== null && this.undoStep.dayKey === this.data.dayKey;
+  },
+
+  undo() {
+    if (!this.canUndo()) return false;
+    const step = this.undoStep;
+    this.undoStep = null;
+    this.data.hydration = step.hydration;
+    this.data.lastDrinkAt = step.lastDrinkAt;
+    this.data.todayCount = step.todayCount;
+    this.data.lastUpdateAt = Time.now();   // the clock moved on either way
+    this.save();
+    return true;
+  },
+
   drink(now = Time.now()) {
     const before = this.band();
     this.sync(now);
+
+    /* Captured after sync and before the drink, so undoing puts back the value
+       the decay had actually reached rather than a stale one. dayKey rides
+       along so a step cannot be applied across a rollover. */
+    this.undoStep = {
+      hydration: this.data.hydration,
+      lastDrinkAt: this.data.lastDrinkAt,
+      todayCount: this.data.todayCount,
+      dayKey: this.data.dayKey
+    };
 
     const s = this.data;
     s.hydration = Math.min(Config.hydration.max, s.hydration + s.refillAmount);
@@ -3653,6 +3768,7 @@ const UI = {
       "tube", "tubeFill", "tubeNum", "pips", "pipsCount",
       "drinkBtn", "drinkLabel", "resetBtn", "resetLabel",
       "sheet", "sheetTitle", "sheetClose", "settingsBtn", "soundIcon",
+      "undoBtn", "undoLabel", "awayCard", "awayText", "awayClose",
       "grpLook", "grpGoal", "grpBehaviour",
       "goalLabel", "goalHint", "goalVal", "goalUp", "goalDown", "langLabel",
       "langDe", "langEn", "langZh",
@@ -3731,6 +3847,9 @@ const UI = {
     this.el.drinkBtn.setAttribute("aria-label", t.drinkAria(name));
     this.el.resetLabel.textContent = t.reset;
     this.el.resetBtn.setAttribute("aria-label", t.resetAria(name));
+    this.el.undoLabel.textContent = t.undo;
+    this.el.undoBtn.setAttribute("aria-label", t.undoAria(name));
+    this.el.awayClose.setAttribute("aria-label", t.awayClose);
 
     this.el.sheetTitle.textContent = t.settings;
     this.label(this.el.settingsBtn, t.settings);
@@ -3922,8 +4041,9 @@ const UI = {
       frag.append(pip);
     }
     this.el.pips.replaceChildren(frag);
-    this.el.pipsCount.textContent = `${count} / ${goal}`;
-    this.el.pips.setAttribute("aria-label", this.t().pipsAria(count, goal));
+    /* The visible sentence is the accessible one: the row is aria-hidden, so
+       there is no second copy of the same fact for a screen reader to read. */
+    this.el.pipsCount.textContent = this.t().pipsAria(count, goal);
     if (this.el.pips.dataset.goal !== "met" || count < goal) {
       this.el.pips.dataset.goal = count >= goal ? "met" : "open";
     }
@@ -4011,6 +4131,40 @@ const UI = {
         + `--blink:${r(1.8, 3.4).toFixed(1)}s;--delay:-${r(0, 6).toFixed(1)}s"></span>`;
     }
     this.el.fireflies.innerHTML = html;
+  },
+
+  /* F6. The way back, for a few seconds after a tap. Hidden rather than
+     disabled: a button that cannot do anything should not be in the tab order,
+     and the dock has one job at a time. */
+  showUndo() {
+    clearTimeout(this.undoTimer);
+    this.el.undoBtn.hidden = false;
+    this.undoTimer = setTimeout(() => this.hideUndo(), Config.recovery.undoMs);
+  },
+
+  hideUndo() {
+    clearTimeout(this.undoTimer);
+    this.undoTimer = null;
+    /* If the focus is on the button as it goes, hand it back to the action
+       rather than letting it fall to the top of the document. */
+    if (document.activeElement === this.el.undoBtn) this.el.drinkBtn.focus();
+    this.el.undoBtn.hidden = true;
+  },
+
+  /* F3. One line after a long gap, in the creature's voice. The data was
+     already there; what was missing was anyone saying it, so coming back to a
+     drooping pet read as an accusation rather than as a story. */
+  maybeSayAway(now = Time.now()) {
+    const last = State.data.lastDrinkAt;
+    if (last === null) return;                       // a first run is not a return
+    const hours = (now - last) / 3600000;
+    if (hours < Config.recovery.awayHours) return;
+    this.el.awayText.textContent = this.t().away(Math.round(hours), this.name());
+    this.el.awayCard.hidden = false;
+  },
+
+  dismissAway() {
+    this.el.awayCard.hidden = true;
   },
 
   renderThemes() {
@@ -4195,6 +4349,9 @@ const Events = {
       document.querySelector(".sheet-scrim")?.remove();
       UI.el.settingsBtn.setAttribute("aria-expanded", "false");
     });
+
+    UI.el.undoBtn.addEventListener("click", () => this.onUndo());
+    UI.el.awayClose.addEventListener("click", () => UI.dismissAway());
 
     UI.el.goalUp.addEventListener("click", () => this.nudgeGoal(+1));
     UI.el.goalDown.addEventListener("click", () => this.nudgeGoal(-1));
@@ -4389,8 +4546,19 @@ const Events = {
     UI.render();
   },
 
+  /* F6. Puts the tap back and says so, quietly: no cheer, no buzz, because
+     undoing is housekeeping and the app should not congratulate it. */
+  onUndo() {
+    if (!State.undo()) { UI.hideUndo(); return; }
+    UI.hideUndo();
+    UI.render();
+    UI.say(UI.t().undone(UI.name()), 1800);
+  },
+
   onDrink() {
     Audio_.unlock();
+    /* The away line has been answered by the act of drinking. */
+    UI.dismissAway();
     /* Read the count before drink() increments it. The band that drink()
        returns as `before` is a string, so comparing it to the goal would be
        false every time and the goal would celebrate on every tap past it. */
@@ -4405,6 +4573,8 @@ const Events = {
       UI.celebrateGoal(result.improved || result.burst);
     }
     UI.droplets(result.burst ? 6 : 3);
+
+    UI.showUndo();
 
     if (result.burst) {
       UI.say(UI.pick(UI.t().gurgle));
@@ -4431,6 +4601,8 @@ const Events = {
 
   onReset() {
     if (!window.confirm(UI.t().resetConfirm(UI.name()))) return;
+    State.undoStep = null;
+    UI.hideUndo();
     State.reset();
     UI.lastBand = null;
     UI.render();
@@ -4500,6 +4672,7 @@ function init() {
   UI.syncSettingsInputs();
   UI.applyText();
   UI.render();
+  UI.maybeSayAway();
   UI.say(UI.bandSpeech(), 1500);
 
   Events.bind();
