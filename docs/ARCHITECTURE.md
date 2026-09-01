@@ -10,7 +10,7 @@ Everything user-facing reads from one config object near the top of the script:
 
 ```js
 const Config = {
-  app: { version: "v0.32", status: "DEVELOPMENT" },
+  app: { version: "v0.33", status: "DEVELOPMENT" },
   species: {
     unicorn:  { name: "Aniluna", emoji: "\u{1F984}", voice: { pitch: 1,    wave: "triangle" } },
     dinosaur: { name: "Anirex",  emoji: "\u{1F996}", voice: { pitch: 0.55, wave: "sawtooth" } }

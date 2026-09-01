@@ -11,6 +11,14 @@ agree: the `index.html` header block, `Config.app.version`, and the newest
 entry below (NXW-VER-6).
 
 ```
+v0.33  2026-09-01  Fixed: the sun and the moon were painting over the clouds.
+                   `.sky` and `.clouds` were both z-index 0 and `.sky` comes
+                   later in the markup, so document order decided it and the
+                   comment beside the code claimed the opposite. The scene now
+                   has one written-down ladder, sky 0, clouds 1, ambient and
+                   ground 2, wash 3, creature 4, and nothing in it relies on
+                   markup order.
+
 v0.32  2026-09-01  Scenery: clouds, hills, grass, flowers, and fireflies after
                    dark. Fixtures rather than ambient kinds, because they must
                    not spawn or expire: they are the thing the drifters cross.

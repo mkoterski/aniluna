@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html - Aniluna Aqua Buddy - v0.32
+  index.html - Aniluna Aqua Buddy - v0.33
 
   Purpose    : Single-file static hydration companion. Tap to drink, the meter
                refills, the character reacts. No backend, no accounts.
@@ -520,15 +520,15 @@ body {
    grey over the whole scene dulls sky, ground, sun, moon and ambient life
    together, which is what "overcast" looks like, and it works in every theme
    because grey washes both a pale sky and a dark one towards the middle.
-   z-index 2 puts it above every scenery layer and below the creature at 3, so
+   z-index 3 puts it above every scenery layer and below the creature at 4, so
    the character keeps its own saturation and stays the one thing in the picture
-   that has not gone grey. Until v0.32 it sat at 1, level with the ambient life
-   and the rainbow, which are later in the document and so escaped it. */
+   that has not gone grey. Before v0.32 it sat level with the ambient life and
+   the rainbow, which are later in the document and so escaped it. */
 .scene::before {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
   background-color: rgb(128 128 128 / var(--wash, 0));
   transition: background-color 0.7s ease;
@@ -541,11 +541,28 @@ body {
    reads as crossing only if it crosses something. These stay put.
    ============================================================ */
 
-/* Clouds pass in front of the sun and behind the birds, which is why they sit
-   at the sky's own level and come after it in the document. Deliberately not
-   scaled by --amb-mood: ambient life thins as the mood drops, weather does not.
-   The wash above them is what carries the mood here. */
-.clouds { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+/* Clouds pass in front of the sun and the moon and behind the birds, and that
+   is a rule rather than an accident of markup order: they own layer 1 and the
+   sky owns 0. Deliberately not scaled by --amb-mood, because ambient life
+   thins as the mood drops and weather does not. The wash carries the mood
+   here instead. */
+/* The scene's stacking, in one place, because two layers sharing a number and
+   sorting by document order is what put the sun in front of the clouds:
+
+     0  sky         the sun and the moon
+     1  clouds      always in front of them, never behind
+     2  ambient     birds and wind, in front of the clouds
+        rainbow     the daylight reward
+        meadow      grass and flowers, on the ground
+        fireflies   after dark, on the ground
+     3  wash        the mood, dulling everything above it
+     4  pet         the creature, which the wash never touches
+     5  speech
+     6  drops
+
+   The ground strip is ::after at auto, which paints below all of these and
+   above the sky gradient, so the hills at auto sit behind it on purpose. */
+.clouds { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
 .cloud {
   position: absolute;
   left: 0;
@@ -574,7 +591,7 @@ body {
 /* Grass and flowers stand ON the ground rather than behind it, so they have to
    clear the strip: z-index 1 against the strip's auto. This is the one piece of
    the scene where painting order is load-bearing. */
-.meadow { position: absolute; inset: auto 0 0 0; height: 15%; z-index: 1; pointer-events: none; }
+.meadow { position: absolute; inset: auto 0 0 0; height: 15%; z-index: 2; pointer-events: none; }
 .tuft {
   position: absolute;
   bottom: 58%;
@@ -608,7 +625,7 @@ body {
 /* Fireflies are life, so they thin with the mood, and they belong to the dark:
    the day already has birds. Gated on the resolved theme, so a clock that says
    night and a theme that says day cannot disagree. */
-.fireflies { position: absolute; inset: 0; z-index: 1; pointer-events: none; display: none; }
+.fireflies { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: none; }
 :root[data-theme="night"] .fireflies { display: block; }
 .fly {
   position: absolute;
@@ -675,7 +692,7 @@ body {
 /* rainbow reward, only while the meter reads at or above Config.thresholds.reward */
 .rainbow {
   position: absolute;
-  z-index: 1;                   /* over the sun and moon, under the character */
+  z-index: 2;                   /* over the clouds, under the character */
   left: 50%;
   top: 13%;
   width: 70%;
@@ -726,7 +743,7 @@ body {
 /* ---------- ambient life: birds by day, wind gusts mostly by night ----------
    Both are spawned rarely by Ambient, cross the scene once and remove
    themselves. Rates live in Config.ambient. */
-.ambient { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.ambient { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .amb {
   position: absolute;
   left: -25%;
@@ -929,7 +946,7 @@ body {
   font-size: 0.86rem;
   text-align: center;
   text-wrap: balance;
-  z-index: 4;
+  z-index: 5;
   animation: pop 0.35s ease;
 }
 .speech::after {
@@ -956,7 +973,7 @@ body {
    ============================================================ */
 .pet {
   position: relative;
-  z-index: 3;
+  z-index: 4;
   width: 56%;
   max-width: 208px;
   margin-bottom: 2%;
@@ -1035,7 +1052,7 @@ body {
 }
 
 /* floating droplets on drink */
-.drops { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.drops { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
 .drop {
   position: absolute;
   left: 50%;
@@ -1802,7 +1819,7 @@ input[type="range"]::-moz-range-thumb {
 /* ========= CONFIG ========= */
 const Config = {
   app: {
-    version: "v0.32",
+    version: "v0.33",
     status: "DEVELOPMENT"        // v0.x = development, v1.x = production
   },
 

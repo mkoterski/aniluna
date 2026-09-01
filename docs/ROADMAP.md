@@ -7,7 +7,7 @@ mean the same thing.
 
 ## Known issues
 
-Defects present in `v0.32`, as opposed to work never started, which is under
+Defects present in `v0.33`, as opposed to work never started, which is under
 [Roadmap](#roadmap). Both lists share one ID series and the IDs are stable, so
 an item keeps its ID when it moves between them and a changelog entry can quote
 it when it is fixed.
@@ -26,7 +26,7 @@ Accepted limitations, written down so they are not rediscovered as bugs:
   no notice that nothing is being kept.
 - No reminders once the tab is closed, and no haptics on iOS. Both are platform
   limits rather than omissions; see F9 and F4 for what could be done anyway.
-- The device test matrix is written but unrun (B2), so `v0.32` is a prototype in
+- The device test matrix is written but unrun (B2), so `v0.33` is a prototype in
   the literal sense: everything here was verified in one desktop browser. The
   matrix itself lives in [`DEVICE-TESTS.md`](DEVICE-TESTS.md).
 - B3 is accepted, decided 2026-08-25. `State.reset()` sets `lastDrinkAt = now`,

@@ -3,7 +3,7 @@
 This is B2. Promotion to `v1.0` needs a confirmed successful run of this matrix
 (NXW-VER-4), so the matrix is the gate and this file is where a run is recorded.
 
-Written against app **v0.32**. `node test/smoke-test.mjs` checks the pure logic
+Written against app **v0.33**. `node test/smoke-test.mjs` checks the pure logic
 against a stub page and asserts nothing about a rendered one, which is why this
 exists: layout, contrast, touch targets, audio unlock, haptics and real
 suspension are only observable on a device.
@@ -42,7 +42,7 @@ D14 is the check for that.
 | ID | Check | How | Pass when |
 |---|---|---|---|
 | D1 | Cold start | Clear the site data, open the page | The meter reads 75%, the creature renders, no console error |
-| D2 | The app starts at all | Watch the console through the first render | The startup banner names `v0.32` and nothing throws. This is the class of failure that shipped in v0.23 |
+| D2 | The app starts at all | Watch the console through the first render | The startup banner names `v0.33` and nothing throws. This is the class of failure that shipped in v0.23 |
 | D3 | A drink persists | Drink, force-quit the browser, reopen | The meter and the daily count survive, and the last-drink line reads as a moment ago |
 | D4 | Settings persist | Change decay, refill, sound, easter egg, theme, language and a name, reopen | All seven come back as set |
 | D5 | Legacy save adopted | Write a save under `ina-water-friend/v1`, clear `aniluna/v1`, reload | The old save is adopted and rewritten under the current key. This is the `Storage.migrate()` path the smoke test does not exercise (B5) |
@@ -128,7 +128,7 @@ with no failure left open.
 Platform : P2, Android Chrome 1xx, Pixel 7a, Android 15
 Tester   : name
 Date     : YYYY-MM-DD
-App      : v0.32, served from <origin>
+App      : v0.33, served from <origin>
 
 D1  pass
 D2  pass
@@ -144,5 +144,5 @@ next free ID in the shared series, and this file records which one it became.
 
 ## Runs
 
-None yet. `v0.32` was verified in one desktop browser only, so the matrix is
+None yet. `v0.33` was verified in one desktop browser only, so the matrix is
 written but unrun, which is what keeps B2 open.

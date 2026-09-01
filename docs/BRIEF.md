@@ -2,7 +2,7 @@
 
 This is the product brief: what the app is, who it is for, how it is meant to
 feel, and which rules it holds itself to. It describes `index.html` as built at
-**v0.32**.
+**v0.33**.
 
 It deliberately does not duplicate the operational documents beside it:
 [`ARCHITECTURE.md`](ARCHITECTURE.md) for the code map and the configuration,
